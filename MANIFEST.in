@@ -1,0 +1,3 @@
+recursive-include humanized_opening_hours *.json
+include *.txt
+include *.md
