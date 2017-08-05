@@ -12,7 +12,7 @@
 """
 
 __version__ = "0.1.0"
-__appname__ = "humanized_opening_hours"
+__appname__ = "osm_humanized_opening_hours"
 __author__ = "rezemika <reze.mika@gmail.com>"
 __licence__ = "AGPLv3"
 

@@ -25,7 +25,7 @@ Sunday: 07:00 - 21:00
 
 # Installation
 
-    $ pip3 install humanized_opening_hours
+    $ pip3 install osm-humanized-opening-hours
 
 # How to use it
 
@@ -181,7 +181,7 @@ Here are some examples.
 
 ```python
 >>> hoh.render(day, universal=True)
-'two hours before sunset'
+'02:00 before sunset'
 
 >>> hoh.render(day)
 '20:30'
@@ -190,7 +190,7 @@ Here are some examples.
 '09:30 - 20:30'
 
 >>> hoh.render(moment, universal=True)
-'09:30 - two hours before sunset'
+'09:30 - 02:00 before sunset'
 ```
 
 ## Objetcs

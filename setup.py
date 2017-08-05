@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 import humanized_opening_hours
 
 setup(
-    name="humanized_opening_hours",
+    name="osm_humanized_opening_hours",
     version=humanized_opening_hours.__version__,
     packages=find_packages(),
     author="rezemika",
