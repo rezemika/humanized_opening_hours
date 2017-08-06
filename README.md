@@ -21,7 +21,7 @@ Saturday: 07:00 - 21:00
 Sunday: 07:00 - 21:00
 ```
 
-**Current version : 0.1.0**
+**Current version : 0.1.1**
 
 # Installation
 

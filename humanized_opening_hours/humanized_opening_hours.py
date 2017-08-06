@@ -45,7 +45,13 @@ import pytz
 import astral
 import locale
 
-__all__ = ["HumanizedOpeningHours"]
+__all__ = [
+    "HumanizedOpeningHours",
+    "HOHError",
+    "DoesNotExistError",
+    "NotParsedError",
+    "PeriodsConflictError"
+]
 
 # HOH Exceptions
 
@@ -307,7 +313,12 @@ class Period:
         """
         if not self.m1.time() or not self.m2.time():
             return
-        return self.m1.time() <= moment <= self.m2.time()
+        if type(moment) is Moment:
+            return self.m1.time() <= moment.time() <= self.m2.time()
+        elif type(moment) is datetime.time:
+            return self.m1.time() <= moment <= self.m2.time()
+        else:
+            raise ValueError("'in <Period>' requires datetime.time or Moment object as left operand.")
     
     def __str__(self):
         return "{} - {}".format(str(self.m1), str(self.m2))
@@ -389,9 +400,9 @@ class Moment:
     
     def __str__(self):
         if self.type == "normal" or self.time():
-            return "<{} {}>".format(self.type, self.time().strftime("%H:%M"))
+            return "<Moment {} {}>".format(self.type, self.time().strftime("%H:%M"))
         else:
-            return "<{} : timedelta {}s>".format(self.type, self.timedelta.seconds)
+            return "<Moment {} : timedelta {}s>".format(self.type, self.timedelta.seconds)
 
 # Main class
 
@@ -653,7 +664,7 @@ class HumanizedOpeningHours:
                 A boolean indicating if the location is open.
                 True if so, False else.
         """
-        if self.need_solar_hours_parsing and self._solar_hours_parsed:
+        if self.need_solar_hours_parsing and not self._solar_hours_parsed:
             raise NotParsedError("Solar hours have not been parsed and need to.")
         if not moment:
             moment = datetime.datetime.now(self.tz)
@@ -686,7 +697,7 @@ class HumanizedOpeningHours:
                 None default, meaning using the present time, at the
                 timezone given to the constructor.
         """
-        if self.need_solar_hours_parsing and self._solar_hours_parsed:
+        if self.need_solar_hours_parsing and not self._solar_hours_parsed:
             raise NotParsedError("Solar hours have not been parsed and need to.")
         if self.always_open:
             return
