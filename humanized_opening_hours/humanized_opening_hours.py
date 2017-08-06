@@ -407,7 +407,7 @@ class Moment:
 # Main class
 
 class HumanizedOpeningHours:
-    def __init__(self, field, lang="en", langs_dir=None, tz=pytz.timezone("UTC")):
+    def __init__(self, field, lang="en", langs_dir=None, tz=pytz.timezone("UTC"), sanitize_only=False):
         """
             A parser for the OSM opening_hours field.
             
@@ -420,12 +420,16 @@ class HumanizedOpeningHours:
             lang : str
                 The destination language, following the ISO 639-1
                 standard (the appropriate JSON file must exist).
-            langs_dir : str, optionnal
+            langs_dir : str, optional
                 The directory where the translation json files are
                 (without final slash). Module's directory default.
                 Allows to use another language or custom sentences.
-            tz : pytz.timezone object, optionnal
+            tz : pytz.timezone object, optional
                 The timezone to use (UTC default).
+            sanitize_only : bool, optional
+                False default. Set to True to only do the sanitizing.
+                The sanitized field is available in the 'field'
+                attribute. The other methods will not work.
         """
         # Checks the field can be parsed.
         if "dawn" in field or "dusk" in field:
@@ -450,6 +454,8 @@ class HumanizedOpeningHours:
         locale.setlocale(locale.LC_TIME, (self.lang, "UTF-8"))
         self.tz = tz
         self.field = self.sanitize(field)
+        if sanitize_only:
+            return
         # Prepares the parsing of the field.
         self._split_field = list(map(str.strip, self.field.split(";")))
         self._opening_periods = []
@@ -584,6 +590,18 @@ class HumanizedOpeningHours:
         # 0630 => 06:30
         for moment in re.findall("[0-9]{4}", field):
             field = field.replace(moment, moment[:2] + ':' + moment[2:])
+        # Adds zeros when necessary.
+        # 7:30 => 07:30
+        for moment in re.findall("(?<![0-9-])[0-9]:[0-9]{2}", field):
+            field = field.replace(moment, '0' + moment)
+        # Removes spaces after commas.
+        # 07:00-13:30, 15:30-19:30 => 07:00-13:30,15:30-19:30
+        for period in re.findall("[0-9], [0-9]", field):
+            field = field.replace(period, period.replace(' ', ''))
+        # Replaces commas by semicolons if necessary.
+        # Mo-Fr 06:30-20:00, Sa 07:30-14:30 => Mo-Fr 06:30-20:00;Sa 07:30-14:30
+        for part in re.findall("[0-9], [A-Z][a-z]", field):
+            field = field.replace(part, part.replace(', ', ';'))
         return field
     
     def parse_solar_hours(self, coords=None, astral_location=None, hours=None, moment=None):
