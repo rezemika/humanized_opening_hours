@@ -592,8 +592,8 @@ class HumanizedOpeningHours:
             field = field.replace(moment, moment[:2] + ':' + moment[2:])
         # Adds zeros when necessary.
         # 7:30 => 07:30
-        for moment in re.findall("(?<![0-9-])[0-9]:[0-9]{2}", field):
-            field = field.replace(moment, '0' + moment)
+        for moment in re.findall("( (?<![0-9-])[0-9]:[0-9]{2})", field):
+            field = field.replace(moment, ' 0' + moment[1:])
         # Removes spaces after commas.
         # 07:00-13:30, 15:30-19:30 => 07:00-13:30,15:30-19:30
         for period in re.findall("[0-9], [0-9]", field):
