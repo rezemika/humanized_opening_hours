@@ -3,6 +3,8 @@ Humanized Opening Hours - A parser for the opening_hours fields from OSM
 
 **Humanized Opening Hours** is a Python 3 module allowing a simple usage of the opening_hours fields used in OpenStreetMap. It provides especially a function to get a good-looking opening hours description from a field.
 
+Any pull request (following PEP-8) is more than welcome!
+
 ```python
 >>> import humanized_opening_hours
 >>> field = "Mo-Fr 06:00-21:00; Sa,Su 07:00-21:00"
@@ -11,7 +13,9 @@ Humanized Opening Hours - A parser for the opening_hours fields from OSM
 True
 >>> hoh.next_change()
 datetime.datetime(2017, 12, 24, 21, 0)
->>> print(hoh.stringify_week_schedules())
+>>> hohr = humanized_opening_hours.HOHRenderer(hoh)
+>>> print(hohr.description())
+'''
 Monday: 06:00 - 21:00
 Tuesday: 06:00 - 21:00
 Wednesday: 06:00 - 21:00
@@ -19,11 +23,15 @@ Thursday: 06:00 - 21:00
 Friday: 06:00 - 21:00
 Saturday: 07:00 - 21:00
 Sunday: 07:00 - 21:00
+'''
 ```
 
-**Current version : 0.1.1**
+**This module is still in development and bugs may occur. If you discover one, please create an issue.**
 
 # Installation
+
+This library is so small, you can include it directly into your project.
+Also, it is available on PyPi.
 
     $ pip3 install osm-humanized-opening-hours
 
@@ -32,22 +40,16 @@ Sunday: 07:00 - 21:00
 The only mandatory argument to give to the constructor is the field, which must be a string.
 You can also specify:
 
-- `lang` (str, "en" default) : the language to use, following the ISO 639-1 standard (currently, only english and french are supported);
-- `langs_dir` (str, None default) : a directory path, where you can put JSON files to have a custom translation;
 - `tz` (pytz.timezone) : the timezone to use, UTC default.
+- `sanitize_only` (bool) : set it to True to not parse the field (usefull when you want only get its sanitized version).
 
 ```python
 import humanized_opening_hours, pytz
 
 field = "Mo-Fr 06:00-21:00; Sa,Su 07:00-21:00"
 
-# Uses the French language and the French timezone.
-hoh = HumanizedOpeningHours(field, lang="fr", tz=pytz.timezone("Europe/Paris"))
-# Uses a custom translation in Kirundi.
-hoh = HumanizedOpeningHours(field, lang="run", langs_dir="translation_files")
+hoh = HumanizedOpeningHours(field, tz=pytz.timezone("Europe/Paris"))
 ```
-
-If you want to create a custom translation, copy and modify one of the JSON files, then name it "hoh_LANG.json" (where "LANG" is the language code, to use for the `lang` argument).
 
 ## Basic methods
 
@@ -67,10 +69,10 @@ datetime.datetime(2017, 12, 24, 21, 0)
 datetime.timedelta(0, 3600)
 ```
 
-You can get a sanitized version of the field given to the constructor with the *sanitize* function.
+You can get a sanitized version of the field given to the constructor with the *sanitize* method or the **field** attribute.
 
 ```python
->>> field = "mo-su 0930-2000"
+# Field : "mo-su 0930-2000"
 >>> print(hoh.sanitize())
 Mo-Su 09:30-20:00
 ```
@@ -83,7 +85,7 @@ First of all, you can easily know if you need to parse them by checking the `hoh
 
 **If you try to do something with a field requiring parsing without parse it, you will get a "NotParsedError".**
 
-Attention, except if the facility is on the equator, this parsing will be valid only for a short period. It is recommended to rerun this function while changing its "moment" argument (or its hours).
+Attention, except if the facility is on the equator, this parsing will be valid only for a short period. It is recommended to rerun this function changing its "moment" argument (or its hours).
 
 If you know that the sun rises at six o'clock and sets at ten o'clock, you can set it like this.
 
@@ -95,9 +97,8 @@ If you know that the sun rises at six o'clock and sets at ten o'clock, you can s
 If you don't know solar hours, you have two methods to set them.
 
 ```python
-# If you are on Pico island (in the Azores islands)...
 # Using the GPS coordinates of the facility.
->>> hoh.parse_solar_hours(coords=(38.506, -28.454))
+>>> hoh.parse_solar_hours(coords=(38.506, -28.454))  # Pico island (in the Azores islands).
 
 # Using the astral module. You can pass to the "moment" argument a datetime.datetime object if you want to parse the solar hours for another date.
 >>> import astral, pytz
@@ -107,16 +108,24 @@ If you don't know solar hours, you have two methods to set them.
 
 ## Have nice schedules
 
-The `stringify_week_schedules` method allows you to have a well-formated multiline string describing the opening hours of the facility.
+The `HOHRenderer` class allows you to get various representations of the schedules.
+Its *init* method takes an HOH object in argument, and two optional argument:
 
-It has a few parameters you need to know:
-- `compact` (bool, False default) : not available yet (will raise an NotImplementedError), will give you a compact result;
-- `holidays` (bool, True default) : will also display the opening hours on holidays (public and school ones), a blank line after the regular ones;
-- `universal` (bool, True default) : will display something like "two hours before sunset" in place of "20:00" (if the sun sets at 22:00), allowing to use this function without having parsed solar hours.
+- `universal` (bool) : allows to have human-readable descriptions without having to parse the solar hours (True default).
+- `lang` (str) : the language to use **(only "en" (default) and "fr" are supported for now)**.
+
+It has several methods to retrieve useful informations.
+
+If the facility is always open, many of the following methods won't be very usefull.
+If you want a human-readable description, see the doc of the *description* method or use the *always_open_str* to get a simple string.
+
+### description
 
 ```python
 # Field : "Mo-Fr 06:00-21:00; Sa,Su 07:00-21:00"
->>> print(hoh.stringify_week_schedules())
+>>> hohr = humanized_opening_hours.HOHRenderer(hoh)
+>>> print(hohr.description())
+'''
 Monday: 06:00 - 21:00
 Tuesday: 06:00 - 21:00
 Wednesday: 06:00 - 21:00
@@ -124,9 +133,11 @@ Thursday: 06:00 - 21:00
 Friday: 06:00 - 21:00
 Saturday: 07:00 - 21:00
 Sunday: 07:00 - 21:00
+'''
 
 # Field : "Mo-Fr 06:00-sunset; Sa,Su 07:00-21:00"
->>> print(hoh.stringify_week_schedules())
+>>> print(hohr.description())
+'''
 Monday: 06:00 - sunset
 Tuesday: 06:00 - sunset
 Wednesday: 06:00 - sunset
@@ -134,10 +145,13 @@ Thursday: 06:00 - sunset
 Friday: 06:00 - sunset
 Saturday: 07:00 - 21:00
 Sunday: 07:00 - 21:00
+'''
 
 # Field : "Mo-Fr 06:00-sunset; Sa,Su 07:00-21:00"
 # Solar hours parsed. Sunset at 21:04.
->>> print(hoh.stringify_week_schedules(universal=False))
+>>> hohr = humanized_opening_hours.HOHRenderer(hoh, universal=False)
+>>> print(hohr.description())
+'''
 Monday: 06:00 - 21:04
 Tuesday: 06:00 - 21:04
 Wednesday: 06:00 - 21:04
@@ -145,10 +159,12 @@ Thursday: 06:00 - 21:04
 Friday: 06:00 - 21:04
 Saturday: 07:00 - 21:00
 Sunday: 07:00 - 21:00
+'''
 
 # Field : "Mo-Fr 06:00-(sunset+02:00); Sa,Su 07:00-21:00"
 # Solar hours parsed. Sunset at 21:04.
->>> print(hoh.stringify_week_schedules())
+>>> print(hohr.description())
+'''
 Monday: 06:00 - 02:00 after sunset
 Tuesday: 06:00 - 02:00 after sunset
 Wednesday: 06:00 - 02:00 after sunset
@@ -156,10 +172,12 @@ Thursday: 06:00 - 02:00 after sunset
 Friday: 06:00 - 02:00 after sunset
 Saturday: 07:00 - 21:00
 Sunday: 07:00 - 21:00
+'''
 
 # Field : "Mo-Fr 06:00-(sunset+02:00); Sa,Su 07:00-21:00"
 # Solar hours parsed. Sunset at 21:04.
->>> print(hoh.stringify_week_schedules(universal=False))
+>>> print(hohr.description(universal=False))
+'''
 Monday: 06:00 - 23:04
 Tuesday: 06:00 - 23:04
 Wednesday: 06:00 - 23:04
@@ -167,31 +185,89 @@ Thursday: 06:00 - 23:04
 Friday: 06:00 - 23:04
 Saturday: 07:00 - 21:00
 Sunday: 07:00 - 21:00
+'''
+
+# Field : "24/7"
+>>> hohr = humanized_opening_hours.HOHRenderer(hoh)
+>>> print(hohr.description())
+'''
+Open 24 hours a day and 7 days a week.
+'''
 ```
 
-## Rendering
+### render_moment
 
-HOH provides a method dedicated to render into a nice string any Period or Moment object (described below).
+Takes a *Moment* (see the *Objects* section) object as argument and returns a human-readable string describing it.
 
-It has three arguments:
-- the object to render;
-- `universal` (bool, optional, False default): as for method `stringify_week_schedules`, returns a translated string instead of an hour for solar hours.
+### render_period
 
-Here are some examples.
+Same as *render_moment*, but for a *Period* object.
+
+### periods_per_day
+
+Returns a dict of seven items with tuples containing the translated name of the day and its periods.
 
 ```python
->>> hoh.render(day, universal=True)
-'02:00 before sunset'
-
->>> hoh.render(day)
-'20:30'
-
->>> hoh.render(moment)
-'09:30 - 20:30'
-
->>> hoh.render(moment, universal=True)
-'09:30 - 02:00 before sunset'
+# Field : "Mo-We 09:00-19:00"
+>>> hohr.periods_per_day()
+'''
+{
+    0: ("Monday", ["09:00 - 19:00"]),
+    1: ("Tuesday", ["09:00 - 19:00"]),
+    2: ("Wednesday", ["09:00 - 19:00"]),
+    3: ('Thursday', []),
+    4: ('Friday', []),
+    5: ('Saturday', []),
+    6: ('Sunday', []),
+}
+'''
 ```
+
+### closed_days
+
+Returns a list of human-readable exceptional closed days.
+
+```python
+# Field : "Mo-We 09:00-19:00 ; Dec 25 off ; May 1 off"
+>>> hohr.closed_days()
+["25 December", "1st May"]
+```
+
+### holidays
+
+Returns a dict describing the status of the facility during holidays.
+
+Here is the dict shape.
+
+```
+{
+    "main": <str>,  # A string indicating whether it's open during holidays.
+    "PH": (
+        <bool or None>,  # True : open ; False : closed ; None : unknown.
+        <periods list (str)>  # Periods list, like those of "periods_per_day()".
+    ),
+    "SH": (
+        <bool or None>,  # True : open ; False : closed ; None : unknown.
+        <periods list (str)>  # Periods list, like those of "periods_per_day()".
+    ),
+}
+```
+
+Example :
+
+```python
+# Field : "Mo-We 09:00-19:00 ; SH off ; PH 09:00-12:00"
+>>> hohr.holidays()
+{
+    "main": "Open on public holidays. Closed on school holidays.",
+    "PH": (True, ["09:00 - 12:00"]),
+    "SH": (False, []),
+}
+```
+
+### set_universal
+
+This method takes a boolean argument and allows you to update the *universal* argument of HOHR. If solar hours have not been parsed, it will raise a "NotParsedError". If you're brave enough, you can also update directly the *universal* attribute of HOHR.
 
 ## Objetcs
 
