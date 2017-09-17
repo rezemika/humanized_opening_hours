@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 #  A parser for the opening_hours fields from OpenStreetMap.
 #  
 #  Published under the AGPLv3 license by rezemika.
@@ -26,7 +24,9 @@
     >>> hoh.next_change()
     datetime.datetime(2017, 12, 24, 21, 0)
     
-    >>> print(hoh.stringify_week_schedules())
+    >>> hohr = humanized_opening_hours.HOHRenderer(hoh)
+    >>> print(hohr.full_description())
+    '''
     Monday: 06:00 - 21:00
     Tuesday: 06:00 - 21:00
     Wednesday: 06:00 - 21:00
@@ -34,8 +34,11 @@
     Friday: 06:00 - 21:00
     Saturday: 07:00 - 21:00
     Sunday: 07:00 - 21:00
+    '''
     ```
 """
+
+# TODO : Handle 24:00.
 
 import os
 import re
@@ -43,10 +46,11 @@ import json
 import datetime
 import pytz
 import astral
-import locale
+import gettext
 
 __all__ = [
     "HumanizedOpeningHours",
+    "HOHRenderer",
     "HOHError",
     "DoesNotExistError",
     "NotParsedError",
@@ -67,6 +71,12 @@ class DoesNotExistError(HOHError):
     """
     pass
 
+class ParseError(HOHError):
+    """
+        Raised when field parsing fails.
+    """
+    pass
+
 class NotParsedError(HOHError):
     """
         Raised when trying to get something which has not been parsed.
@@ -81,47 +91,34 @@ class PeriodsConflictError(HOHError):
 
 # Translation
 
-class HOHTranslate():
-    
-    def __init__(self, lang, langs_dir):
-        """
-            A translater for HumanizedOpeningHours.
-        """
-        if not langs_dir:
-            filename = os.path.join(
-                os.path.dirname(__file__),
-                "hoh_{}.json".format(lang)
-            )
-        else:
-            filename = "{}/hoh_{}.json".format(langs_dir, lang)
-        with open(filename, 'r', encoding='utf-8') as lang_file:
-            self.f = json.load(lang_file)
-    
-    def sentence(self, s):
-        """
-            Translate a sentence.
-        """
-        return self.f["sentences"].get(s)
-    
-    def word(self, word):
-        """
-            Translate a regular word.
-        """
-        return self.f["words"].get(word)
-    
-    def month(self, index):
-        """
-            Return a month name from his index.
-            (0 : January - 11 : December)
-        """
-        return self.f["months"][index]
-    
-    def weekday(self, index):
-        """
-            Return a weekday name from his index.
-            (0 : Monday - 6 : Sunday)
-        """
-        return self.f["weekdays"][index]
+def _(message): return message
+
+WEEKDAYS = (
+    _("Monday"),
+    _("Tuesday"),
+    _("Wednesday"),
+    _("Thursday"),
+    _("Friday"),
+    _("Saturday"),
+    _("Sunday")
+)
+
+MONTHS = (
+    _("January"),
+    _("February"),
+    _("March"),
+    _("April"),
+    _("May"),
+    _("June"),
+    _("July"),
+    _("August"),
+    _("September"),
+    _("October"),
+    _("November"),
+    _("December")
+)
+
+del _
 
 # Meta-classes
 
@@ -213,7 +210,10 @@ class Day:
             m2 = Moment("sunset")
         else:
             result = re.search("\((sunrise|sunset)(\+|-)([0-9][0-9]:[0-9][0-9])\)", m2)
-            moment_type, sign, differential = result.group(1), result.group(2), result.group(3)
+            try:
+                moment_type, sign, differential = result.group(1), result.group(2), result.group(3)
+            except AttributeError:
+                raise ParseError("Field parsing has failed on '{}'.".format(field))
             hours = int(differential.split(':')[0])
             minutes = int(differential.split(':')[1])
             if sign == '-':
@@ -223,6 +223,8 @@ class Day:
             m2 = Moment(moment_type, timedelta=timedelta)
         # Sanity precaution.
         for period in self.periods:
+            if m1.type in ["sunrise", "sunset"] or m2.type in ["sunrise", "sunset"]:
+                continue
             if m1 in period or m2 in period:
                 raise PeriodsConflictError(
                     "The period '{field}' is in conflict with this one: "
@@ -407,7 +409,7 @@ class Moment:
 # Main class
 
 class HumanizedOpeningHours:
-    def __init__(self, field, lang="en", langs_dir=None, tz=pytz.timezone("UTC"), sanitize_only=False):
+    def __init__(self, field, tz=pytz.timezone("UTC"), sanitize_only=False):
         """
             A parser for the OSM opening_hours field.
             
@@ -417,13 +419,6 @@ class HumanizedOpeningHours:
             ----------
             field : str
                 The opening_hours field.
-            lang : str
-                The destination language, following the ISO 639-1
-                standard (the appropriate JSON file must exist).
-            langs_dir : str, optional
-                The directory where the translation json files are
-                (without final slash). Module's directory default.
-                Allows to use another language or custom sentences.
             tz : pytz.timezone object, optional
                 The timezone to use (UTC default).
             sanitize_only : bool, optional
@@ -449,13 +444,8 @@ class HumanizedOpeningHours:
         self.months = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
         # Get parameters.
-        self._t = HOHTranslate(lang, langs_dir)
-        self.lang = lang
-        locale.setlocale(locale.LC_TIME, (self.lang, "UTF-8"))
         self.tz = tz
         self.field = self.sanitize(field)
-        if sanitize_only:
-            return
         # Prepares the parsing of the field.
         self._split_field = list(map(str.strip, self.field.split(";")))
         self._opening_periods = []
@@ -466,6 +456,8 @@ class HumanizedOpeningHours:
         )
         self._solar_hours_parsed = False
         self.exceptional_closed_days = []
+        if sanitize_only:
+            return
         # Handles the "24/7" specificity.
         if "24/7" in self.field:
             self.always_open = True
@@ -514,9 +506,8 @@ class HumanizedOpeningHours:
                         "does not exists.".format(day)
                     )
                 self.exceptional_closed_days.append(
-                    datetime.date(2000, self.months.index(month)+1, int(day))
+                    datetime.date(2000, self.months.index(month), int(day))
                 )
-        for part in self._split_field:
             # Fr 08:30-20:00
             # Mo 10:00-12:00,12:30-15:00
             # Sa,Su 10:00-12:00
@@ -524,7 +515,7 @@ class HumanizedOpeningHours:
             if re.match("^[A-Za-z]{2}(,\w+)*? (,?[\w():+-]+-[\w():+-]+)+", part):
                 days, periods = part.split()
                 periods = periods.split(',')
-                for day in map(str.title, days.split(',')):
+                for day in days.split(','):
                     if day not in self.days:
                         if day == "PH":
                             for period in periods:
@@ -537,8 +528,9 @@ class HumanizedOpeningHours:
                                 "Field error: the day '{}' does not exists."
                                 .format(day)
                             )
-                    for period in periods:
-                        self[day].add_period_from_field(period, self.tz)
+                    else:
+                        for period in periods:
+                            self[day].add_period_from_field(period, self.tz)
             # Fr-Su 10:00-12:00
             # Fr-Su 10:00-12:00,12:30-15:00
             # Th-Su,Mo 10:00-12:00
@@ -546,7 +538,16 @@ class HumanizedOpeningHours:
                 "[A-Za-z]{2}-[A-Za-z]{2}(,\w+)*? "
                 "(,?[\w():+-]+-[\w():+-]+)+", part):
                 slice_days = re.search("([A-Za-z]{2})-([A-Za-z]{2})", part)
-                covered_days = self.days[self.days.index(slice_days.group(1).title()):self.days.index(slice_days.group(2).title())+1]
+                for day in (slice_days.group(1).title(), slice_days.group(2).title()):
+                    if day not in self.days:
+                        raise DoesNotExistError(
+                                "Field error: the day '{}' does not exists."
+                                .format(day)
+                            )
+                covered_days = self.days[
+                        self.days.index(slice_days.group(1).title()):
+                        self.days.index(slice_days.group(2).title())+1
+                    ]
                 others_days = tuple(part.split()[0].split(',')[1:])
                 periods = part.split()[1].split(',')
                 for day in covered_days + others_days:
@@ -584,7 +585,7 @@ class HumanizedOpeningHours:
         """
         # Corrects the case errors.
         # mo => Mo
-        for day in self.days + self.months + ("sunrise", "sunset", "dawn", "dusk"):
+        for day in self.days + self.months + ("sunrise", "sunset", "dawn", "dusk", "PH", "SH"):
             field = re.sub("(?i){}(?!\w+)".format(day), day, field)
         # Adds colons when necessary.
         # 0630 => 06:30
@@ -722,11 +723,10 @@ class HumanizedOpeningHours:
         if not moment:
             moment = datetime.datetime.now(self.tz)
         time_moment = moment.time().replace(tzinfo=self.tz)
-        days = self[moment.weekday():-1] + self[0:moment.weekday()]
+        days = self[moment.weekday():] + self[0:moment.weekday()]
         td_days = 0
-        for day in days:
+        for td_days, day in enumerate(days):
             if not day.opens_today():
-                td_days += 1
                 continue
             for period in day.periods:
                 if time_moment in period:
@@ -735,7 +735,6 @@ class HumanizedOpeningHours:
                     return self._couple2moment(td_days, period.m1, moment)
                 if time_moment > period.m2.time():
                     continue
-            td_days += 1
         # Should not come here.
         return
     
@@ -788,148 +787,288 @@ class HumanizedOpeningHours:
                 return self.SH
             else:
                 return self._opening_periods[self.days.index(index)]
-        elif type(index) is slice and type(index.start) is type(index.stop) is int:
-            return self._opening_periods[index.start:index.stop:index.step]
-        elif type(index) is slice and type(index.start) is type(index.stop) is str:
-            return self._opening_periods[
-                self.days.index(index.start):self.days.index(index.stop):index.step
-            ]
         else:
-            raise ValueError("Index must be an integer, a string or a slice object..")
-    
-    def render(self, obj, universal=False):
+            return self._opening_periods[index]
+
+class HOHRenderer:  # TODO : lang_dir
+    """
+        A renderer for HOH objects into various output formats.
+    """
+    def __init__(self, hoh, universal=True, lang="en", lang_dir="locales/"):
         """
-            Renders to a human readable string a Period or a Moment object.
+            A renderer for HOH objects into various output formats.
             
             Parameters
             ----------
-            t : HOHTranslate object, optionnal
-                Allows the use of 'universal'. None default.
-                Should stay to None only for Period objects
-                containing only "normal" typed Moments.
-            universal : bool, optionnal
-                Outputs 'sunrise' or 'sunset' instead of their hours.
-                Supports offsets like '(sunrise+02:00)'.
+            hoh : HumanizedOpeningHours object
+                An HOH object from where it will use
+                the information for rendering.
+            universal : bool, optional
+                Outputs "sunrise" or "sunset" instead of their hours.
+                Supports offsets like "(sunrise+02:00)". True default.
+            lang : str, optional
+                The language to use for rendering. Must be available.
+                Default: "en".
+            lang_dir : str, optional
+                The absolute path to a directory where HOHR will find
+                .mo translation files, if you want a custom translation.
         """
-        if type(obj) is Period:
-            return "{} - {}".format(self.render(obj.m1, universal), self.render(obj.m2, universal))
-        elif type(obj) is Moment:
-            if obj.type == "normal":
-                return obj.time().strftime(self._t.sentence("time_format"))
-            else:
-                if universal is True:
-                    if obj.timedelta and obj.time() is None:
-                        hours, remainder = divmod(obj.timedelta.seconds, 3600)
-                        minutes, seconds = divmod(remainder, 60)
-                        if obj.timedelta.days > 0:
-                            hours = str(24 - hours)
-                        else:
-                            hours = str(24)
-                        minutes = str(minutes)
-                        if len(hours) == 1:
-                            hours = '0' + hours
-                        if len(minutes) == 1:
-                            minutes = '0' + minutes
-                        string_time = self._t.sentence("time_format")
-                        string_time = string_time.replace('%H', hours).replace('%M', minutes)
-                        if obj.timedelta.seconds > 0:
-                            offset = self._t.sentence("after_solar")
-                        else:
-                            offset = self._t.sentence("before_solar")
-                        # TODO : Test this more in depth.
-                        return "{time} {offset} {type}".format(time=string_time, offset=offset, type=t.sentence(obj.type))
-                    else:
-                        return self._t.word(obj.type)
-                else:
-                    if obj.time() is not None:
-                        return obj.time().strftime(self._t.sentence("time_format"))
-                    else:
-                        raise NotParsedError("Solar hours have not been parsed. Can't be rendered.")
-        else:
-            raise ValueError("The first argument must be a Period or a Moment object.")
+        self.hoh = hoh
+        self.lang = lang
+        self.universal = self.set_universal(universal)
+        self.always_open_str = ''
+        if self.hoh.always_open:
+            self.always_open_str = _("Open 24 hours a day and 7 days a week.")
+        # TODO : Check.
+        gettext.install("HOH", lang_dir)
+        self.language = gettext.translation("HOH", lang_dir, languages=[lang], fallback=True)
+        self.language.install()
     
-    def stringify_week_schedules(self, compact=False, holidays=True, universal=True):
+    def available_languages(self):
         """
-            Returns a human-readable string describing the opening hours
-            on a regular week.
+            Returns a list of all suported languages.
+        """
+        return gettext.find('HOH', 'locales/', all=True)
+    
+    def set_universal(self, state):
+        """
+            Defines the "universal" state of HOHR. This variable can be
+            changed manually, but this method will ensure that this
+            won't pose problems (it will raise a NotParsedError otherwise).
             
             Parameters
             ----------
-            compact : bool, optionnal : TODO
-                Defines if schedules should be shortened if possible.
-                False default.
-            holidays : bool, optionnal
-                Defines if holidays must be indicated. True default.
-            universal : bool, optionnal
-                Sets whether the solar hours should be rendered like
-                "sunrise" or like "22:00" (depending on the date).
+            state : bool
+                Defines whether the outputs will follow a universal
+                format (True default on init).
             
             Returns
             -------
-            str
-                A human readable multiline string describing the
-                opening hours on a regular week.
+            self
+                This method returns the class itself, allowing chaining.
         """
-        if self.need_solar_hours_parsing and not self._solar_hours_parsed and not universal:
+        self.universal = True
+        if not state and self.hoh.need_solar_hours_parsing and not self.hoh._solar_hours_parsed:
             raise NotParsedError("Solar hours have not been parsed and need to.")
-        compacted = False
-        output = ""
-        if self.always_open:
-            output += self._t.sentence("always_open")
-            compacted = True
-        # TODO.
-        if compact and not compacted:
-            raise NotImplementedError("Sorry, this functionality is not yet implemented.")
-        if not compact and not compacted:
-            i = 0
-            for day in self._opening_periods:
-                day_periods = [self.render(period, universal) for period in day.periods]
-                day_periods = " {} ".format(self._t.word("and")).join(day_periods)
-                if not day_periods:
-                    day_periods = self._t.word("closed")
-                output += self._t.sentence("day_periods").format(
-                    day=self._t.weekday(day.index).title(),
-                    periods=day_periods
-                )
-                i += 1
-                if i < 7:
-                    output += "\n"
-        # TODO : Improve.
-        if holidays and (self.PH.periods or self.SH.periods):
-            if self.PH.closed and self.SH.closed:
-                output += "\n\n" + self._t.sentence("closed_public_school_holidays")
-            elif self.PH.closed:
-                output += "\n\n" + self._t.sentence("closed_public_holidays")
-            elif self.SH.closed:
-                output += "\n\n" + self._t.sentence("closed_school_holidays")
-            elif self.PH.has_same_periods(self.SH) and self.PH.opens_today() and self.SH.closed.opens_today():
-                day = "\n\n{} {} {}".format(
-                    self._t.sentence("public_holidays").capitalize(),
-                    self._t.word("and"),
-                    self._t.sentence("school_holidays")
-                )
-                day_periods = [self.render(period, universal) for period in self.PH.periods]
-                day_periods = " {} ".format(self._t.word("and")).join(day_periods)
-                output += self._t.sentence("day_periods").format(
-                    day=day,
-                    periods=day_periods
+        self.universal = state
+        return self
+    
+    def _render_timedelta(self, moment):
+        """
+            Returns a human-readable delay from a Moment's timedelta.
+        """
+        hours, remainder = divmod(moment.timedelta.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return datetime.time(hours, minutes).strftime("%H:%M")
+    
+    def _days_periods(self, day):
+        """
+            Returns a list of formated periods (str) from a Day object.
+        """
+        periods = []
+        for period in day.periods:
+            periods.append(self.render_period(period))
+        return periods
+    
+    def render_moment(self, moment):
+        """
+            Renders to a human readable string a Moment object.
+        """
+        # TODO : Check / review.
+        gettext.install("HOH", "locales/")
+        self.language.install()
+        if type(moment) != Moment:
+            raise ValueError("The first argument must be a Period or a Moment object.")
+        if moment.type == "normal":
+            return moment.time_object.strftime("%H:%M")
+        else:
+            if self.universal:
+                time = self._render_timedelta(moment)
+                if moment.timedelta.seconds > 0:
+                    if moment.type == "sunrise":
+                        return _("{time} after sunrise").format(time=time)
+                    else:
+                        return _("{time} after sunset").format(time=time)
+                elif moment.timedelta.seconds < 0:
+                    if moment.type == "sunrise":
+                        return _("{time} before sunrise").format(time=time)
+                    else:
+                        return _("{time} before sunset").format(time=time)
+                else:
+                    if moment.type == "sunrise":
+                        return _("sunrise")
+                    else:
+                        return _("sunset")
+            elif self.hoh._solar_hours_parsed:
+                return moment.time().strftime("%H:%M")
+            else:
+                raise NotParsedError("Solar hours have not been parsed and need to.")
+    
+    def render_period(self, period):
+        """
+            Renders to a human readable string a Period object.
+        """
+        if type(period) != Period:
+            raise ValueError("The first argument must be a Period or a Moment object.")
+        return "{} - {}".format(
+            self.render_moment(period.m1), self.render_moment(period.m2)
+        )
+    
+    def periods_per_day(self):
+        """
+            Returns a dict of seven items with day indexes as keys and
+            tuples of name of the day and a list of its periods
+            (str, like those returned by "render_period()") as values.
+        """
+        # TODO : Check / review.
+        gettext.install("HOH", "locales/")
+        self.language.install()
+        output_periods = {}
+        for i in range(7):
+            day = self.hoh.get_day(i)
+            output_periods[i] = (_(WEEKDAYS[i]), self._days_periods(day))
+        return output_periods
+    
+    def closed_days(self):
+        """
+            Returns a list of human-readable exceptional closed days (str).
+        """
+        # TODO : Check / review.
+        gettext.install("HOH", "locales/")
+        self.language.install()
+        days = []
+        for day in self.hoh.exceptional_closed_days:
+            # TODO : Improve.
+            if day.day == 1:
+                days.append(
+                    _("1st {month_name}").format(month_name=_(MONTHS[day.month]))
                 )
             else:
-                output += "\n\n"
-                for holiday in [(self.PH, "public_holidays"), (self.SH, "school_holidays")]:
-                    if not holiday[0].opens_today():
-                        continue
-                    day_periods = [self.render(period, universal) for period in holiday[0].periods]
-                    day_periods = " {} ".format(self._t.word("and")).join(day_periods)
-                    output += self._t.sentence("day_periods").format(
-                        day=self._t.sentence(holiday[1]).capitalize(),
-                        periods=day_periods
+                days.append(
+                    _("{day} {month_name}").format(
+                        day=day.day, month_name=_(MONTHS[day.month])
                     )
-            if self.exceptional_closed_days:
-                output += '\n' + self._t.sentence("closed_days")
-                closed_days = [date.strftime(self._t.sentence("date_format")) for date in self.exceptional_closed_days]
-                if len(closed_days) == 1:
-                    output += closed_days[0]
-                else:
-                    output += ', '.join(closed_days[:-1]) + ' ' + self._t.word("and") + ' ' + closed_days[-1]
+                )
+        return days
+    
+    def holidays(self):
+        """
+            Returns a dict describing the schedules during the holidays.
+            
+            Dict shape:
+            {
+                "main": <str>,  # A string indicating whether it's open during holidays.
+                "PH": (
+                    <bool or None>,  # True : open ; False : closed ; None : unknown.
+                    <periods list (str)>  # Periods list, like those of "periods_per_day()".
+                ),
+                "SH": (
+                    <bool or None>,  # True : open ; False : closed ; None : unknown.
+                    <periods list (str)>  # Periods list, like those of "periods_per_day()".
+                ),
+            }
+        """
+        # TODO : Check / review.
+        gettext.install("HOH", "locales/")
+        self.language.install()
+        ph_state = self.hoh.PH.opens_today() or None
+        if ph_state is None and self.hoh.PH.closed is True:
+            ph_state = False
+        sh_state = self.hoh.SH.opens_today() or None
+        if sh_state is None and self.hoh.SH.closed is True:
+            sh_state = False
+        ph_descriptor = {
+            True: _("Open on public holidays."),
+            False: _("Closed on public holidays."),
+            None: '',
+        }.get(ph_state)
+        sh_descriptor = {
+            True: _("Open on school holidays."),
+            False: _("Closed on school holidays."),
+            None: '',
+        }.get(sh_state)
+        default_descriptor = ' '.join(
+            [d for d in (ph_descriptor, sh_descriptor) if d != '']
+        )
+        main_descriptor = {
+            ph_state is sh_state is True: _("Open on public and school holidays."),
+            ph_state is sh_state is False: _("Closed on public and school holidays."),
+            ph_state is sh_state is None: '',
+        }.get(True, default_descriptor)
+        # TODO : Check / review.
+        ph_schedules = []
+        sh_schedules = []
+        if ph_state:
+            ph_schedules = self._days_periods(self.hoh.PH)
+        if sh_state:
+            sh_schedules = self._days_periods(self.hoh.SH)
+        return {
+            "main": main_descriptor,
+            "PH": (ph_state, ph_schedules),
+            "SH": (sh_state, sh_schedules),
+        }
+    
+    def _join(self, l, separator, final_separator):
+        """
+            Returns a string from a list, a separator an a final separator.
+            For example: hohr._join(['A', 'B', 'C'], ' ; ', ' and')
+            will return "A ; B and C".
+        """
+        if separator == final_separator:
+            return separator.join(l)
+        else:
+            if len(l) == 1:
+                return separator.join(l)
+            else:
+                return separator.join(l[1:]) + final_separator + l[-1]
+    
+    def _format_day_periods(self, day, periods):
+        """
+            Returns a string describing the schedules of a day from
+            a Day object and its list of periods.
+        """
+        # TODO : Check / review.
+        gettext.install("HOH", "locales/")
+        self.language.install()
+        if periods:
+            day_periods = self._join(periods, ', ', _(" and "))
+        else:
+            day_periods = _("closed")
+        return _("{day}: {periods}").format(
+            day=day, periods=day_periods
+        )
+    
+    def description(self, holidays=True):
+        """
+            Returns a multiline string describing the whole schedules.
+            
+            Parameters
+            ----------
+            holidays : bool, optional
+                Defines whether the holiday schedules will be described.
+                True default.
+        """
+        periods = self.periods_per_day().values()
+        output = ''
+        if self.hoh.always_open:
+            output += _("Open 24 hours a day and 7 days a week.")
+        else:
+            for i, day in enumerate(periods):
+                output += self._format_day_periods(day[0], day[1])
+                if i != len(periods):
+                    output += '\n'
+        all_holidays = self.holidays()
+        if holidays and all_holidays["SH"][0] or all_holidays["PH"][0]:
+            output += '\n'
+            if all_holidays["SH"][0]:
+                output += self._format_day_periods(_("School holidays"), all_holidays["SH"][1])
+                output += '\n'
+            if all_holidays["PH"][0]:
+                output += self._format_day_periods(_("Public holidays"), all_holidays["PH"][1])
+                output += '\n'
+            output += all_holidays["main"]
+        if output[-1] == '\n':
+            # Fixes a bug making the translation inoperative when removing
+            # the last linebreak (if i != len(periods)-1:).
+            output = output[:-1]
         return output
