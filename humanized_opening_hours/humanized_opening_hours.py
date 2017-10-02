@@ -790,6 +790,13 @@ class HumanizedOpeningHours:
         else:
             return self._opening_periods[index]
 
+    def render(self, *args, **kwargs):
+        """
+            Returns the HOHRenderer object. Can take HOHRenderer's parameters.
+        """
+        return HOHRenderer(self, *args, **kwargs)
+
+
 class HOHRenderer:  # TODO : lang_dir
     """
         A renderer for HOH objects into various output formats.
