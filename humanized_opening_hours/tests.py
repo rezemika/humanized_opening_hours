@@ -24,7 +24,7 @@ class TestGlobal(unittest.TestCase):
             datetime.timedelta(hours=3, minutes=30)
         )
         # Rendering.
-        hohr = humanized_opening_hours.HOHRenderer(hoh)
+        hohr = hoh.render()
         self.assertEqual(
             hohr.render_moment(hoh[0].periods[0].m1),
             "09:00"
@@ -59,7 +59,7 @@ class TestGlobal(unittest.TestCase):
             datetime.timedelta(minutes=50)
         )
         # Rendering.
-        hohr = humanized_opening_hours.HOHRenderer(hoh)
+        hohr = hoh.render()
         self.assertEqual(
             hohr.render_moment(hoh[0].periods[0].m2),
             "12:00"
@@ -91,7 +91,7 @@ class TestGlobal(unittest.TestCase):
             datetime.timedelta(days=1, hours=3, minutes=30)
         )
         # Rendering.
-        hohr = humanized_opening_hours.HOHRenderer(hoh)
+        hohr = hoh.render()
         self.assertEqual(
             hohr.render_moment(hoh[6].periods[0].m1),
             "09:00"
@@ -190,8 +190,7 @@ class TestMethods(unittest.TestCase):
 class TestRenderers(unittest.TestCase):
     def test_periods_per_day(self):
         field = "Mo-We 09:00-19:00"
-        hoh = humanized_opening_hours.HumanizedOpeningHours(field)
-        hohr = humanized_opening_hours.HOHRenderer(hoh)
+        hohr = humanized_opening_hours.HumanizedOpeningHours(field).render()
         field_dict = {
             0: ("Monday", ["09:00 - 19:00"]),
             1: ("Tuesday", ["09:00 - 19:00"]),
@@ -205,8 +204,8 @@ class TestRenderers(unittest.TestCase):
     
     def test_periods_per_day_not_universal(self):
         field = "Mo-We 09:00-19:00"
-        hoh = humanized_opening_hours.HumanizedOpeningHours(field)
-        hohr = humanized_opening_hours.HOHRenderer(hoh, universal=False)
+        hohr = humanized_opening_hours.HumanizedOpeningHours(field)\
+            .render(universal=False)
         field_dict = {
             0: ("Monday", ["09:00 - 19:00"]),
             1: ("Tuesday", ["09:00 - 19:00"]),
@@ -222,12 +221,11 @@ class TestRenderers(unittest.TestCase):
         field = "Mo-We sunrise-19:00"
         hoh = humanized_opening_hours.HumanizedOpeningHours(field)
         with self.assertRaises(humanized_opening_hours.NotParsedError) as context:
-            hohr = humanized_opening_hours.HOHRenderer(hoh, universal=False)
+            hohr = hoh.render(universal=False)
     
     def test_periods_per_day_solar_universal(self):
         field = "Mo-We sunrise-19:00"
-        hoh = humanized_opening_hours.HumanizedOpeningHours(field)
-        hohr = humanized_opening_hours.HOHRenderer(hoh)
+        hohr = humanized_opening_hours.HumanizedOpeningHours(field).render()
         field_dict = {
             0: ("Monday", ["sunrise - 19:00"]),
             1: ("Tuesday", ["sunrise - 19:00"]),
@@ -241,15 +239,13 @@ class TestRenderers(unittest.TestCase):
     
     def test_closed_days(self):
         field = "Mo-We 09:00-19:00 ; Dec 25 off ; May 1 off"
-        hoh = humanized_opening_hours.HumanizedOpeningHours(field)
-        hohr = humanized_opening_hours.HOHRenderer(hoh)
+        hohr = humanized_opening_hours.HumanizedOpeningHours(field).render()
         self.assertEqual(hohr.closed_days(), ["25 December", "1st May"])
         return
     
     def test_holidays(self):
         field = "Mo-We 09:00-19:00 ; SH off ; PH 09:00-12:00"
-        hoh = humanized_opening_hours.HumanizedOpeningHours(field)
-        hohr = humanized_opening_hours.HOHRenderer(hoh)
+        hohr = humanized_opening_hours.HumanizedOpeningHours(field).render()
         self.assertEqual(
             hohr.holidays(),
             {
@@ -273,8 +269,7 @@ Sunday: closed
 
 Public holidays: 09:00 - 12:00
 Open on public holidays. Closed on school holidays."""
-        hoh = humanized_opening_hours.HumanizedOpeningHours(field)
-        hohr = humanized_opening_hours.HOHRenderer(hoh)
+        hohr = humanized_opening_hours.HumanizedOpeningHours(field).render()
         self.assertEqual(
             hohr.description(),
             description
@@ -282,8 +277,8 @@ Open on public holidays. Closed on school holidays."""
         
         # With translation.
         field = "Mo,SH 09:00-19:00"
-        hoh = humanized_opening_hours.HumanizedOpeningHours(field)
-        hohr = humanized_opening_hours.HOHRenderer(hoh, lang="fr")
+        hohr = humanized_opening_hours.HumanizedOpeningHours(field)\
+            .render(lang="fr")
         description = """\
 Lundi : 09:00 - 19:00
 Mardi : fermé
@@ -302,8 +297,8 @@ Ouvert durant les vacances scolaires."""
         
         # Without holidays.
         field = "Mo,SH 09:00-19:00"
-        hoh = humanized_opening_hours.HumanizedOpeningHours(field)
-        hohr = humanized_opening_hours.HOHRenderer(hoh, lang="fr")
+        hohr = humanized_opening_hours.HumanizedOpeningHours(field)\
+            .render(lang="fr")
         description = """\
 Lundi : 09:00 - 19:00
 Mardi : fermé
@@ -319,8 +314,7 @@ Dimanche : fermé"""
         
         # 24/7.
         field = "24/7"
-        hoh = humanized_opening_hours.HumanizedOpeningHours(field)
-        hohr = humanized_opening_hours.HOHRenderer(hoh)
+        hohr = humanized_opening_hours.HumanizedOpeningHours(field).render()
         description = "Open 24 hours a day and 7 days a week."
         self.assertEqual(
             hohr.description(),
