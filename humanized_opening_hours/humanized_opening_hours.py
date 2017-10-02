@@ -790,11 +790,12 @@ class HumanizedOpeningHours:
         else:
             return self._opening_periods[index]
 
-    def render(self, universal=True, lang="en", lang_dir="locales/"):
+    def render(self, *args, **kwargs):
         """
             Returns the HOHRenderer object. Can take HOHRenderer's parameters.
         """
-        return HOHRenderer(self, universal, lang, lang_dir)
+        return HOHRenderer(self, *args, **kwargs)
+
 
 class HOHRenderer:  # TODO : lang_dir
     """
