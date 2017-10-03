@@ -1,10 +1,4 @@
-#  A parser for the opening_hours fields from OpenStreetMap.
-#  
-#  Published under the AGPLv3 license by rezemika.
-#  
-
-"""
-    A parser for the opening_hours fields from OpenStreetMap.
+""" A parser for the opening_hours fields from OpenStreetMap.
     
     Provides Day objects, containing (among others) datetime.time objects
     representing the beginning and the end of all the opening periods.
@@ -13,7 +7,9 @@
     
     Sanitizes the fields to prevent some common mistakes.
     
-    ```python
+    Example
+    -------
+
     >>> import humanized_opening_hours
     
     >>> field = "Mo-Fr 06:00-21:00; Sa,Su 07:00-21:00"
@@ -22,11 +18,10 @@
     True
     
     >>> hoh.next_change()
-    datetime.datetime(2017, 12, 24, 21, 0)
+    datetime.datetime(2017, 10, 3, 21, 0, tzinfo=<UTC>)
     
     >>> hohr = humanized_opening_hours.HOHRenderer(hoh)
-    >>> print(hohr.full_description())
-    '''
+    >>> print(hohr.description())
     Monday: 06:00 - 21:00
     Tuesday: 06:00 - 21:00
     Wednesday: 06:00 - 21:00
@@ -34,8 +29,7 @@
     Friday: 06:00 - 21:00
     Saturday: 07:00 - 21:00
     Sunday: 07:00 - 21:00
-    '''
-    ```
+
 """
 
 # TODO : Handle 24:00.
@@ -123,16 +117,31 @@ del _
 # Meta-classes
 
 class Day:
-    def __init__(self, index):
-        """
-            A regular Day object, containing opening periods.
+    """
+    A regular Day object, containing opening periods.
             
-            Parameters
-            ----------
-            index : str
-                The OSM-like day or a special day (Mo, Tu, PH, SH...).
-        """
-        self.index = index
+    Attributes
+    ----------
+    index
+        special day (PH, SH) or index 0-6 of day.
+
+    name : str
+        The OSM-like day or a special day (Mo, Tu, PH, SH...).
+    periods : array
+        Opens periods for this day, empty by default
+    closed : bool
+        False by default
+    """
+ 
+    def __init__(self, index):
+        """ A regular Day object, containing opening periods.
+            
+        Parameters
+        ----------
+        index
+            special day (PH, SH) or index 0-6 of day.
+        """ 
+       self.index = index
         if index in ["PH", "SH"]:
             self.name = index
         else:
@@ -143,28 +152,48 @@ class Day:
     
     def opens_today(self):
         """
-            Returns True if there is a period for this day. False else.
+        Returns
+        -------
+        bool
+            True if there is a period for this day. False else.
         """
         return len(self.periods) > 0
     
     def has_same_periods(self, day):
-        """
-            Returns True if the given Day object has the same
+        """ Compare current day periods with another day
+
+        Parameters
+        ----------
+        day : Day
+            Other day to compare
+        Returns
+        -------
+        bool
+            True if the given Day object has the same
             opening periods (i.e. they are similars).
         """
         return self.periods == day.periods
     
     def set_closed(self):
+        """ Close the day
+
+        Empty periods and set closed to True
+        """
         self.closed = True
         self.periods = []
         return
     
     def total_duration(self):
         """
-            Returns a datetime.timedelta object, representing
-            the duration of all the opening periods of the day.
-            Raises a NotParsedError when solar hours have not
-            been parsed.
+        Raises
+        ------
+        NotParsedError 
+            when solar hours have not been parsed.
+
+        Returns
+        -------
+        datetime.timedelta 
+            The duration of all the opening periods of the day.
         """
         td = datetime.timedelta()
         for period in self.periods:
@@ -176,10 +205,22 @@ class Day:
         return td
     
     def add_period_from_field(self, field, tz):
-        """
-            Adds a period to the Day from an OSM-like period
-            (e.g. 12:30-19:00). Supports sunrises and sunsets,
+        """ Adds a period to the Day from an OSM-like period
+            Supports sunrises and sunsets,
             with or without offset.
+
+        Raises
+        ------
+        ParseError
+            Added period can't be parsed
+        PeriodsConflictError
+            Added periods and existing period in day are overlapping
+        Parameters
+        ----------
+        field : str
+            Period of day in a OSM-like format (e.g 12:30-19:00)
+        tz : str
+            Timezone infos
         """
         # Prevents bugs for "(sunrise-02:00)".
         moments = re.split("-(?![^\(]*\))", field)
@@ -237,8 +278,15 @@ class Day:
     
     def _set_solar_hours(self, sunrise_time, sunset_time):
         """
-            Sets sunrise and sunset hours for each Moment of each Period
-            of the day from their datetime.time representation.
+        Sets sunrise and sunset hours for each Moment of each Period
+        of the day from their datetime.time representation.
+
+        Parameters
+        ----------
+        sunrise_time :
+        
+        sunset_time :
+
         """
         for period in self.periods:
             for moment in [period.m1, period.m2]:
@@ -249,12 +297,30 @@ class Day:
         return
     
     def __str__(self):
+        """ Display name of day and number of periods
+
+        Returns
+        -------
+        str:
+            String representation of day
+        """
         return "<'{}' Day object ({} periods)>".format(self.name, len(self.periods))
     
     def __repr__(self):
         return self.__str__()
 
 class Period:
+    """
+    A regular Period object, containing two Moments objects
+    (a beginning and an end).
+            
+    Attributes
+    ----------
+    m1 : Moment object
+        The beginning of the period.
+    m2 : Moment object
+        The end of the period.
+    """
     def __init__(self, m1, m2):
         """
             A regular Period object, containing two Moments objects
@@ -273,9 +339,14 @@ class Period:
     
     def duration(self):
         """
-            Returns a datetime.timedelta object, representing
-            the duration of the period. Returns None when solar
-            hours have not been parsed.
+        Returns a datetime.timedelta object, representing
+        the duration of the period.
+        
+        Returns
+        -------
+        datetime.timedelta
+            None if beginning of end of period is missing 
+            else duration of period
         """
         if not self.m1.time() or not self.m2.time():
             return
@@ -309,7 +380,15 @@ class Period:
     
     def __contains__(self, moment):
         """
-            Returns True if the given datetime.time object is between
+        
+        Raises
+        ------
+        ValueError
+            
+        Returns
+        -------
+        bool
+            True if the given datetime.time object is between
             the beginning and the end of the period. Returns False else.
             Returns None if solar hours have not been parsed.
         """
@@ -336,8 +415,14 @@ class Moment:
             either with a 'sunrise' or 'sunset' type and a timedelta
             relative to the sunrise or the sunset.
             
-            Parameters
-            ----------
+        Raises
+        ------
+        ValueError
+            moment_type not properly define, time object missing for normal
+            time delta can't exist in normal moment_type
+        
+        Parameters
+        ----------
             moment_type : str
                 The type of the moment, which can be "normal", "sunrise"
                 or "sunset".
@@ -363,6 +448,13 @@ class Moment:
         return
     
     def is_variable(self):
+        """
+
+        Returns
+        -------
+        bool
+            False if type of moment is normal True else 
+        """
         return self.type in ["sunrise", "sunset"]
     
     def time(self):
@@ -415,6 +507,9 @@ class HumanizedOpeningHours:
             
             >>> hoh = HumanizedOpeningHours("Th-Sa 10:00-19:00", "en", pytz.timezone("UTC"))
             
+            Raises:
+                NotImplementedError
+
             Parameters
             ----------
             field : str
