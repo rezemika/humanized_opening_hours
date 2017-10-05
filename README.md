@@ -8,7 +8,7 @@ Any pull request (following PEP-8) is more than welcome!
 ```python
 >>> import humanized_opening_hours
 >>> field = "Mo-Fr 06:00-21:00; Sa,Su 07:00-21:00"
->>> hoh = HumanizedOpeningHours(field)
+>>> hoh = humanized_opening_hours.HumanizedOpeningHours(field)
 >>> hoh.is_open()
 True
 >>> hoh.next_change()
@@ -41,14 +41,14 @@ The only mandatory argument to give to the constructor is the field, which must 
 You can also specify:
 
 - `tz` (pytz.timezone) : the timezone to use, UTC default.
-- `sanitize_only` (bool) : set it to True to not parse the field (usefull when you want only get its sanitized version).
+- `sanitize_only` (bool) : set it to True to not parse the field (usefull when you want only to get its sanitized version).
 
 ```python
 import humanized_opening_hours, pytz
 
 field = "Mo-Fr 06:00-21:00; Sa,Su 07:00-21:00"
 
-hoh = HumanizedOpeningHours(field, tz=pytz.timezone("Europe/Paris"))
+hoh = humanized_opening_hours.HumanizedOpeningHours(field, tz=pytz.timezone("Europe/Paris"))
 ```
 
 ## Basic methods
@@ -72,8 +72,8 @@ datetime.timedelta(0, 3600)
 You can get a sanitized version of the field given to the constructor with the *sanitize* method or the **field** attribute.
 
 ```python
-# Field : "mo-su 0930-2000"
->>> print(hoh.sanitize())
+>>> field = "mo-su 0930-2000"
+>>> print(hoh.sanitize(field))
 Mo-Su 09:30-20:00
 ```
 
@@ -102,7 +102,7 @@ If you don't know solar hours, you have two methods to set them.
 
 # Using the astral module. You can pass to the "moment" argument a datetime.datetime object if you want to parse the solar hours for another date.
 >>> import astral, pytz
->>> location = astral.Astral.Location("Pico Island", "Atlantic Ocean", (38.506, -28.454), pytz.timezone("Atlantic/Azores"), 100)
+>>> location = astral.Astral.Location(("Pico Island", "Atlantic Ocean", 38.506, -28.454, "Atlantic/Azores", 100))
 >>> hoh.parse_solar_hours(astral_location=location)
 ```
 
@@ -269,7 +269,7 @@ Example :
 
 This method takes a boolean argument and allows you to update the *universal* argument of HOHR. If solar hours have not been parsed, it will raise a "NotParsedError". If you're brave enough, you can also update directly the *universal* attribute of HOHR.
 
-## Objetcs
+## Objects
 
 Apart the main HumanizedOpeningHours class, HOH provides three other objects:
 - `Day` : a weekday, or public or schoold holidays;
