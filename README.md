@@ -117,9 +117,9 @@ Its *init* method takes an HOH object in argument, and two optional argument:
 It has several methods to retrieve useful informations.
 
 If the facility is always open, many of the following methods won't be very usefull.
-If you want a human-readable description, see the doc of the *description* method or use the *always_open_str* to get a simple string.
+If you want a human-readable description, see the doc of the [description](#description) method or use the *always_open_str* to get a simple string.
 
-### description
+### <a name="description"></a>description
 
 ```python
 # Field : "Mo-Fr 06:00-21:00; Sa,Su 07:00-21:00"
@@ -197,11 +197,11 @@ Open 24 hours a day and 7 days a week.
 
 ### render_moment
 
-Takes a *Moment* (see the *Objects* section) object as argument and returns a human-readable string describing it.
+Takes a [Moment](#moment) object as argument and returns a human-readable string describing it.
 
 ### render_period
 
-Same as *render_moment*, but for a *Period* object.
+Same as *render_moment*, but for a [Period](#period) object.
 
 ### periods_per_day
 
@@ -322,7 +322,7 @@ All the days can be get by getting their index directly from the HOH object, or 
 <'Mo' Day object (1 periods)>
 ```
 
-### Period
+### <a name="period"></a>Period
 
 Attributes:
 - `m1` (Moment object) : the beginning of the period;
@@ -339,7 +339,7 @@ datetime.timedelta(0, 10800)
 True
 ```
 
-### Moment
+### <a name="moment"></a>Moment
 
 Attributes:
 - `type` (str) : the type of this moment, which can be "normal", "sunrise" or "sunset";
