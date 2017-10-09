@@ -74,7 +74,7 @@ You can get a sanitized version of the field given to the constructor with the *
 ```python
 >>> field = "mo-su 0930-2000"
 >>> print(hoh.sanitize(field))
-Mo-Su 09:30-20:00
+"Mo-Su 09:30-20:00"
 ```
 
 ## Solar hours

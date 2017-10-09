@@ -22,6 +22,7 @@
     
     >>> hohr = humanized_opening_hours.HOHRenderer(hoh)
     >>> print(hohr.description())
+    '''
     Monday: 06:00 - 21:00
     Tuesday: 06:00 - 21:00
     Wednesday: 06:00 - 21:00
@@ -29,7 +30,7 @@
     Friday: 06:00 - 21:00
     Saturday: 07:00 - 21:00
     Sunday: 07:00 - 21:00
-
+    '''
 """
 
 # TODO : Handle 24:00.
@@ -135,9 +136,9 @@ class Day:
     name : str
         The OSM-like day or a special day (Mo, Tu, PH, SH...).
     periods : array
-        Opens periods for this day, empty by default
+        Opens periods for this day, empty by default.
     closed : bool
-        False by default
+        False by default.
     """
  
     def __init__(self, index):
@@ -145,8 +146,8 @@ class Day:
             
         Parameters
         ----------
-        index
-            special day (PH, SH) or index 0-6 of day.
+        index : str or int
+            Special day (PH, SH) or index 0-6 of day.
         """ 
         self.index = index
         if index in ["PH", "SH"]:
@@ -167,12 +168,13 @@ class Day:
         return len(self.periods) > 0
     
     def has_same_periods(self, day):
-        """ Compare current day periods with another day
+        """ Compare current day periods with another day.
 
         Parameters
         ----------
         day : Day
-            Other day to compare
+            Other day to compare.
+
         Returns
         -------
         bool
@@ -182,21 +184,21 @@ class Day:
         return self.periods == day.periods
     
     def set_closed(self):
-        """ Close it completely
+        """ Close it completely.
 
-        Empty periods and set closed to True
+        Empty periods and set closed to True.
         """
         self.closed = True
         self.periods = []
         return
     
     def total_duration(self):
-        """ Duration for all opening periods
+        """ Duration for all opening periods.
 
         Raises
         ------
         NotParsedError 
-            when solar hours have not been parsed.
+            When solar hours have not been parsed.
 
         Returns
         -------
@@ -220,16 +222,16 @@ class Day:
         Raises
         ------
         ParseError
-            Added period can't be parsed
+            Added period can't be parsed.
         PeriodsConflictError
-            Added periods and existing period in day are overlapping
+            Added periods and existing period in day are overlapping.
 
         Parameters
         ----------
         field : str
-            Period of day in a OSM-like format (e.g 12:30-19:00)
+            Period of day in a OSM-like format (e.g 12:30-19:00).
         tz : str
-            Timezone infos
+            Timezone infos.
         """
         # Prevents bugs for "(sunrise-02:00)".
         moments = re.split("-(?![^\(]*\))", field)
@@ -292,10 +294,10 @@ class Day:
 
         Parameters
         ----------
-        sunrise_time :
-        
-        sunset_time :
-
+        sunrise_time : datetime.time
+            Time of the sunrise
+        sunset_time : datetime.time
+            Time of the sunset
         """
         for period in self.periods:
             for moment in [period.m1, period.m2]:
@@ -307,12 +309,12 @@ class Day:
     
 
     def __str__(self):
-        """ Display name of day and number of periods
+        """ Display name of day and number of periods.
 
         Returns
         -------
         str:
-            String representation of day
+            String representation of day.
         """
         return "<'{}' Day object ({} periods)>".format(self.name, len(self.periods))
 
@@ -358,7 +360,7 @@ class Period:
         -------
         datetime.timedelta
             None if beginning of end of period is missing 
-            else duration of period
+            else duration of period.
         """
         if not self.m1.time() or not self.m2.time():
             return
@@ -396,14 +398,14 @@ class Period:
 
         Parameters
         ----------
-        moment: moment object or datetime.time object
+        moment : moment object or datetime.time object
             The time must contains between the beginning
-            and the end of the period
+            and the end of the period.
 
         Raises
         ------
         ValueError
-            If the moment isn't datetime.time or Moment
+            If the moment isn't datetime.time or Moment.
 
         Returns
         -------
@@ -438,8 +440,7 @@ class Moment:
         Raises
         ------
         ValueError
-            moment_type not properly define, time object missing for normal
-            time delta can't exist in normal moment_type
+            Timedelta is set with "normal" moment_type.
         
         Parameters
         ----------
@@ -469,23 +470,23 @@ class Moment:
     
     def is_variable(self):
         """
-        Is period variable
+        Is period variable.
 
         Returns
         -------
         bool
-            False if type of moment is normal True else 
+            False if type of moment is normal else True. 
         """
         return self.type in ["sunrise", "sunset"]
     
     def time(self):
         """
-        Return current date using timezone of time_object
+        Return current date using timezone of time_object.
 
         Returns
         -------
         Tuple:
-            Return datetime object if time_object exist else None
+            Return datetime object if time_object exist else None.
         """
         if self.time_object:
             return (
@@ -539,7 +540,7 @@ class HumanizedOpeningHours:
         Raises
         ------
         NotImplementedError 
-            Only for week, dawn, dusk and ranks in month
+            Only for week, dawn, dusk and ranks in month.
 
         Parameters
         ----------
@@ -740,7 +741,7 @@ class HumanizedOpeningHours:
         ------
         ValueError
             One of the optionnal parameters must be given 
-            (coords, astral_location, hours)
+            (coords, astral_location, hours).
 
         Parameters
         ----------
@@ -804,7 +805,7 @@ class HumanizedOpeningHours:
         Raises
         ------
         NotParsedError
-            Solar hours hadn't be parsed        
+            Solar hours hadn't be parsed.     
     
         Parameters
         ----------
@@ -848,7 +849,7 @@ class HumanizedOpeningHours:
         Raises
         ------
         NotParsedError
-            Solar hours hadn't be parsed        
+            Solar hours hadn't be parsed.        
     
         Parameters
         ----------
@@ -860,7 +861,7 @@ class HumanizedOpeningHours:
         Returns
         -------
         datetime.datetime
-            From _couple2moment function, None if there is a error
+            From _couple2moment function, None if there is a error.
         """
         if self.need_solar_hours_parsing and not self._solar_hours_parsed:
             raise NotParsedError("Solar hours have not been parsed and need to.")
@@ -887,16 +888,16 @@ class HumanizedOpeningHours:
     def _couple2moment(self, td_days, moment_object, moment):
         """
         Create a date from moment with the added value of td_days 
-        set in the timezone of moment_object
+        set in the timezone of moment_object.
 
         Parameters
         ----------
         td_days: int
-            Number of days to add
+            Number of days to add.
         moment_object: Moment
-            Reference for timezone
+            Reference for timezone.
         moment: Moment
-            Reference date we use
+            Reference date we use.
         Returns
         -------
         datetime.datetime 
@@ -918,13 +919,14 @@ class HumanizedOpeningHours:
         Parameters
         ----------
         moment: Moment
-            Moment to compare with next change, if empty we use datetime.now()
+            Moment to compare with next change, 
+            if empty we use datetime.now().
 
         Returns
         -------
         datetime.timedelta
             If it's always open returns datetime.timedelta(0)
-            else return delta between next_change and moment
+            else return delta between next_change and moment.
         """
         if not moment:
             moment = datetime.datetime.now(self.tz)
@@ -938,31 +940,31 @@ class HumanizedOpeningHours:
 
         Parameters
         ----------
-        day: str or int
+        day : str or int
             The argument can be an integer (between 0 and 6) 
             or a string like 'Mo' or 'Th' (OSM like).
 
         Returns
         -------
-        str:
-            Name of the day
+        str
+            Name of the day.
         """
         return self[day]
     
     def __getitem__(self, index):
         """
-        Get the period according  the day index
+        Get the period according to the day index.
 
         Parameters
         ----------
-        int: str or int
+        int : str or int
             The argument can be an integer (between 0 and 6) 
             or a string like 'Mo' or 'Th' (OSM like).
 
         Returns
         -------
-        str:
-            Opening period
+        str
+            Opening period.
         """
         if type(index) is int:
             return self._opening_periods[index]
@@ -978,7 +980,7 @@ class HumanizedOpeningHours:
 
     def render(self, *args, **kwargs):
         """
-        Render hoh to hohr object
+        Render hoh to hohr object.
 
         Returns
         -------
@@ -1029,7 +1031,7 @@ class HOHRenderer:  # TODO : lang_dir
         Returns
         -------
         List(str)
-            List of all suported languages
+            List of all suported languages/
         """
         return gettext.find('HOH', 'locales/', all=True)
     
@@ -1042,7 +1044,7 @@ class HOHRenderer:  # TODO : lang_dir
         Raises
         ------
         NotParsedError
-            Solar hours need to be parsed
+            Solar hours need to be parsed.
 
         Parameters
         ----------
@@ -1068,11 +1070,11 @@ class HOHRenderer:  # TODO : lang_dir
         Parameters
         ----------
         moment: Moment
-            Moment to format
+            Moment to format.
         Returns
         -------
         str
-            String of time in format H:M 
+            String of time in format H:M.
         """
         hours, remainder = divmod(moment.timedelta.seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
@@ -1085,11 +1087,11 @@ class HOHRenderer:  # TODO : lang_dir
         Parameters
         ----------
         day: Day
-            Day to parse
+            Day to parse.
         Returns
         -------
         List
-            Periods for this day
+            Periods for this day.
         """
         periods = []
         for period in day.periods:
@@ -1103,19 +1105,19 @@ class HOHRenderer:  # TODO : lang_dir
         Raises
         ------
         ValueError
-            Moment parameter must be a Moment object
+            Moment parameter must be a Moment object.
         NoParsedError
-            Solar hours must be parsed
+            Solar hours must be parsed.
 
         Parameters
         ----------
-        moment: Moment
-            The moment to parse into string
+        moment : Moment
+            The moment to parse into string.
 
         Returns
         -------
         str
-            String format of moment
+            String format of moment.
         """
         # TODO : Check / review.
         gettext.install("HOH", "locales/")
@@ -1154,17 +1156,17 @@ class HOHRenderer:  # TODO : lang_dir
         Raises
         ------
         ValueError
-            Moment parameter must be a Moment object
+            Moment parameter must be a Moment object.
 
         Parameters
         ----------
-        period: Period
-            The period to parse into string
+        period : Period
+            The period to parse into string.
 
         Returns
         -------
         str
-            String format of period
+            String format of period.
         """
         if type(period) != Period:
             raise ValueError("The first argument must be a Period or a Moment object.")
@@ -1181,8 +1183,8 @@ class HOHRenderer:  # TODO : lang_dir
         Returns
         -------
         Dict
-            seven items with day indexes as keys and
-        tuples of name of the day and a list of its periods
+            Seven items with day indexes as keys and
+            tuples of name of the day and a list of its periods.
         """
         # TODO : Check / review.
         gettext.install("HOH", "locales/")
@@ -1200,7 +1202,7 @@ class HOHRenderer:  # TODO : lang_dir
         Returns
         -------
         str
-            String format of closed days
+            String format of closed days.
         """
         # TODO : Check / review.
         gettext.install("HOH", "locales/")
@@ -1236,11 +1238,11 @@ class HOHRenderer:  # TODO : lang_dir
                 <periods list (str)>  # Periods list, like those of "periods_per_day()".
             ),
         }
-
+        
         Returns
         -------
         Dict
-            Formatted dict of holidays
+            Formatted dict of holidays.
         """
         # TODO : Check / review.
         gettext.install("HOH", "locales/")
@@ -1290,17 +1292,17 @@ class HOHRenderer:  # TODO : lang_dir
 
         Parameters
         ----------
-        l: List
-            List of element to join
-        separator: str
-            separator tu use until the n - 1 part of the list
-        final_separator: str
-            Separator to use for the final part
+        l : List
+            List of element to join.
+        separator : str
+            Separator tu use until the n - 1 part of the list.
+        final_separator : str
+            Separator to use for the final part.
 
         Returns
         -------
         str
-            Concatenation de la list using separator and final separator
+            Concatenation de la list using separator and final separator.
         """
         if separator == final_separator:
             return separator.join(l)
@@ -1317,15 +1319,15 @@ class HOHRenderer:  # TODO : lang_dir
 
         Parameters
         ----------
-        day: Day
-            Day to format
-        periods: List
-            List of periods for this day
+        day : Day
+            Day to format.
+        periods : List
+            List of periods for this day.
 
         Returns
         -------
         str
-            Schedule of a day
+            Schedule of a day.
         """
         # TODO : Check / review.
         gettext.install("HOH", "locales/")
@@ -1345,13 +1347,13 @@ class HOHRenderer:  # TODO : lang_dir
         Parameters
         ----------
         holidays : bool, optional
-            Defines whether the holiday schedules will be described.
-            True default.
+            Defines whether the holiday schedules will be described
+            True by default.
 
         Returns
         -------
         str
-            Full description of the schedule
+            Full description of the schedule.
         """
         periods = self.periods_per_day().values()
         output = ''
