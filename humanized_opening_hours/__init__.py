@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""
-    A parser for the opening_hours fields from OpenStreetMap.
+""" A parser for the opening_hours fields from OpenStreetMap.
     
     Provides Day objects, containing (among others) datetime.time objects
     representing the beginning and the end of all the opening periods.

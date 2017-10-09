@@ -8,7 +8,7 @@ Any pull request (following PEP-8) is more than welcome!
 ```python
 >>> import humanized_opening_hours
 >>> field = "Mo-Fr 06:00-21:00; Sa,Su 07:00-21:00"
->>> hoh = HumanizedOpeningHours(field)
+>>> hoh = humanized_opening_hours.HumanizedOpeningHours(field)
 >>> hoh.is_open()
 True
 >>> hoh.next_change()
@@ -41,14 +41,14 @@ The only mandatory argument to give to the constructor is the field, which must 
 You can also specify:
 
 - `tz` (pytz.timezone) : the timezone to use, UTC default.
-- `sanitize_only` (bool) : set it to True to not parse the field (usefull when you want only get its sanitized version).
+- `sanitize_only` (bool) : set it to True to not parse the field (usefull when you want only to get its sanitized version).
 
 ```python
 import humanized_opening_hours, pytz
 
 field = "Mo-Fr 06:00-21:00; Sa,Su 07:00-21:00"
 
-hoh = HumanizedOpeningHours(field, tz=pytz.timezone("Europe/Paris"))
+hoh = humanized_opening_hours.HumanizedOpeningHours(field, tz=pytz.timezone("Europe/Paris"))
 ```
 
 ## Basic methods
@@ -72,9 +72,9 @@ datetime.timedelta(0, 3600)
 You can get a sanitized version of the field given to the constructor with the *sanitize* method or the **field** attribute.
 
 ```python
-# Field : "mo-su 0930-2000"
->>> print(hoh.sanitize())
-Mo-Su 09:30-20:00
+>>> field = "mo-su 0930-2000"
+>>> print(hoh.sanitize(field))
+"Mo-Su 09:30-20:00"
 ```
 
 ## Solar hours
@@ -102,7 +102,7 @@ If you don't know solar hours, you have two methods to set them.
 
 # Using the astral module. You can pass to the "moment" argument a datetime.datetime object if you want to parse the solar hours for another date.
 >>> import astral, pytz
->>> location = astral.Astral.Location("Pico Island", "Atlantic Ocean", (38.506, -28.454), pytz.timezone("Atlantic/Azores"), 100)
+>>> location = astral.Astral.Location(("Pico Island", "Atlantic Ocean", 38.506, -28.454, "Atlantic/Azores", 100))
 >>> hoh.parse_solar_hours(astral_location=location)
 ```
 
@@ -117,9 +117,9 @@ Its *init* method takes an HOH object in argument, and two optional argument:
 It has several methods to retrieve useful informations.
 
 If the facility is always open, many of the following methods won't be very usefull.
-If you want a human-readable description, see the doc of the *description* method or use the *always_open_str* to get a simple string.
+If you want a human-readable description, see the doc of the [description](#description) method or use the *always_open_str* to get a simple string.
 
-### description
+### <a name="description"></a>description
 
 ```python
 # Field : "Mo-Fr 06:00-21:00; Sa,Su 07:00-21:00"
@@ -197,11 +197,11 @@ Open 24 hours a day and 7 days a week.
 
 ### render_moment
 
-Takes a *Moment* (see the *Objects* section) object as argument and returns a human-readable string describing it.
+Takes a [Moment](#moment) object as argument and returns a human-readable string describing it.
 
 ### render_period
 
-Same as *render_moment*, but for a *Period* object.
+Same as *render_moment*, but for a [Period](#period) object.
 
 ### periods_per_day
 
@@ -269,7 +269,7 @@ Example :
 
 This method takes a boolean argument and allows you to update the *universal* argument of HOHR. If solar hours have not been parsed, it will raise a "NotParsedError". If you're brave enough, you can also update directly the *universal* attribute of HOHR.
 
-## Objetcs
+## Objects
 
 Apart the main HumanizedOpeningHours class, HOH provides three other objects:
 - `Day` : a weekday, or public or schoold holidays;
@@ -322,7 +322,7 @@ All the days can be get by getting their index directly from the HOH object, or 
 <'Mo' Day object (1 periods)>
 ```
 
-### Period
+### <a name="period"></a>Period
 
 Attributes:
 - `m1` (Moment object) : the beginning of the period;
@@ -339,7 +339,7 @@ datetime.timedelta(0, 10800)
 True
 ```
 
-### Moment
+### <a name="moment"></a>Moment
 
 Attributes:
 - `type` (str) : the type of this moment, which can be "normal", "sunrise" or "sunset";
