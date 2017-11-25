@@ -11,7 +11,7 @@ setup(
     author_email="reze.mika@gmail.com",
     description="A parser for the opening_hours fields from OpenStreetMap.",
     long_description=open('README.md').read(),
-    install_requires=["astral", "pytz"],
+    install_requires=["pytz", "isoweek", "copy", "babel"],
     include_package_data=True,
     url='http://github.com/rezemika/humanized_opening_hours',
     classifiers=[
@@ -21,6 +21,7 @@ setup(
         "Natural Language :: French",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
+        "Topic :: Utilities",
         "Topic :: Other/Nonlisted Topic",
     ]
 )
