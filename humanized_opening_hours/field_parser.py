@@ -182,10 +182,14 @@ def parse_month_part(year, part: str) -> Year:
     return year
 
 def parse_holiday_week(year, part):
-    if raw_concerned_object[0] == "PH":
+    if part.startswith("PH "):
         concerned_days = year.PH_week.days
-    else:
+    elif part.startswith("SH "):
         concerned_days = year.SH_week.days
+    elif part[:5] in ["PH,SH", "SH,PH"]:
+        concerned_days = year.PH_week.days + year.SH_week.days
+    else:
+        raise ParseError("The part {part!r} is invalid.".format(part=part))
     part = part[3:]
     schedules = parse_schedules(part.split()[1])
     for day in concerned_days:

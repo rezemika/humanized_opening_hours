@@ -837,8 +837,10 @@ class HOHRenderer:
         """
         # TODO : Handle exceptional days.
         if self.ohparser.year.always_open:
-            # TODO : Handle holidays.
-            return self.always_open_str
+            description = self.always_open_str
+            if holidays:
+                description += '\n\n' + self.humanized_holidays_status()
+            return description
         similar_weeks = self.ohparser.year.similar_weeks()
         if len(similar_weeks) == 1:
             display_week_range = week_range
