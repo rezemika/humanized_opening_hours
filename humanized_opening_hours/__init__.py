@@ -1,16 +1,18 @@
-# -*- coding: utf-8 -*-
+"""A parser for the opening_hours fields from OpenStreetMap.
 
-""" A parser for the opening_hours fields from OpenStreetMap.
-    
-    Provides Day objects, containing (among others) datetime.time objects
-    representing the beginning and the end of all the opening periods.
-    Can handle solar hours with "sunrise" or "sunset", including with
-    offset like "(sunrise+02:00)".
-    
-    Automatically sanitizes the fields to prevent some common mistakes.
+Provides an OHParser object with the most useful methods
+(`is_open()`, `next_change()`, etc). Allows you to set
+public and school holidays. Provides a `render()` method
+to get human-readable strings describing the opening hours.
+
+Automatically sanitizes the fields to prevent some common mistakes.
+
+To get started, simply do:
+>>> import humanized_opening_hours as hoh
+>>> oh = hoh.OHParser("Th-Sa 10:00-19:00")
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __appname__ = "osm_humanized_opening_hours"
 __author__ = "rezemika <reze.mika@gmail.com>"
 __licence__ = "AGPLv3"
@@ -22,13 +24,9 @@ _sys.path.append(_os.path.dirname(_os.path.abspath(__file__)))
 import gettext
 gettext.install("HOH", "locales/")
 
-# TODO : Check.
-
-from humanized_opening_hours.humanized_opening_hours import (
-    HumanizedOpeningHours,
+from humanized_opening_hours.main import (
+    OHParser,
     HOHRenderer,
-    HOHError,
-    DoesNotExistError,
-    NotParsedError,
-    PeriodsConflictError
 )
+
+from humanized_opening_hours import exceptions
