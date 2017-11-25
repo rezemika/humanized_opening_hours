@@ -26,6 +26,10 @@ from temporal_objects import (
 from field_parser import parse_field
 import validators
 
+import sys as _sys
+import os as _os
+_os.chdir(_os.path.dirname(_os.path.realpath(__file__)))
+
 class OHParser:
     def __init__(self, field, year=None):
         """
@@ -479,15 +483,11 @@ class HOHRenderer:
     """
     
     def __init__(self, ohparser, universal=True, locale_name="en"):
-        if locale_name not in self.available_locales():
-            raise ValueError("'locale_name' must be one of the locales in HOHRenderer AVAILABLE_LOCALES tuple.")
         self.ohparser = ohparser
         self.universal = universal
         if not locale_name:
-            self.locale_name = "en"
-        else:
-            self.locale_name = locale_name
-        self.set_locale(self.locale_name)
+            locale_name = "en"
+        self.set_locale(locale_name)
         self.always_open_str = _("Open 24 hours a day and 7 days a week.")
         return
     
@@ -501,7 +501,7 @@ class HOHRenderer:
         list[str]
             The list of all suported languages.
         """
-        locales = gettext.find("HOH", "humanized_opening_hours/locales/", all=True)
+        locales = gettext.find("HOH", "locales/", all=True)
         locales = [l.split('/')[-3] for l in locales]
         locales.append("en")
         return locales
@@ -521,12 +521,17 @@ class HOHRenderer:
         self
             The instance itself.
         """
+        if locale_name not in self.available_locales():
+            raise ValueError(
+                "'locale_name' must be one of the locales given by the "
+                "HOHRenderer`available_locales()` method."
+            )
         self.locale_name = locale_name
         self.babel_locale = babel.Locale.parse(locale_name)
         lang = self.babel_locale.language
-        gettext.install("HOH", "humanized_opening_hours/locales/")
+        gettext.install("HOH", "locales/")
         i18n_lang = gettext.translation(
-            "HOH", localedir="humanized_opening_hours/locales/",
+            "HOH", localedir="locales/",
             languages=[lang],
             fallback=True
         )
