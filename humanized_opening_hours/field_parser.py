@@ -42,6 +42,8 @@ def parse_field(splited_field: list, year_int: int, default_holidays : bool = Tr
             index = splited_field.index("24/7")
             year._set_always_open()
             splited_field.pop(index)
+    if len(splited_field) and splited_field[0] in ["off", "closed"]:
+        return year
     for part in splited_field:
         # "PH off"
         # "SH off"
