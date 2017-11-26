@@ -34,7 +34,7 @@ def validate_part(part):
         rest = re.findall("{months} [0-9]+ (.+)".format(months=RE_MONTHS), part)[0]
         if rest in ["open", "closed", "off", "closed"]:
             return
-        validate_rest([0])
+        validate_rest(rest)
         return
     concerned_period, rest = part.split(' ', 1)
     validate_concerned_period(concerned_period, rest)
@@ -58,7 +58,7 @@ def validate_fallback(fallback):
 def validate_concerned_period(field, rest):
     if re.match("{days}(-{days})?(,{days})*".format(days=RE_DAYS), field):
         return
-    if re.match("{months}(-{months})?(,{months})*".format(months=MONTHS), field):
+    if re.match("{months}(-{months})?(,{months})*".format(months=RE_MONTHS), field):
         return
     if field.startswith("week"):
         # TODO : Improve.
