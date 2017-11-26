@@ -22,10 +22,15 @@ from temporal_objects import (
     Moment
 )
 
+# A list of the indexes of regular closed days, to override PH and SH.
+regular_closed_days = []
+
 def parse_field(splited_field: list, year_int: int, default_holidays : bool = True) -> Year:
     """Parses a splited field and a year, and returns a Year object."""
     days_in_year = 366 if calendar.isleap(year_int) else 365
     year = Year()
+    year.year = year_int
+    closed_days_indexes = []
     for week_index, week in enumerate(isoweek.Week.weeks_of_year(year_int)):
         for i, day_date in enumerate(week.days()):
             d = Day(day_date.weekday())
@@ -66,7 +71,8 @@ def parse_field(splited_field: list, year_int: int, default_holidays : bool = Tr
         # "Mo,SH *"
         elif part[:2] in WEEKDAYS:
             concerned_days = parse_regular_day_range(year, part.split()[0])
-            schedules = parse_schedules(part.split()[1])
+            days_indexes = [day.index for day in concerned_days]
+            schedules = parse_schedules(part.split()[1], days_indexes=closed_days_indexes)
             for day in concerned_days:
                 if schedules.closed:
                     day.periods = []
@@ -83,10 +89,10 @@ def parse_field(splited_field: list, year_int: int, default_holidays : bool = Tr
                 day.date = date
                 if schedules.closed:
                     day.periods = []
-                    continue
                 else:
                     for period in schedules.regular:
                         day._add_period(period, force=True)
+                year.exceptional_days.append(day)
             # "Jan *"
             # "Jan-Feb *"
             else:
@@ -110,6 +116,9 @@ def parse_field(splited_field: list, year_int: int, default_holidays : bool = Tr
             year.PH_week = list(year.iter_weeks())[26]
         if not "SH" in field:
             year.SH_week = list(year.iter_weeks())[26]
+    for day in year.all_days:
+        if day.date.weekday() in closed_days_indexes:
+            day.periods = []
     return year
 
 # See https://stackoverflow.com/a/952952
@@ -158,7 +167,11 @@ def parse_days_range(days_range: str) -> list:
 def parse_month_range(year, part: str) -> list:
     month_range = part.split()[0]
     if '-' not in month_range:
-        concerned_days = [m for m in year.all_months()][0]
+        concerned_days = []
+        for month in month_range.split(','):
+            concerned_days.extend(
+                [m for m in year.all_months()][MONTHS.index(month)]
+            )
     else:
         month_range_start, month_range_stop = month_range.split('-')
         month_range_start, month_range_stop = (
@@ -166,7 +179,7 @@ def parse_month_range(year, part: str) -> list:
             MONTHS.index(month_range_stop)
         )
         concerned_days = [m for m in year.all_months()][month_range_start:month_range_stop+1]
-        concerned_days = flatten(concerned_months)
+        concerned_days = flatten(concerned_days)
     return concerned_days
 
 def parse_month_part(year, part: str) -> Year:
@@ -246,11 +259,13 @@ def parse_week_part(year, part: str) -> Year:
 
 Schedules = namedtuple("Schedules", ["regular", "closed"])
 
-def parse_schedules(schedules: str) -> Schedules:
+def parse_schedules(schedules: str, days_indexes : list = None) -> Schedules:
     #if schedules == "open":
     if schedules.startswith("open "):  # "open 12:00-19:00"
         schedules = schedules[10:]  # Strips the "open ".
     elif schedules in ["off", "closed"]:
+        if days_indexes:
+            regular_closed_days.extend(days_indexes)
         return Schedules(
             regular=[],
             closed=True
