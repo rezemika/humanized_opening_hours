@@ -582,6 +582,29 @@ class HOHRenderer:
         """
         return self.babel_locale.months['format']['wide'][index+1]
     
+    def _format_date(self, date):
+        """Formats a datetime with the appropriate locale.
+        
+        Parameters
+        ----------
+        date : datetime.date
+            The date to format.
+        
+        Returns
+        -------
+        str
+            The formatted date.
+        """
+        # Gets the locale pattern.
+        pattern = babel.dates.get_date_format(format="long").pattern
+        # Removes the year.
+        pattern = pattern.replace('y', ' ').replace('  ', '')
+        return babel.dates.format_date(
+            date,
+            locale=self.babel_locale,
+            format=pattern
+        )
+    
     def humanized_time_before_next_change(self, moment=None, word=True):
         """Returns a human-readable string of the remaining time
         before the next opening status change.
