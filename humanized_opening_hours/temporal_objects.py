@@ -70,6 +70,13 @@ class SimilarDay:
             return self.periods[-1].end
         return None
     
+    @classmethod
+    def _from_day(cls, day):
+        instance = cls()
+        instance.periods = day.periods
+        instance.dates.append(day.date)
+        return instance
+    
     def __eq__(self, other):
         return hash(self) == hash(other)
     
