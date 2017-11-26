@@ -368,6 +368,7 @@ class OHParser:
                 None if it's always open.
         """
         if self.year.always_open:
+            # TODO : Improve.
             next_change = NextChange(moment=None, dt=None)
             return next_change
         

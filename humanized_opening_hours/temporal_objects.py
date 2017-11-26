@@ -356,15 +356,17 @@ class Year:
         if index is None and not dt:
             raise ValueError("'index' or 'dt' must be given.")
         if index is not None:
-            dt = datetime.datetime(self.year, 1, 1) + datetime.timedelta(index)
+            dt = datetime.datetime(self.year, 1, 2) + datetime.timedelta(days=index)
         exceptional_dates = [day.date for day in self.exceptional_days]
         if dt in exceptional_dates:
             return self.exceptional_days[exceptional_dates.index(dt)]
         # TODO : Check and improve.
         if type(dt) == datetime.datetime:
             dt = dt.date()
-        day_of_year = dt.timetuple().tm_yday - 1
-        return self.all_days[day_of_year]
+        # TODO : Fix this dirty hack.
+        for day in self.all_days:
+            if day.date == dt:
+                return day
     
     def _set_always_open(self):
         self.always_open = True
