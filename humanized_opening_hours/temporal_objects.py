@@ -157,6 +157,8 @@ class Year:
     ----------
     all_days : list
         A list of all the days in the year.
+        It does NOT contains exceptional_days.
+        Use the `get_day()` method to get them.
     PH_days : list
         All the days indicated as public holidays.
     SH_days : list
@@ -167,6 +169,10 @@ class Year:
         A regular school holidays week.
     always_open : bool
         True if it's always open (24/7), False else.
+    exceptional_days : list[Day]
+        A list of the exceptional days (e.g. "Dec 25 off").
+    year : int
+        The year (e.g. 2017).
     
     /!\ Default, the school and public holidays aren't included
     in "all_days" attribute: you must define them first
@@ -186,6 +192,7 @@ class Year:
         self.SH_week.closed = False
         self.always_open = False
         self.exceptional_days = []
+        self.year = None
         return
     
     def iter_weeks_as_lists(self):
@@ -286,10 +293,8 @@ class Year:
         """
         all_weeks = list(self.iter_weeks())
         weeks = []
-        
         temp_week = SimilarWeek._from_week(all_weeks[0])
         weeks.append(temp_week)
-        
         for week in all_weeks[1:]:
             temp_week = SimilarWeek._from_week(week)
             new = True
@@ -297,6 +302,7 @@ class Year:
                 if temp_week == w:
                     w.indexes.append(week.index)
                     new = False
+                    break
             if new:
                 weeks.append(temp_week)
         return weeks
@@ -315,21 +321,24 @@ class Year:
         current_month_index = 0
         current_month = []
         last_month = None
-        for day in self.all_days:
-            if day.month_index == current_month_index:
-                current_month.days.append(day)
+        for i in range(len(self.all_days)):
+            day = self.get_day(index=i)
+            if day.date.month-1 == current_month_index:
+                current_month.append(day)
             else:
-                last_month = copy.copy(current_month)
-                current_month = current_month_index + 1
-                yield last_month
+                yield current_month
+                current_month = []
+                current_month_index += 1
         yield current_month
     
-    def get_day(self, dt):
+    def get_day(self, dt=None, index=None):
         """Returns a Day from a datetime.
         
         Parameters
         ----------
-        datetime.datetime / datetime.date
+        index : int, optional
+            The index of day in the year.
+        datetime.datetime / datetime.date, optional
             The date of the day. /!\ This method will ignore
             the year of the given datetime.
         
@@ -344,20 +353,18 @@ class Year:
         ValueError
             When no datetime and no index are provided.
         """
+        if index is None and not dt:
+            raise ValueError("'index' or 'dt' must be given.")
+        if index is not None:
+            dt = datetime.datetime(self.year, 1, 1) + datetime.timedelta(index)
+        exceptional_dates = [day.date for day in self.exceptional_days]
+        if dt in exceptional_dates:
+            return self.exceptional_days[exceptional_dates.index(dt)]
         # TODO : Check and improve.
         if type(dt) == datetime.datetime:
             dt = dt.date()
-        start_index = self._get_day_index(dt) - 5
-        if start_index < 0:
-            start_index = 0
-        for day in self.all_days[start_index:]:
-            if day.date == dt:
-                return day
-        raise KeyError
-    
-    def _get_day_index(self, dt):
-        """Returns a day index (in the year) from a datetime."""
-        return dt.timetuple().tm_yday - 1
+        day_of_year = dt.timetuple().tm_yday - 1
+        return self.all_days[day_of_year]
     
     def _set_always_open(self):
         self.always_open = True
@@ -370,13 +377,13 @@ class Year:
         if isinstance(other, self.__class__):
             return self.__dict__ == other.__dict__
         return NotImplemented
-
+    
     def __ne__(self, other):
         """Defines a non-equality test."""
         if isinstance(other, self.__class__):
             return not self.__eq__(other)
         return NotImplemented
-
+    
     def __hash__(self):
         """
         Overrides the default hash behavior (that returns the id or the object).
