@@ -59,6 +59,53 @@ class TestGlobal(unittest.TestCase):
             "09:00 - 12:00"
         )
 
+class TestPatterns(unittest.TestCase):
+    # Checks there is no error with regular fields.
+    maxDiff = None
+    
+    def test_regulars(self):
+        field = "24/7"
+        oh = main.OHParser(field)
+        self.assertTrue(oh.year.always_open)
+        
+        field = "Mo-Sa 09:00-19:00"
+        oh = main.OHParser(field)
+        self.assertFalse(oh.year.always_open)
+        
+        field = "Mo,Th 09:00-sunset"
+        oh = main.OHParser(field)
+        
+        field = "Mo,Th (sunrise+02:00)-sunset"
+        oh = main.OHParser(field)
+        
+        field = "Mo,SH 09:00-19:00"
+        oh = main.OHParser(field)
+        
+        field = "Mo,SH 09:00-19:00"
+        oh = main.OHParser(field)
+        
+        field = "Jan 09:00-19:00"
+        oh = main.OHParser(field)
+        
+        field = "Jan-Feb 09:00-19:00"
+        oh = main.OHParser(field)
+        
+        field = "Jan,Aug 09:00-19:00"
+        oh = main.OHParser(field)
+    
+    def test_exceptional_days(self):
+        field = "Dec 25 off"
+        oh = main.OHParser(field)
+        self.assertEqual(len(oh.year.exceptional_days), 1)
+        
+        field = "Jan 1 13:00-19:00"
+        oh = main.OHParser(field)
+        self.assertEqual(len(oh.year.exceptional_days), 1)
+        
+        field = "Jan 1 13:00-19:00; Dec 25 off"
+        oh = main.OHParser(field)
+        self.assertEqual(len(oh.year.exceptional_days), 2)
+
 class TestSanitize(unittest.TestCase):
     maxDiff = None
     
