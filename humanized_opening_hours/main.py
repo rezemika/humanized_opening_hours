@@ -855,9 +855,9 @@ class HOHRenderer:
             day_periods = self._join_list(periods)
             if not day_periods:
                 day_periods = _("closed")
-            days_descriptions.append(' '*indent + _("{day_name}: {day_periods}").format(
-                day_name=name.title(),
-                day_periods=day_periods
+            days_descriptions.append(' '*indent + _("{left}: {right}").format(
+                left=name.title(),
+                right=day_periods
             ))
         # TODO : Improve.
         week_range = range(min(week.indexes), max(week.indexes)+1)
