@@ -16,6 +16,7 @@ from temporal_objects import (
     MomentKind,
     Year,
     Week,
+    SimilarDay,
     SimilarWeek,
     Day,
     Period,
@@ -788,6 +789,50 @@ class HOHRenderer:
             return values[0]
         return ', '.join(values[:-1]) + _(" and ") + values[-1]
     
+    def humanized_exceptional_days(self):
+        """Returns the description of the exceptional days.
+        
+        E.g. a field containing "Dec 25 off" will return
+        "Closed on 25 december".
+        
+        Returns
+        -------
+        str
+            The description.
+        """
+        similar_exceptional_days = []
+        similar_exceptional_days.append(SimilarDay._from_day(self.ohparser.year.exceptional_days[0]))
+        for day in self.ohparser.year.exceptional_days[1:]:
+            temp_day = SimilarDay._from_day(day)
+            new = True
+            for sed in similar_exceptional_days:
+                if temp_day == sed:
+                    sed.dates.append(day.date)
+                    new = False
+                    break
+            if new:
+                similar_exceptional_days.append(temp_day)
+        description = ''
+        for i, sec in enumerate(similar_exceptional_days):
+            if not sec.opens_today():
+                formated_dates = [self._format_date(date) for date in sec.dates]
+                title = self._join_list(formated_dates).capitalize()
+                description += _("{left}: {right}").format(
+                    left=title,
+                    right=_("closed")
+                ) + '\n'
+                similar_exceptional_days.pop(i)
+                break  # There should be only one closed SimilarDay.
+        for sec in similar_exceptional_days:
+            formated_dates = [self._format_date(date) for date in sec.dates]
+            title = self._join_list(formated_dates).capitalize()
+            schedules = self._join_list(self.humanized_periods_of_day(sec))
+            description += _("{left}: {right}").format(
+                left=title,
+                right=schedules
+            ) + '\n'
+        return description.rstrip()
+    
     def _week_description(self, week, indent=0, display_week_range=True):
         """Returns the description of a SimilarWeek.
         
@@ -842,16 +887,22 @@ class HOHRenderer:
             description += ' ' + _("closed")
         return description
     
-    def description(self, holidays=True, indent=0, week_range=True):
-        """Returns the description of a SimilarWeek.
+    def description(self, holidays=True, indent=0, week_range=True, exceptional_days=True):
+        """Returns a full description of the opening hours.
         
         Parameters
         ----------
         holidays : bool, optional
-            Define whether the holidays must be described with the
+            Defines whether the holidays must be described with the
             `humanized_holidays_status()` method.
         indent : int, optional
             The indentation of day periods. 0 default.
+        week_range : bool, optional
+            Defines whether the week range must be indicated.
+            True default.
+        exceptional_days : bool, optional
+            Defines whether the exceptional days (e.g. "Dec 25 off")
+            must be described. True default.
         
         Returns
         -------
@@ -861,6 +912,8 @@ class HOHRenderer:
         # TODO : Handle exceptional days.
         if self.ohparser.year.always_open:
             description = self.always_open_str
+            if exceptional_days and self.ohparser.year.exceptional_days:
+                description += '\n\n' + self.humanized_exceptional_days()
             if holidays:
                 description += '\n\n' + self.humanized_holidays_status()
             return description
@@ -877,6 +930,8 @@ class HOHRenderer:
             holidays_descriptions = self._holidays_description(similar_weeks, indent=indent)
             descriptions.extend(holidays_descriptions)
         description = '\n\n'.join(descriptions)
+        if exceptional_days and self.ohparser.year.exceptional_days:
+            description += '\n\n' + self.humanized_exceptional_days()
         if holidays and not holidays_descriptions:
             description += '\n\n' + self.humanized_holidays_status()
         return description
