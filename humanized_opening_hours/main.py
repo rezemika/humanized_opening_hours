@@ -183,6 +183,8 @@ class OHParser:
             # Adds or removes spaces when necessary.
             # "Mo-Su 10:00-19:00;Sa off" => "Mo-Su 10:00-19:00; Sa off"
             part = re.sub("\s*(;)\s*", "\1 ", part)
+            # " , " => ","
+            part = re.sub(" ?, ?", ",", part)
             # Corrects the case errors.
             # "mo" => "Mo"
             for word in special_words:

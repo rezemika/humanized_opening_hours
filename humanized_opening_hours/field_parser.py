@@ -59,8 +59,8 @@ def parse_field(splited_field: list, year_int: int, default_holidays : bool = Tr
         # "10:00-12:00"
         # "00:00-24:00"
         elif part[:2].isdigit():
-            concerned_days = flatten(list(year.iter_weeks_as_lists()))
-            schedules = parse_schedules(part.split()[1])
+            concerned_days = year.all_days
+            schedules = parse_schedules(part)
             for day in concerned_days:
                 if schedules.closed:
                     day.periods = []
@@ -82,17 +82,20 @@ def parse_field(splited_field: list, year_int: int, default_holidays : bool = Tr
         elif part[:3] in MONTHS:
             # "Dec 25 off"
             if re.match("[A-Z][a-z]{2} [0-9]{1,2} .+", part):
-                month_index, day_number = MONTHS.index(part.split()[0]), int(part.split()[1])
-                date = datetime.date(year_int, month_index+1, day_number)
-                schedules = parse_schedules(part.split(' ', 2)[-1])
-                day = Day(date.weekday())
-                day.date = date
-                if schedules.closed:
-                    day.periods = []
-                else:
-                    for period in schedules.regular:
-                        day._add_period(period, force=True)
-                year.exceptional_days.append(day)
+                # "Jan1,Dec 25"
+                for d in part.split(','):
+                    d = d.strip()
+                    month_index, day_number = MONTHS.index(d.split()[0]), int(d.split()[1])
+                    date = datetime.date(year_int, month_index+1, day_number)
+                    schedules = parse_schedules(d.split(' ', 2)[-1])
+                    day = Day(date.weekday())
+                    day.date = date
+                    if schedules.closed:
+                        day.periods = []
+                    else:
+                        for period in schedules.regular:
+                            day._add_period(period, force=True)
+                    year.exceptional_days.append(day)
             # "Jan *"
             # "Jan-Feb *"
             else:
@@ -278,6 +281,7 @@ def parse_schedules(schedules: str, days_indexes : list = None) -> Schedules:
     
     periods = []
     for schedule_period in schedules.split(','):
+        schedule_period = schedule_period.strip()
         if schedule_period.endswith('+'):
             raise ImpreciseField("The part '{}' is valid but not precise enough to allow parsing.".format(schedules))
         period_start, period_end = re.split("-(?![^\(]*\))", schedule_period)

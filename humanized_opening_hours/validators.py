@@ -36,6 +36,9 @@ def validate_part(part):
             return
         validate_rest(rest)
         return
+    if part[:2].isdigit():
+        validate_rest(part)
+        return
     concerned_period, rest = part.split(' ', 1)
     validate_concerned_period(concerned_period, rest)
     if rest in META:
