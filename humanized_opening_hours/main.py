@@ -199,6 +199,9 @@ class OHParser:
             # "7:30" => "07:30"
             for moment in re.findall("( (?<![0-9-])[0-9]:[0-9]{2})", field):
                 part = part.replace(moment, ' 0' + moment[1:])
+            # Replaces "24" by "24/7".
+            if part == "24":
+                part = "24/7"
             parts.append(part)
         return '; '.join(parts)
     
