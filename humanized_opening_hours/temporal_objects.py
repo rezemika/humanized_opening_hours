@@ -411,8 +411,6 @@ class Year:
         
         Raises
         ------
-        KeyError
-            When the requested Day is not in the year.
         ValueError
             When no datetime and no index are provided.
         """
