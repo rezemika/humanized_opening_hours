@@ -104,7 +104,7 @@ class SimilarWeek:
         The list of indexes of similar weeks in the year
         (between 0 and 52 inclusive).
     days : list[SimilarDay]
-        The similar days of the week..
+        The similar days of the week.
     """
     
     def __init__(self):
@@ -125,10 +125,52 @@ class SimilarWeek:
         instance = cls()
         instance.indexes.append(week.index)
         for day in week.days:
-            d = SimilarDay()
-            d.periods = day.periods
-            d.dates.append(day.date)
-            instance.days.append(d)
+            instance.days.append(SimilarDay._from_day(day))
+        return instance
+    
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+    
+    def __ne__(self, other):
+        return not self == other
+    
+    def __hash__(self):
+        return hash(tuple(self.days))
+    
+    def __repr__(self):
+        return self.__str__()
+    
+    def __str__(self):
+        return "<SimilarWeek ({n} weeks - {start}-{end})>".format(
+            n=len(self.indexes),
+            start=min(self.indexes)+1,
+            end=max(self.indexes)+1
+        )
+
+class SimilarMonth:
+    """An object which can represent many months with similar days.
+    
+    Attributes
+    ----------
+    indexes : list[int]
+        The list of indexes of months in the year
+        (between 0 and 11 inclusive).
+    days : list[SimilarDay]
+        The similar days of the month.
+    """
+    
+    def __init__(self):
+        self.indexes = []
+        self.days = []
+        return
+    
+    @classmethod
+    def _from_days(cls, days):
+        # 'days' is a list of Day objects in the month.
+        instance = cls()
+        instance.indexes = days[0].date.month - 1
+        for day in days:
+            instance.days.append(SimilarDay._from_day(day))
         return instance
     
     def __eq__(self, other):
@@ -307,6 +349,27 @@ class Year:
                 weeks.append(temp_week)
         return weeks
     
+    def similar_months(self):
+        """Returns a list of SimilarMonths.
+        
+        Each SimilarMonths as two attributes :
+        - `indexes` : a list of integers, the indexes of the months;
+        - `days` : a list of SimilarDay objects.
+        
+        A SimilarDay has the following attributes :
+        - `periods` : a list of periods;
+        - `dates` : a list of datetime.date objects.
+        
+        Returns
+        -------
+        list[SimilarMonths]
+            All the months of the year combined in a shorter list.
+        """
+        similar_months = []
+        for month in self.all_months():
+            similar_months.append(SimilarMonth._from_days(month))
+        return similar_months
+    
     def all_months(self):
         """Provides a generator to iterate over all the months of the year.
         
@@ -316,7 +379,7 @@ class Year:
         
         Yields
         ------
-        Month : The next month in the year.
+        list : The days of the next month in the year.
         """
         current_month_index = 0
         current_month = []

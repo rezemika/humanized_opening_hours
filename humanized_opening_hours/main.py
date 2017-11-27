@@ -195,6 +195,8 @@ class OHParser:
                 if "year" in part:
                     break
                 part = part.replace(moment, moment[:2] + ':' + moment[2:])
+            if re.match("[A-Z][a-z]{2} [0-9]{1,2} .+", part):
+                part = re.sub("([A-Z][a-z]{2} [0-9]{1,2}) (.+)", "\1: \2", part)
             # Adds zeros when necessary.
             # "7:30" => "07:30"
             for moment in re.findall("( (?<![0-9-])[0-9]:[0-9]{2})", field):
@@ -915,7 +917,6 @@ class HOHRenderer:
         str
             The description.
         """
-        # TODO : Handle exceptional days.
         if self.ohparser.year.always_open:
             description = self.always_open_str
             if exceptional_days and self.ohparser.year.exceptional_days:

@@ -83,7 +83,7 @@ def parse_field(splited_field: list, year_int: int, default_holidays : bool = Tr
                     day._add_period(period, force=True)
         elif part[:3] in MONTHS:
             # "Dec 25 off"
-            if re.match("[A-Z][a-z]{2} [0-9]{1,2} .+", part):
+            if re.match("[A-Z][a-z]{2} [0-9]{1,2}: .+", part):
                 # "Jan1,Dec 25"
                 for d in part.split(','):
                     d = d.strip()
@@ -102,7 +102,11 @@ def parse_field(splited_field: list, year_int: int, default_holidays : bool = Tr
             # "Jan-Feb *"
             else:
                 concerned_days = parse_month_range(year, part)
-                schedules = parse_schedules(part.split()[1])
+                raw_schedules = part.split(' ', 1)[1]
+                for word in WEEKDAYS:
+                    if raw_schedules.startswith(word):
+                        raw_schedules = raw_schedules[len(word):]
+                schedules = parse_schedules(raw_schedules)
                 for day in concerned_days:
                     if schedules.closed:
                         day.periods = []
@@ -185,6 +189,17 @@ def parse_month_range(year, part: str) -> list:
         )
         concerned_days = [m for m in year.all_months()][month_range_start:month_range_stop+1]
         concerned_days = flatten(concerned_days)
+    days = part.split()[1]
+    if days[0:2] in WEEKDAYS:
+        day_names = parse_days_range(days)
+        days_indexes = [WEEKDAYS.index(day_name) for day_name in day_names]
+        new_concerned_days = []
+        for day in concerned_days:
+            if day.date.weekday() in days_indexes:
+                new_concerned_days.append(day)
+            else:
+                day.periods = []
+        return new_concerned_days
     return concerned_days
 
 def parse_month_part(year, part: str) -> Year:

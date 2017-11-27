@@ -30,8 +30,8 @@ def validate_field(field):
     return
 
 def validate_part(part):
-    if re.match("{months} [0-9]+ .+".format(months=RE_MONTHS), part):
-        rest = re.findall("{months} [0-9]+ (.+)".format(months=RE_MONTHS), part)[0]
+    if re.match("{months} [0-9]+: .+".format(months=RE_MONTHS), part):
+        rest = re.findall("{months} [0-9]+: (.+)".format(months=RE_MONTHS), part)[0]
         if rest in ["open", "closed", "off", "closed"]:
             return
         validate_rest(rest)
@@ -40,6 +40,10 @@ def validate_part(part):
         validate_rest(part)
         return
     concerned_period, rest = part.split(' ', 1)
+    # "Jan Mo 10:00-12:00"
+    for word in WEEKDAYS:
+        if rest.startswith(word):
+            rest = rest[len(word):]
     validate_concerned_period(concerned_period, rest)
     if rest in META:
         return
