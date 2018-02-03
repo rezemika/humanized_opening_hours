@@ -4,6 +4,7 @@ import pytz
 import babel.dates
 import gettext
 import lark
+from collections import namedtuple
 
 from exceptions import (
     HOHError,
@@ -334,6 +335,11 @@ class OHParser:  # TODO : Opening hours descriptions.
     def __str__(self):
         return "<OHParser field: '{}'>".format(self.sanitized_field)
 
+RenderableDay = namedtuple("RenderableDay", ["name", "description"])
+RenderableDay.__doc__ = """A namedtuple containing two strings:
+- "name": the name of the day (e.g. "Monday");
+- "description": the description of the periods of the day."""
+
 class HOHRenderer:
     """
     A renderer for the OSM opening_hours fields.
@@ -541,6 +547,71 @@ class HOHRenderer:
         if len(values) == 1:
             return values[0]
         return ', '.join(values[:-1]) + _(" and ") + values[-1]
+    
+    def _render_universal_moment(self, moment):
+        if not moment._has_offset():
+            string = {
+                MomentKind.SUNRISE: _("sunrise"),
+                MomentKind.SUNSET: _("sunset"),
+                MomentKind.DAWN: _("dawn"),
+                MomentKind.DUSK: _("dusk")
+            }.get(moment.kind)
+            if string:
+                return string
+            elif moment._time == datetime.time.max:
+                # TODO : Relevant?
+                return _("%H:%M").replace('%H', '00').replace('%M', '00')
+            else:
+                return moment.time().strftime(_("%H:%M"))
+        else:
+            if moment._delta.days == 0:
+                string = {
+                    MomentKind.SUNRISE: _("{} after sunrise"),
+                    MomentKind.SUNSET: _("{} after sunset"),
+                    MomentKind.DAWN: _("{} after dawn"),
+                    MomentKind.DUSK: _("{} after dusk")
+                }.get(moment.kind)
+            else:
+                string = {
+                    MomentKind.SUNRISE: _("{} before sunrise"),
+                    MomentKind.SUNSET: _("{} before sunset"),
+                    MomentKind.DAWN: _("{} before dawn"),
+                    MomentKind.DUSK: _("{} before dusk")
+                }.get(moment.kind)
+            delta = (
+                datetime.datetime(2000, 1, 1, 0) +
+                moment._delta
+            ).time().strftime(_("%H:%M"))
+        return string.format(delta)
+    
+    def periods_of_day(self, day):
+        """Returns a description of the opening periods of a day.
+        
+        Parameters
+        ----------
+        day : datetime.date
+            The day for which to get the periods description.
+        
+        Returns
+        -------
+        RenderableDay (collections.namedtuple)
+            A namedtuple containing two strings:
+            - "name": the name of the day (e.g. "Monday");
+            - "description": the description of the periods of the day.
+        
+        """
+        d = self.ohparser.get_day(day)
+        rendered_periods = []
+        for period in d.periods:
+            rendered_periods.append(
+                "{} - {}".format(
+                    self._render_universal_moment(period.beginning),
+                    self._render_universal_moment(period.end)
+                )
+            )
+        rendered_periods = self._join_list(rendered_periods)
+        name = self.get_locale_day(0)
+        return RenderableDay(name=name, description=rendered_periods)
     
     def __repr__(self):
         return str(self)
