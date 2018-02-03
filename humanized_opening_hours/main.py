@@ -36,6 +36,19 @@ weeks
 Mo[-1] 10:00-20:00
 """
 
+def days_of_week_from_day(dt):
+    """
+        Returns a list of seven datetime.date days representing a week
+        from a day in this week.
+    """
+    days = []
+    if isinstance(dt, datetime.datetime):
+        dt = dt.date()
+    start = dt - datetime.timedelta(days=dt.weekday())
+    for i in range(7):
+        days.append(start + datetime.timedelta(days=i))
+    return days
+
 class OHParser:  # TODO : Opening hours descriptions.
     def __init__(self, field):
         """
@@ -316,7 +329,7 @@ class OHParser:  # TODO : Opening hours descriptions.
         return HOHRenderer(self, *args, **kwargs)
     
     def __repr__(self):
-        return self.__str__()
+        return str(self)
     
     def __str__(self):
         return "<OHParser field: '{}'>".format(self.sanitized_field)
@@ -531,7 +544,7 @@ class HOHRenderer:
         return ', '.join(values[:-1]) + _(" and ") + values[-1]
     
     def __repr__(self):
-        return self.__str__()
+        return str(self)
     
     def __str__(self):
         return "<HOHRenderer>"
