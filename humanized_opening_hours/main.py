@@ -510,9 +510,8 @@ class HOHRenderer:
         """
         next_change = self.ohparser.next_change(moment=moment)
         if not moment:
-            now = self.ohparser._get_now()
-        now = moment
-        delta = next_change - now
+            moment = self.ohparser._get_now()
+        delta = next_change - moment
         # TODO : Check granularity.
         return babel.dates.format_timedelta(
             delta,
