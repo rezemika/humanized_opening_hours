@@ -13,7 +13,11 @@ from temporal_objects import (
 class YearTransformer(Transformer):
     # Moments
     def digital_moment(self, arg):
-        return Moment(MomentKind.NORMAL, time=datetime.datetime.strptime(arg[0], "%H:%M").time())
+        if arg[0] == "24:00":
+            time = datetime.time.max
+        else:
+            time = datetime.datetime.strptime(arg[0], "%H:%M").time()
+        return Moment(MomentKind.NORMAL, time=time)
     
     def solar_moment(self, arg):
         return Moment(MomentKind[arg[0].upper()], delta=datetime.timedelta())
@@ -90,6 +94,13 @@ class YearTransformer(Transformer):
     # Holidays
     def holiday(self, args):
         return set([tk.value for tk in args])
+    
+    # Always open
+    def always_open(self, args):
+        return (set('*'), [self.period([
+            self.digital_moment(["00:00"]),
+            self.digital_moment(["24:00"])
+        ])])
     
     # Field part
     def field_part(self, args):

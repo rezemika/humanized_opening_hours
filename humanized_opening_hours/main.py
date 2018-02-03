@@ -29,13 +29,11 @@ _os.chdir(_os.path.dirname(_os.path.realpath(__file__)))
 
 # TODO formats
 """
-24/7  # Raises a TypeError.
 Jan Mo 10:00-20:00
 SH Mo 10:00-20:00
 year
 weeks
 Mo[-1] 10:00-20:00
-00:00-24:00
 """
 
 class OHParser:  # TODO : Opening hours descriptions.
@@ -246,7 +244,7 @@ class OHParser:  # TODO : Opening hours descriptions.
             (e.g. the field is invalid).
         """
         if not dt:
-            moment = datetime.datetime.now().replace(tzinfo=pytz.UTC)
+            dt = datetime.datetime.now().replace(tzinfo=pytz.UTC)
         elif dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
             dt = pytz.UTC.localize(dt)
         day = self.get_day(dt=dt)
