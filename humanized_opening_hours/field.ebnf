@@ -1,0 +1,42 @@
+DAY : "Mo" | "Tu" | "We" | "Th" | "Fr" | "Sa" | "Su"
+MONTH : "Jan" | "Feb" | "Mar" | "Apr" | "May" | "Jun" | "Jul" | "Aug" | "Sep" | "Oct" | "Nov" | "Dec"
+PUBLIC_HOLIDAYS : "PH"
+SCHOOL_HOLIDAYS : "SH"
+
+SOLAR : "sunrise" | "sunset" | "dawn" | "dusk"
+DIGITAL_MOMENT : /[0-2][0-9]:[0-5][0-9]+/
+
+SOLAR_COMPLEX_MOMENT : "(" SOLAR ("+"|"-") DIGITAL_MOMENT ")"
+
+moment : DIGITAL_MOMENT -> digital_moment
+       | SOLAR -> solar_moment
+       | SOLAR_COMPLEX_MOMENT -> solar_complex_moment
+
+period : moment "-" moment
+
+raw_consecutive_day_range : DAY "-" DAY
+INDEPENDANT_DAY_RANGE : "," DAY
+
+raw_consecutive_month_range : MONTH "-" MONTH
+
+HOLIDAYS : PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS
+
+concerned_period : DAY ("," DAY)* ("," HOLIDAYS)* -> unconsecutive_days
+                 | MONTH ("," MONTH)* ("," HOLIDAYS)* -> unconsecutive_months
+                 | HOLIDAYS ["," HOLIDAYS] -> holiday
+                 | raw_consecutive_day_range ("," DAY)* ("," HOLIDAYS)* -> consecutive_day_range
+                 | raw_consecutive_month_range ("," MONTH)* ("," HOLIDAYS)* -> consecutive_month_range
+
+day_periods : period ("," period)*
+            | "off" -> period_closed
+            | "closed" -> period_closed
+
+DATE : /[0-3]?[0-9]+/
+date_exceptional_day : MONTH " " DATE -> exceptional_day
+
+field_part : concerned_period " " day_periods
+           | day_periods -> everyday_periods
+           | "24/7" -> always_open
+           | date_exceptional_day ("," date_exceptional_day)* " " day_periods -> exceptional_dates
+
+field : field_part ("; " field_part)*

@@ -1,12 +1,8 @@
 from enum import Enum
 import datetime
 import pytz
-import isoweek
-from exceptions import ParseError, ImpreciseField, SolarHoursNotSetError, PeriodsConflictError
-from itertools import chain, islice
-import copy
-from collections import namedtuple
-from itertools import zip_longest
+from exceptions import SolarHoursNotSetError
+from collections import OrderedDict
 
 WEEKDAYS = (
     "Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"
@@ -16,199 +12,19 @@ MONTHS = (
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 )
 
-class SimilarDay:
-    """An object which can represent many days with similar periods.
-    
-    Attributes
-    ----------
-    periods : list[Period]
-        The list of opening periods.
-    dates : list[datetime.date]
-        The list of dates of similar days.
-    """
-    
-    def __init__(self):
-        self.periods = []
-        self.dates = []
-        return
-    
-    def opens_today(self) -> bool:
-        """Is it open today?
-        
-        Returns
-        -------
-        bool
-            True if the day contains any opening period. False else.
-        """
-        return len(self.periods) > 0
-    
-    def is_open(self, moment):
-        """Is it open?
-        
-        Parameters
-        ----------
-        moment : datetime.datetime
-            The moment for which to check the opening.
-        
-        Returns
-        -------
-        bool
-            True if it's open, False else.
-            /!\ Returns False if the concerned day contains an unset
-            solar moment.
-        """
-        if moment.tzinfo is None or moment.tzinfo.utcoffset(moment) is None:
-            moment = pytz.UTC.localize(moment)
-        for period in self.periods:
-            if moment in period:
-                return True
-        return False
-    
-    def last_open_hour(self):
-        """Returns the last Moment of the day, or None if there is none."""
-        if self.opens_today():
-            return self.periods[-1].end
-        return None
-    
-    @classmethod
-    def _from_day(cls, day):
-        instance = cls()
-        instance.periods = day.periods
-        instance.dates.append(day.date)
-        return instance
-    
-    def __eq__(self, other):
-        return hash(self) == hash(other)
-    
-    def __ne__(self, other):
-        return not self == other
-    
-    def __hash__(self):
-        return hash(tuple(self.periods))
-    
-    def __repr__(self):
-        return self.__str__()
-    
-    def __str__(self):
-        return "<SimilarDay ({nd} dates - {np} periods)>".format(
-            nd=len(self.dates),
-            np=len(self.periods)
-        )
+# Equality test codes come from
+# https://stackoverflow.com/questions/390250/elegant-ways-to-support-equivalence-equality-in-python-classes
 
-class SimilarWeek:
-    """An object which can represent many weeks with similar days.
-    
-    Attributes
-    ----------
-    indexes : list[int]
-        The list of indexes of similar weeks in the year
-        (between 0 and 52 inclusive).
-    days : list[SimilarDay]
-        The similar days of the week.
-    """
-    
-    def __init__(self):
-        self.indexes = []
-        self.days = []
-        return
-    
-    def opens_this_week(self):
-        """Returns whether there is an opening period
-        for any day in the week.
-        
-        Returns True if so, False else.
-        """
-        return any([day.opens_today() for day in self.days])
-    
-    @classmethod
-    def _from_week(cls, week):
-        instance = cls()
-        instance.indexes.append(week.index)
-        for day in week.days:
-            instance.days.append(SimilarDay._from_day(day))
-        return instance
-    
-    def __eq__(self, other):
-        return hash(self) == hash(other)
-    
-    def __ne__(self, other):
-        return not self == other
-    
-    def __hash__(self):
-        return hash(tuple(self.days))
-    
-    def __repr__(self):
-        return self.__str__()
-    
-    def __str__(self):
-        return "<SimilarWeek ({n} weeks - {start}-{end})>".format(
-            n=len(self.indexes),
-            start=min(self.indexes)+1,
-            end=max(self.indexes)+1
-        )
-
-class SimilarMonth:
-    """An object which can represent many months with similar days.
-    
-    Attributes
-    ----------
-    indexes : list[int]
-        The list of indexes of months in the year
-        (between 0 and 11 inclusive).
-    days : list[SimilarDay]
-        The similar days of the month.
-    """
-    
-    def __init__(self):
-        self.indexes = []
-        self.days = []
-        return
-    
-    @classmethod
-    def _from_days(cls, days):
-        # 'days' is a list of Day objects in the month.
-        instance = cls()
-        instance.indexes = days[0].date.month - 1
-        for day in days:
-            instance.days.append(SimilarDay._from_day(day))
-        return instance
-    
-    def __eq__(self, other):
-        return hash(self) == hash(other)
-    
-    def __ne__(self, other):
-        return not self == other
-    
-    def __hash__(self):
-        return hash(tuple(self.days))
-    
-    def __repr__(self):
-        return self.__str__()
-    
-    def __str__(self):
-        return "<SimilarWeek ({n} weeks - {start}-{end})>".format(
-            n=len(self.indexes),
-            start=min(self.indexes)+1,
-            end=max(self.indexes)+1
-        )
-
+'''
 class Year:
     """A year, containing between 365 and 366 days.
     
     Attributes
     ----------
-    all_days : list
+    all_days : list[Day]
         A list of all the days in the year.
         It does NOT contains exceptional_days.
         Use the `get_day()` method to get them.
-    PH_days : list
-        All the days indicated as public holidays.
-    SH_days : list
-        All the days indicated as school holidays.
-    PH_week : Week
-        A regular public holidays week.
-    SH_week : Week
-        A regular school holidays week.
     always_open : bool
         True if it's always open (24/7), False else.
     exceptional_days : list[Day]
@@ -226,182 +42,16 @@ class Year:
     
     def __init__(self):
         self.all_days = []
-        self.PH_days = []
-        self.SH_days = []
-        self.PH_week = Week()
-        self.SH_week = Week()
-        self.PH_week.closed = False
-        self.SH_week.closed = False
         self.always_open = False
         self.exceptional_days = []
         self.year = None
-        return
     
-    def iter_weeks_as_lists(self):
-        """Provides a generator to iterate over all the weeks of the year.
-        
-        /!\ Default, the school and public holidays aren't included,
-        you must define them first (see the OHParser's "set_PH()"
-        and "set_SH()" methods).
-        
-        To get a week from its index, simply do "iter_weeks()[index]".
-        
-        Yields
-        ------
-        tuple
-            The days of the next week in the year,
-            which may **not** contain 7 days.
-        """
-        first_week = []
-        first_week_index = 0
-        next_day_index = 0
-        for i, day in enumerate(self.all_days):
-            if day.index == 6:
-                first_week.append(self.all_days[:i+1])
-                next_day_index = i + 1
-                break
-        yield first_week
-        
-        def grouper(iterable, n):
-            """Collects data into fixed-length chunks or blocks."""
-            # See https://docs.python.org/3/library/itertools.html#itertools-recipes
-            # TODO : Check it does not provide copy.
-            args = [iter(iterable)] * n
-            iterable = zip_longest(*args, fillvalue=None)
-            l = []
-            for item in iterable:
-                g = [i for i in item if i is not None]
-                l.append(tuple(g))
-            return l
-        
-        remaining_days = self.all_days[next_day_index:]
-        for i, days_group in enumerate(grouper(remaining_days, 7)):
-            yield days_group
-    
-    def iter_weeks(self):
-        """Provides a generator to iterate over all the weeks of the year.
-        
-        /!\ Default, the school and public holidays aren't included,
-        you must define them first (see the OHParser's "set_PH()"
-        and "set_SH()" methods).
-        
-        Yields
-        ------
-        Week : The next week in the year, which may **not** contain 7 days.
-        """
-        first_week = Week()
-        first_week.index = 0
-        next_day_index = 0
-        for i, day in enumerate(self.all_days):
-            if day.index == 6:
-                first_week.days = self.all_days[:i+1]
-                next_day_index = i + 1
-                break
-        yield first_week
-        
-        def grouper(iterable, n):
-            """Collects data into fixed-length chunks or blocks."""
-            # See https://docs.python.org/3/library/itertools.html#itertools-recipes
-            args = [iter(iterable)] * n
-            iterable = zip_longest(*args, fillvalue=None)
-            l = []
-            for item in iterable:
-                g = [i for i in item if i is not None]
-                l.append(tuple(g))
-            return l
-        
-        remaining_days = self.all_days[next_day_index:]
-        for i, days_group in enumerate(grouper(remaining_days, 7)):
-            week = Week()
-            week.index = i + 1
-            week.days = days_group
-            yield week
-    
-    def similar_weeks(self):
-        """Returns a list of SimilarWeeks.
-        
-        Each SimilarWeeks as two attributes :
-        - `indexes` : a list of integers, the indexes of the weeks;
-        - `days` : a list of SimilarDay objects.
-        
-        A SimilarDay has the following attributes :
-        - `periods` : a list of periods;
-        - `dates` : a list of datetime.date objects.
-        
-        Returns
-        -------
-        list[SimilarWeeks]
-            All the weeks of the year combined in a shorter list.
-        """
-        all_weeks = list(self.iter_weeks())
-        weeks = []
-        temp_week = SimilarWeek._from_week(all_weeks[0])
-        weeks.append(temp_week)
-        for week in all_weeks[1:]:
-            temp_week = SimilarWeek._from_week(week)
-            new = True
-            for w in weeks:
-                if temp_week == w:
-                    w.indexes.append(week.index)
-                    new = False
-                    break
-            if new:
-                weeks.append(temp_week)
-        return weeks
-    
-    def similar_months(self):
-        """Returns a list of SimilarMonths.
-        
-        Each SimilarMonths as two attributes :
-        - `indexes` : a list of integers, the indexes of the months;
-        - `days` : a list of SimilarDay objects.
-        
-        A SimilarDay has the following attributes :
-        - `periods` : a list of periods;
-        - `dates` : a list of datetime.date objects.
-        
-        Returns
-        -------
-        list[SimilarMonths]
-            All the months of the year combined in a shorter list.
-        """
-        similar_months = []
-        for month in self.all_months():
-            similar_months.append(SimilarMonth._from_days(month))
-        return similar_months
-    
-    def all_months(self):
-        """Provides a generator to iterate over all the months of the year.
-        
-        /!\ Default, the school and public holidays aren't included,
-        you must define them first (see the OHParser's "set_PH()"
-        and "set_SH()" methods).
-        
-        Yields
-        ------
-        list : The days of the next month in the year.
-        """
-        current_month_index = 0
-        current_month = []
-        last_month = None
-        for i in range(len(self.all_days)):
-            day = self.get_day(index=i)
-            if day.date.month-1 == current_month_index:
-                current_month.append(day)
-            else:
-                yield current_month
-                current_month = []
-                current_month_index += 1
-        yield current_month
-    
-    def get_day(self, dt=None, index=None):
+    def get_day(self, dt):
         """Returns a Day from a datetime.
         
         Parameters
         ----------
-        index : int, optional
-            The index of day in the year.
-        datetime.datetime / datetime.date, optional
+        datetime.datetime / datetime.date
             The date of the day. /!\ This method will ignore
             the year of the given datetime.
         
@@ -412,174 +62,56 @@ class Year:
         Raises
         ------
         ValueError
-            When no datetime and no index are provided.
+            When no datetime is provided.
         """
         if index is None and not dt:
-            raise ValueError("'index' or 'dt' must be given.")
-        if index is not None:
-            dt = datetime.datetime(self.year, 1, 2) + datetime.timedelta(days=index)
+            raise ValueError("A 'datetime' must be given.")
         exceptional_dates = [day.date for day in self.exceptional_days]
         if dt in exceptional_dates:
             return self.exceptional_days[exceptional_dates.index(dt)]
         # TODO : Check and improve.
-        if type(dt) == datetime.datetime:
+        if isinstance(dt, datetime.datetime):
             dt = dt.date()
         # TODO : Fix this dirty hack.
         for day in self.all_days:
             if day.date == dt:
                 return day
     
-    def _set_always_open(self):
-        self.always_open = True
-        for day in self.all_days:
-            day._set_always_open()
-    
-    # From https://stackoverflow.com/questions/390250/elegant-ways-to-support-equivalence-equality-in-python-classes
     def __eq__(self, other):
-        """Overrides the default Equals behavior."""
         if isinstance(other, self.__class__):
             return self.__dict__ == other.__dict__
         return NotImplemented
     
     def __ne__(self, other):
-        """Defines a non-equality test."""
         if isinstance(other, self.__class__):
             return not self.__eq__(other)
         return NotImplemented
     
     def __hash__(self):
-        """
-        Overrides the default hash behavior (that returns the id or the object).
-        """
         return hash(tuple(sorted(self.__dict__.items())))
     
     def __repr__(self):
         return self.__str__()
     
     def __str__(self):
-        return "<Year>"
-
-class Week:
-    """A week, containing 7 days.
-    
-    Attributes
-    ----------
-    index : int
-        The index of week in the year (between 0 and 52).
-    days : list[Day]
-        All the days in this week.
-    
-    Parameters
-    ----------
-    index : int, optional
-        The index of week in the year (between 0 and 52).
-        -1 default meaning a regular or repetitive week.
-    
-    This class is not intended to be created by anything other
-    than the OHParser.
-    """
-    
-    def __init__(self, index=-1):
-        self.index = index
-        self.days = []
-        for i in range(7):
-            self.days.append(Day(i))
-        return
-    
-    def opens_this_week(self):
-        """Returns whether there is an opening period
-        for any day in the week.
-        
-        Returns True if so, False else.
-        """
-        return any([day.opens_today() for day in self.days])
-    
-    def __contains__(self, dt):
-        """Returns whether a datetime.datetime is included in the week.
-        
-        Parameters
-        ----------
-        datetime.datetime
-            The moment for which to check.
-        
-        Returns
-        -------
-        bool
-            True if the given datetime is between the first and the last
-            day of the week. False else.
-        """
-        if type(dt) != datetime.datetime:
-            return NotImplemented
-        week_start = datetime.datetime.combine(self.days[0].date, datetime.time.min)
-        week_stop = datetime.datetime.combine(self.days[0].date, datetime.time.max)
-        return week_start <= dt <= week_stop
-    
-    # From https://stackoverflow.com/questions/390250/elegant-ways-to-support-equivalence-equality-in-python-classes
-    def __eq__(self, other):
-        """
-        Overrides the default Equals behavior.
-        """
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return NotImplemented
-
-    def __ne__(self, other):
-        """
-        Defines a non-equality test.
-        """
-        if isinstance(other, self.__class__):
-            return not self.__eq__(other)
-        return NotImplemented
-
-    def __hash__(self):
-        """
-        Overrides the default hash behavior (that returns the id or the object).
-        """
-        return hash(tuple(sorted(self.__dict__.items())))
-    
-    def __repr__(self):
-        return self.__str__()
-    
-    def __str__(self):
-        if self.index == -1:
-            return "<Regular Week>"
-        else:
-            return "<Week #{}>".format(self.index)
+        return "<Year {}>".format(self.year)
 
 class Day:
     """A day, containing periods.
     
     Attributes
     ----------
-    index : int
-        The index of the day in a week (between 0 and 6).
     periods : list[Period]
         The opening periods of the day.
-    date : datetime.date
-        The date of the day.
-    week_index : int
-        The index of the week of the day (between 0 and 52).
-    month_index : int
-        The index of the month of the day (between 0 and 11).
     always_open : bool
         True if it's open all the day (24/7), False else.
-    
-    Parameters
-    ----------
-    index : int
-        The index of the day in a week (between 0 and 6).
-    
-    This class is not intended to be created by anything other
-    than the OHParser.
+    date : datetime.date
+        The date of the day.
     """
     
     def __init__(self, index):
-        self.index = index
         self.periods = []
         self.date = None
-        self.week_index = None
-        self.month_index = None
-        return
     
     def opens_today(self) -> bool:
         """Is it open today?
@@ -589,7 +121,7 @@ class Day:
         bool
             True if the day contains any opening period. False else.
         """
-        return len(self.periods) > 0
+        return bool(len(self.periods))
     
     def is_open(self, moment):
         """Is it open?
@@ -614,13 +146,12 @@ class Day:
         return False
     
     def is_always_open(self):
-        return len(self.periods) == 1 and self.periods[0].beginning.time() == datetime.time.min and self.periods[0].end.time() == datetime.time.max
-    
-    def last_open_hour(self):
-        """Returns the last Moment of the day, or None if there is none."""
-        if self.opens_today():
-            return self.periods[-1].end
-        return None
+        """Returns whether it's open the whole day."""
+        return all((
+            len(self.periods) == 1,
+            self.periods[0].beginning.time() == datetime.time.min,
+            self.periods[0].end.time() == datetime.time.max
+        ))
     
     def _contains_unknown_times(self):
         """Returns whether there are unknown solar hours in the day.
@@ -632,70 +163,22 @@ class Day:
                 return True
         return False
     
-    def _add_period(self, period_to_add, force=False):
-        """Adds a period to the day.
-        
-        Parameters
-        ----------
-        Period
-            The period to add.
-        force : bool, optional
-            Override the other periods if they are overlapping.
-        
-        Raises
-        ------
-        humanized_opening_hours.exceptions.PeriodsConflictError
-            When the added period overlaps an already present one
-            and "force" is False.
-            When "always_open" is True.
-        """
-        if self.is_always_open() and not force:
-            raise PeriodsConflictError("It's already open all the day (24/7).")
-        for i, period in enumerate(self.periods):
-            if period.beginning.kind.requires_parsing() or period.end.kind.requires_parsing():
-                continue
-            if period.beginning in period_to_add or period.end in period_to_add:
-                if force:
-                    del self.periods[i]
-                    break
-                raise PeriodsConflictError(
-                    "The period '{p1}' is in conflict with this one: "
-                    "'{p2}' in the day '{day}'.".format(
-                        p1=period_to_add, p2=period, day=WEEKDAYS[self.index]
-                    )
-                )
-        self.periods.append(period_to_add)
-    
     def _set_always_open(self):
         self.always_open = True
         self.periods = [Period(datetime.time.min, datetime.time.max)]
     
-    # From https://stackoverflow.com/questions/390250/elegant-ways-to-support-equivalence-equality-in-python-classes
     def __eq__(self, other):
-        """
-        Overrides the default Equals behavior.
-        """
         if isinstance(other, self.__class__):
             return self.__dict__ == other.__dict__
         return NotImplemented
     
     def __ne__(self, other):
-        """
-        Defines a non-equality test.
-        """
-        return not self == other
+        if isinstance(other, self.__class__):
+            return not self.__eq__(other)
+        return NotImplemented
     
     def __hash__(self):
-        """
-        Overrides the default hash behavior (that returns the id or the object).
-        """
-        s = 0
-        for a, b in self.__dict__.items():
-            try:
-                s += hash((a, b))
-            except TypeError:
-                s += hash(a) + hash(tuple(b))
-        return s
+        return hash(tuple(sorted(self.__dict__.items())))
     
     def __repr__(self):
         return self.__str__()
@@ -705,32 +188,147 @@ class Day:
             WEEKDAYS[self.index],
             len(self.periods)
         )
+'''
+
+class Day:
+    def __init__(self, date):
+        """A day, containing periods.
+        
+        Attributes
+        ----------
+        periods : list[Period]
+            The opening periods of the day.
+        always_open : bool
+            True if it's open all the day (24/7), False else.
+        date : datetime.date
+            The date of the day.
+        """
+
+        self.date = date
+        self.periods = []
+        self._solar_hours = {
+            "sunrise": None, "sunset": None,
+            "dawn": None, "dusk": None
+        }
+    
+    def opens_today(self) -> bool:
+        """Is it open today?
+        
+        Returns
+        -------
+        bool
+            True if the day contains any opening period. False else.
+        """
+        return bool(len(self.periods))
+    
+    def is_open(self, moment):
+        """Is it open?
+        
+        Parameters
+        ----------
+        moment : datetime.datetime
+            The moment for which to check the opening.
+        
+        Returns
+        -------
+        bool
+            True if it's open, False else.
+            /!\ Returns False if the concerned day contains an unset
+            solar moment.
+        """
+        if moment.tzinfo is None or moment.tzinfo.utcoffset(moment) is None:
+            moment = pytz.UTC.localize(moment)
+        for period in self.periods:
+            if moment in period:
+                return True
+        return False
+    
+    def is_always_open(self):
+        # TODO : Handle closed days.
+        """Returns whether it's open the whole day."""
+        return all((
+            len(self.periods) == 1,
+            self.periods[0].beginning.time() == datetime.time.min,
+            self.periods[0].end.time() == datetime.time.max
+        ))
+    
+    def _set_solar_hours(self, _solar_hours):
+        for period in self.periods:
+            period.beginning._solar_hours = _solar_hours
+            period.end._solar_hours = _solar_hours
+    
+    def _contains_unknown_times(self):
+        """Returns whether there are unknown solar hours in the day.
+        
+        Returns True if so, False else.
+        """
+        for period in self.periods:
+            if not period.beginning.time() or not period.end.time():
+                return True
+        return False
+    
+    def _set_always_open(self):
+        self.always_open = True
+        self.periods = [Period(datetime.time.min, datetime.time.max)]
+    
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+    
+    def __ne__(self, other):
+        if isinstance(other, self.__class__):
+            return not self.__eq__(other)
+        return NotImplemented
+    
+    def __hash__(self):
+        return hash(tuple(sorted(self.__dict__.items())))
+    
+    def __repr__(self):
+        return self.__str__()
+    
+    def __str__(self):
+        return "<Day '{}' ({} periods)>".format(
+            WEEKDAYS[self.date.weekday()],
+            len(self.periods)
+        )
+
+class HolidayDay(Day):  # Not used yet.
+    def __init__(self, weekday):
+        """An holiday day, containing periods.
+        
+        Attributes
+        ----------
+        periods : list[Period]
+            The opening periods of the day.
+        always_open : bool
+            True if it's open all the day (24/7), False else.
+        date : datetime.date
+            The date of the day.
+        """
+        self.weekday = weekday
+        self.periods = []
+    
+    def __str__(self):
+        return "<HolidayDay '{}' ({} periods)>".format(
+            WEEKDAYS[self.weekday],
+            len(self.periods)
+        )
 
 class Period:
     """An opening period, containing a beginning and an end.
     
     Attributes
     ----------
-    Moment
-        A Moment representing the beginning of the period.
-    Moment
-        A Moment representing the end of the period.
-    
-    Parameters
-    ----------
     beginning : Moment
         A Moment representing the beginning of the period.
     end : Moment
         A Moment representing the end of the period.
-    
-    This class is not intended to be created by anything other
-    than the OHParser.
     """
     
     def __init__(self, beginning, end):
         self.beginning = beginning
         self.end = end
-        return
     
     def is_variable(self):
         """Returns whether the period is variable.
@@ -742,27 +340,17 @@ class Period:
         """
         return self.beginning.kind.requires_parsing() or self.end.kind.requires_parsing()
     
-    # From https://stackoverflow.com/questions/390250/elegant-ways-to-support-equivalence-equality-in-python-classes
     def __eq__(self, other):
-        """
-        Overrides the default Equals behavior.
-        """
         if isinstance(other, self.__class__):
             return self.__dict__ == other.__dict__
         return NotImplemented
     
     def __ne__(self, other):
-        """
-        Defines a non-equality test.
-        """
         if isinstance(other, self.__class__):
             return not self.__eq__(other)
         return NotImplemented
     
     def __hash__(self):
-        """
-        Overrides the default hash behavior (that returns the id or the object).
-        """
         return hash(tuple(sorted(self.__dict__.items())))
     
     def __contains__(self, moment):
@@ -770,24 +358,21 @@ class Period:
         
         Parameters
         ----------
-        Moment / datetime.datetime / datetime.time
+        datetime.datetime / datetime.time / Moment
             The moment for which to check. Must be timezone aware.
         """
         if not self.beginning.time() or not self.end.time():
-            return False
-        try:
-            if type(moment) is Moment:
-                return self.beginning.time() <= moment.time() <= self.end.time()
-            elif type(moment) is datetime.time:
-                moment = moment.replace(tzinfo=pytz.UTC)
-                return self.beginning.time() <= moment <= self.end.time()
-            elif type(moment) is datetime.datetime:
-                moment = moment.timetz().replace(tzinfo=pytz.UTC)
-                return self.beginning.time() <= moment <= self.end.time()
-            else:
-                return NotImplemented
-        except TypeError as e:  # Handles "unorderable types" with None values.
-            raise SolarHoursNotSetError("This day contains unknown solar hours.")
+            raise SolarHoursNotSetError("This period contains an unset solar moment.")
+        if type(moment) is Moment:
+            return self.beginning.time() <= moment.time() <= self.end.time()
+        elif type(moment) is datetime.time:
+            moment = moment.replace(tzinfo=pytz.UTC)
+            return self.beginning.time() <= moment <= self.end.time()
+        elif type(moment) is datetime.datetime:
+            moment = moment.timetz().replace(tzinfo=pytz.UTC)
+            return self.beginning.time() <= moment <= self.end.time()
+        else:
+            return NotImplemented
     
     def __repr__(self):
         return "<Period from {} to {}>".format(str(self.beginning), str(self.end))
@@ -825,11 +410,8 @@ class Moment:
         The time, if kind is "normal".
     delta : datetime.timedelta
         A timedelta from a specific moment, if kind is not "normal".
-        For example, is kind is "sunrise", delta must be a timedelta
-        between the moment itself and the sunrise.
-    
-    This class is not intended to be created by anything other
-    than the OHParser.
+        For example, if kind is "sunrise", delta must be a timedelta
+        between the moment itself and the sunrise. It may be 0 seconds.
     """
     
     def __init__(self, kind, time=None, delta=None):
@@ -840,28 +422,36 @@ class Moment:
         if self.kind != MomentKind.NORMAL and delta is None:
             raise ValueError("A delta must be given when kind is solar (e.g. 'sunrise', 'sunset', etc).")
         self._delta = delta
-        return
+        self._solar_hours = {
+            "sunrise": None, "sunset": None,
+            "dawn": None, "dusk": None
+        }
     
     def time(self):
-        """The time of the moment, if available.
+        """The time of the moment.
+        
+        Raises
+        ------
+        humanized_opening_hours.exceptions.SolarHoursNotSetError
+            When the kind of the moment is not "normal" and solar
+            hours have not been set.
         
         Returns
         -------
-        datetime.time / None
-            A datetime.time on UTC timezone, or None if solar hours have
-            not been set.
+        datetime.time
+            A datetime.time on UTC timezone.
         """
-        if self._time:
-            if not self.kind.requires_parsing():
-                return self._time.replace(tzinfo=pytz.UTC)
-            else:
-                return (
-                    datetime.datetime.combine(
-                        datetime.date(2000, 1, 1),
-                        self._time.replace(tzinfo=pytz.UTC)
-                    ) + self._delta
-                ).timetz()
-        return None
+        if not self.kind.requires_parsing():
+            return self._time.replace(tzinfo=pytz.UTC)
+        try:
+            return (
+                datetime.datetime.combine(
+                    datetime.date(2000, 1, 1),
+                    self._solar_hours.get(self.kind.name.lower()).replace(tzinfo=pytz.UTC)
+                ) + self._delta
+            ).timetz()
+        except AttributeError:
+            raise SolarHoursNotSetError("This moment is not of 'normal' kind and solar hours have not been set.")
     
     def _has_offset(self):
         """Returns whether the moment has an offset.
@@ -874,29 +464,6 @@ class Moment:
         if not self._delta:
             return False
         return self._delta.seconds != 0
-    
-    # From https://stackoverflow.com/questions/390250/elegant-ways-to-support-equivalence-equality-in-python-classes
-    def __eq__(self, other):
-        """
-        Overrides the default Equals behavior.
-        """
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return NotImplemented
-    
-    def __ne__(self, other):
-        """
-        Defines a non-equality test.
-        """
-        if isinstance(other, self.__class__):
-            return not self.__eq__(other)
-        return NotImplemented
-    
-    def __hash__(self):
-        """
-        Overrides the default hash behavior (that returns the id or the object).
-        """
-        return hash(tuple(sorted(self.__dict__.items())))
     
     def __repr__(self):
         # TODO : Be more precise.
@@ -919,5 +486,3 @@ class Moment:
                     sign='-' if self._delta.days == -1 else '+',
                     delta=delta
                 )
-
-NextChange = namedtuple("NextChange", ["dt", "moment"])
