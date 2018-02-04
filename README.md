@@ -194,6 +194,14 @@ Attributes:
 datetime.time(18, 30, tzinfo=<UTC>)
 ```
 
+# Performances
+
+HOH uses the module [Lark](https://github.com/erezsh/lark) (with the Earley parser) to parse the fields.
+It has not been optimized yet, and is therefore relatively slow (about 0.05 seconds for a basic field, and 2.8s for a hundred).
+
+However, you can save some time by passing the parser to the constructor, instead to recreate it each time.
+To do this, get the Lark parser with the `humanized_opening_hours.field_parser.get_parser()` function, and pass it to the `OHParser` constructor *via* the `parser` argument.
+
 # Dependencies
 
 This module requires the following modules, which can be installed with `pip3`.

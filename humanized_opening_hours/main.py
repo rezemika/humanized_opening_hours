@@ -21,7 +21,7 @@ from temporal_objects import (
     Moment
 )
 
-from field_parser import parse_field
+import field_parser
 import validators
 
 import sys as _sys
@@ -51,7 +51,7 @@ def days_of_week_from_day(dt):
     return days
 
 class OHParser:  # TODO : Opening hours descriptions.
-    def __init__(self, field):
+    def __init__(self, field, parser=None):
         """
         A parser for the OSM opening_hours fields.
         
@@ -61,6 +61,12 @@ class OHParser:  # TODO : Opening hours descriptions.
         ----------
         field : str
             The opening_hours field.
+        parser : Lark parser, optional
+            If you care about performance, you can get a Lark parser
+            for the opening_hours field with the
+            `humanized_opening_hours.field_parser.get_parser()`
+            function, which you can pass to the constructor of
+            this class, to avoid having to regenerate it for each field.
         
         Attributes
         ----------
@@ -96,7 +102,9 @@ class OHParser:  # TODO : Opening hours descriptions.
             raise NotImplementedError("This field contains a rule for which support is not implemented yet.")
         self.sanitized_field = self.sanitize(self.original_field)
         try:
-            self._tree = parse_field(self.sanitized_field)
+            if not parser:
+                parser = field_parser.get_parser()
+            self._tree = field_parser.parse_field(self.sanitized_field, parser)
         except lark.lexer.UnexpectedInput as e:
             raise ParseError("The field could not be parsed, it may be invalid.")
         self.PH_dates = []
