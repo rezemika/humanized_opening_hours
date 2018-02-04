@@ -37,6 +37,6 @@ date_exceptional_day : MONTH " " DATE -> exceptional_day
 field_part : concerned_period " " day_periods
            | day_periods -> everyday_periods
            | "24/7" -> always_open
-           | date_exceptional_day ("," date_exceptional_day)* " " day_periods -> exceptional_dates
+           | date_exceptional_day ("," date_exceptional_day)* ":"? " " day_periods -> exceptional_dates
 
 field : field_part ("; " field_part)*

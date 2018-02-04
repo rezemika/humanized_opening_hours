@@ -173,17 +173,16 @@ class OHParser:  # TODO : Opening hours descriptions.
                 if "year" in part:
                     break
                 part = part.replace(moment, moment[:2] + ':' + moment[2:])
-            
-            # TODO : Check why it doesn't work anymore.
-            #if re.match("[A-Z][a-z]{2} [0-9]{1,2} .+", part):
-            #    part = re.sub("([A-Z][a-z]{2} [0-9]{1,2}) (.+)", "\1: \2", part)
-            
+            # This is optional, but nicer to read.
+            if re.match("[A-Z][a-z]{2} [0-9]{1,2} .+", part):
+                part = re.sub("([A-Z][a-z]{2} [0-9]{1,2}) (.+)", r"\1: \2", part)
             # Adds zeros when necessary.
             # "7:30" => "07:30"
-            for moment in re.findall("( (?<![0-9-])[0-9]:[0-9]{2})", field):
-                part = part.replace(moment, ' 0' + moment[1:])
+            part = re.sub("([^0-9]|^)([0-9]:[0-9])", r"\g<1>0\g<2>", part)
+            # Adds semicolons when necessary.
+            part = re.sub("([0-9]) ?, ?([A-Za-z][a-z][^a-z])", r"\1; \2", part)
             # Replaces "24" by "24/7".
-            if part == "24":
+            if part in ("24", "24 hours", "24 Hours", "24h"):
                 part = "24/7"
             parts.append(part)
         return '; '.join(parts)
