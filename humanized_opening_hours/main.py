@@ -175,15 +175,16 @@ class OHParser:  # TODO : Opening hours descriptions.
             # "mo" => "Mo"
             for word in special_words:
                 part = re.sub("(?i){}(?!\w+)".format(word), word, part)
-            # Adds colons when necessary.
+            # Adds colons and removes 'h' when necessary.
             # "0630" => "06:30"
             for moment in re.findall("[0-9]{4}", part):
                 if "year" in part:
                     break
                 part = part.replace(moment, moment[:2] + ':' + moment[2:])
-            # This is optional, but nicer to read.
-            if re.match("[A-Z][a-z]{2} [0-9]{1,2} .+", part):
-                part = re.sub("([A-Z][a-z]{2} [0-9]{1,2}) (.+)", r"\1: \2", part)
+            for moment in re.findall("([0-9][0-9]h)[^0-9]", part):
+                part = part.replace(moment, moment[:2] + ':00')
+            for moment in re.findall("[0-9][0-9]h[0-9]", part):
+                part = part.replace(moment, moment[:2] + ':' + moment[-1])
             # Adds zeros when necessary.
             # "7:30" => "07:30"
             part = re.sub("([^0-9]|^)([0-9]:[0-9])", r"\g<1>0\g<2>", part)
