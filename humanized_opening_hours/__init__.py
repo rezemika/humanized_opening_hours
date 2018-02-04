@@ -27,6 +27,7 @@ gettext.install("HOH", "locales/")
 from humanized_opening_hours.main import (
     OHParser,
     HOHRenderer,
+    days_of_week_from_day
 )
 
 from humanized_opening_hours import exceptions
