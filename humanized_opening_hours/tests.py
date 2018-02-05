@@ -1,8 +1,10 @@
 import unittest
-import main, exceptions
 import datetime, pytz
 
+import main, exceptions
+
 # TODO : Add more unit tests for various formats.
+# TODO : Test renderer methods.
 
 class TestGlobal(unittest.TestCase):
     maxDiff = None
@@ -28,6 +30,22 @@ class TestGlobal(unittest.TestCase):
         self.assertEqual(
             oh.next_change(dt),
             datetime.datetime(2016, 2, 1, 13, 0, tzinfo=pytz.timezone("UTC"))
+        )
+    
+    def test_3(self):
+        field = "24/7"
+        oh = main.OHParser(field)
+        # Is it open?
+        dt = datetime.datetime(2016, 2, 1, 15, 30, tzinfo=pytz.timezone("UTC"))
+        self.assertTrue(oh.is_open(dt))
+        dt = datetime.datetime(2016, 2, 1, 19, 30, tzinfo=pytz.timezone("UTC"))
+        self.assertTrue(oh.is_open(dt))
+        dt = datetime.datetime(2016, 2, 1, 12, 10, tzinfo=pytz.timezone("UTC"))
+        self.assertTrue(oh.is_open(dt))
+        # Periods
+        self.assertEqual(
+            oh.get_day(datetime.date.today()).periods[0].beginning.time(),
+            datetime.time.min.replace(tzinfo=pytz.UTC)
         )
 
 class TestPatterns(unittest.TestCase):
@@ -148,6 +166,24 @@ class TestSolarHours(unittest.TestCase):
         field = "Mo,Th 09:00-12:00,13:00-(sunrise+02:00"
         with self.assertRaises(exceptions.ParseError) as context:
             oh = main.OHParser(field)
+
+class TestFunctions(unittest.TestCase):
+    maxDiff = None
+    
+    def test_days_of_week_from_day(self):
+        dt = datetime.date(2018, 2, 5)
+        self.assertEqual(
+            main.days_of_week_from_day(dt),
+            [
+                datetime.date(2018, 2, 5),
+                datetime.date(2018, 2, 6),
+                datetime.date(2018, 2, 7),
+                datetime.date(2018, 2, 8),
+                datetime.date(2018, 2, 9),
+                datetime.date(2018, 2, 10),
+                datetime.date(2018, 2, 11)
+            ]
+        )
 
 if __name__ == '__main__':
     unittest.main()
