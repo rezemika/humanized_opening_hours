@@ -194,6 +194,35 @@ Attributes:
 datetime.time(18, 30, tzinfo=<UTC>)
 ```
 
+# Supported field formats
+
+Here are the field formats officialy supported and tested (examples).
+
+```
+24/7
+Mo 10:00-20:00
+Mo-Fr 10:00-20:00
+Sa,Su 10:00-20:00
+Su,PH off  # or "closed"
+10:00-20:00
+sunrise-sunset  # or "dawn" / "dusk"
+(sunrise+01:00)-20:00
+Jan 10:00-20:00
+Jan-Feb 10:00-20:00
+Jan,Dec 10:00-20:00
+```
+
+The following formats are NOT supported yet and their parsing will raise ParseErrors.
+
+```
+Jan Mo 10:00-20:00
+years
+weeks
+easter 10:00-20:00
+Su[1] 10:00-20:00
+SH Mo 10:00-20:00
+```
+
 # Performances
 
 HOH uses the module [Lark](https://github.com/erezsh/lark) (with the Earley parser) to parse the fields.
