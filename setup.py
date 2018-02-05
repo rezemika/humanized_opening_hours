@@ -1,7 +1,8 @@
-# -*- coding: utf-8 -*-
- 
 from setuptools import setup, find_packages
+import os
 import humanized_opening_hours
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 setup(
     name="osm_humanized_opening_hours",
@@ -10,8 +11,8 @@ setup(
     author="rezemika",
     author_email="reze.mika@gmail.com",
     description="A parser for the opening_hours fields from OpenStreetMap.",
-    long_description=open('README.md').read(),
-    install_requires=["pytz", "isoweek", "copy", "babel"],
+    long_description=open(BASE_DIR + "/README.md", 'r').read(),
+    install_requires=["pytz", "lark-parser", "babel"],
     include_package_data=True,
     url='http://github.com/rezemika/humanized_opening_hours',
     classifiers=[
