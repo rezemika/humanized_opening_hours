@@ -46,9 +46,7 @@ def days_of_week_from_day(dt):
     if isinstance(dt, datetime.datetime):
         dt = dt.date()
     start = dt - datetime.timedelta(days=dt.weekday())
-    for i in range(7):
-        days.append(start + datetime.timedelta(days=i))
-    return days
+    return [start+datetime.timedelta(days=i) for i in range(7)]
 
 class OHParser:  # TODO : Opening hours descriptions.
     def __init__(self, field, parser=None):
