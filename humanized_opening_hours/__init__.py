@@ -12,7 +12,7 @@ To get started, simply do:
 >>> oh = hoh.OHParser("Th-Sa 10:00-19:00")
 """
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 __appname__ = "osm_humanized_opening_hours"
 __author__ = "rezemika <reze.mika@gmail.com>"
 __licence__ = "AGPLv3"
