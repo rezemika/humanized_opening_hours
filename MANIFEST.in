@@ -1,4 +1,5 @@
 recursive-include humanized_opening_hours *.po
 recursive-include humanized_opening_hours *.mo
+include humanized_opening_hours/*.ebnf
 include *.txt
 include *.md

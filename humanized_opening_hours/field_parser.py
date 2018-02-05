@@ -158,7 +158,7 @@ def get_parser():
     """
         Returns a Lark parser able to parse a valid field.
     """
-    base_dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
     with open(os.path.join(base_dir, "field.ebnf"), 'r') as f:
         grammar = f.read()
     return Lark(grammar, start="field", ambiguity="explicit")
