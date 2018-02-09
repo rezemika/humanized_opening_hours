@@ -618,6 +618,35 @@ class HOHRenderer:
         name = self.get_locale_day(day.weekday())
         return RenderableDay(name=name, description=rendered_periods)
     
+    def plaintext_week_description(self, obj=None):
+        """Returns a plaintext descriptions of the schedules of a week.
+        
+        Parameters
+        ----------
+        datetime.date / list[datetime.date] : optional
+            A day in the week to render, or a list of the week days
+            to render. May be None to mean "the current week".
+        
+        Returns
+        -------
+        str
+            The plaintext schedules of the week. Contains 7 lines,
+            or as many lines as in the given list.
+        """
+        if not obj:
+            obj = datetime.date.today()
+        if type(obj) is not list:
+            obj = days_of_week_from_day(obj)
+        output = ''
+        for day in obj:
+            d = self.periods_of_day(day)
+            description = d.description if d.description else _("closed")
+            output += _("{name}: {periods}").format(
+                name=d.name,
+                periods=description
+            ) + '\n'
+        return output.rstrip()
+    
     def __repr__(self):
         return str(self)
     
