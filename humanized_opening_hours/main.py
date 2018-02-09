@@ -604,7 +604,6 @@ class HOHRenderer:
             A namedtuple containing two strings:
             - "name": the name of the day (e.g. "Monday");
             - "description": the description of the periods of the day.
-        
         """
         d = self.ohparser.get_day(day)
         rendered_periods = []
@@ -616,7 +615,7 @@ class HOHRenderer:
                 )
             )
         rendered_periods = self._join_list(rendered_periods)
-        name = self.get_locale_day(0)
+        name = self.get_locale_day(day.weekday())
         return RenderableDay(name=name, description=rendered_periods)
     
     def __repr__(self):
