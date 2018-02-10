@@ -6,12 +6,12 @@ Humanized Opening Hours - A parser for the opening_hours fields from OSM
 Any pull request (following PEP-8) is more than welcome!
 
 ```python
->>> import humanized_opening_hours
+>>> import humanized_opening_hours as hoh
 >>> field = "Mo-Fr 06:00-21:00; Sa,Su 07:00-21:00"
->>> hoh = humanized_opening_hours.HumanizedOpeningHours(field)
->>> hoh.is_open()
+>>> oh = hoh.HumanizedOpeningHours(field)
+>>> oh.is_open()
 True
->>> hoh.next_change()
+>>> oh.next_change()
 datetime.datetime(2017, 12, 24, 21, 0)
 ```
 
@@ -133,6 +133,26 @@ Returns a humanized delay before the next change in opening status.
 "in 3 hours"
 >>> hohr.humanized_time_before_next_change(word=False)
 "3 hours"
+```
+
+### <a name="plaintext_week_description"></a>plaintext_week_description
+
+Returns a plaintext description of the schedules of a week.
+This method takes either a `datetime.date` object or a list of `datetime.date` objects.
+In the first case, it is converted into a list of the days in the same week.
+It can also take no parameter, so the described week will be the current one.
+
+```python
+>>> hohr.plaintext_week_description()
+"""
+Monday: 08:00 - 19:00
+Tuesday: 08:00 - 19:00
+Wednesday: 08:00 - 19:00
+Thursday: 08:00 - 19:00
+Friday: 08:00 - 19:00
+Saturday: 08:00 - 12:00
+Sunday: closed
+"""
 ```
 
 ## Objects
