@@ -335,6 +335,30 @@ class OHParser:  # TODO : Opening hours descriptions.
         """Returns a HOHRenderer object. See its docstring for details."""
         return HOHRenderer(self, *args, **kwargs)
     
+    def __getitem__(self, val):
+        """Allows to get Day object(s) with slicing. Takes datetime.date objects.
+        
+        >>> oh[datetime.date.today()]
+        '<Day 'Mo' (2 periods)>'
+        
+        >>> oh[datetime.date(2018, 1, 1):datetime.date(2018, 1, 3)]
+        ['<Day 'Mo' (2 periods)>', '<Day 'Tu' (2 periods)>', '<Day 'We' (2 periods)>']
+        
+        Also supports step with `oh[start:stop:step]` (as int).
+        """
+        if type(val) is datetime.date:
+            return self.get_day(val)
+        # Type checking
+        if val.start is not None or val.stop is not None:
+            if type(val.start) is not datetime.date or type(val.stop) is not datetime.date:
+                raise NotImplementedError
+        if val.step is not None and type(val.step) is not int:
+            raise NotImplementedError
+        
+        step = val.step if val.step is not None else 1
+        ordinals = range(val.start.toordinal(), val.stop.toordinal()+1, step)
+        return [self.get_day(datetime.date.fromordinal(o)) for o in ordinals]
+    
     def __repr__(self):
         return str(self)
     

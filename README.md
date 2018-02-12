@@ -177,6 +177,17 @@ Attributes:
 True
 ```
 
+You can get a Day in two ways. Firstly with the `get_day()` method of OHParser, which takes a `datetime.date` object.
+You can also use slicing with `datetime.date` object(s). It also supports stepping (with an integer).
+
+```python
+>>> oh[datetime.date.today()]
+'<Day 'Mo' (2 periods)>'
+
+>>> oh[datetime.date(2018, 1, 1):datetime.date(2018, 1, 3)]
+['<Day 'Mo' (2 periods)>', '<Day 'Tu' (2 periods)>', '<Day 'We' (2 periods)>']
+```
+
 ### <a name="period"></a>Period
 
 Attributes:
