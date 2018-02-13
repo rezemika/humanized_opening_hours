@@ -42,7 +42,6 @@ def days_of_week_from_day(dt):
         Returns a list of seven datetime.date days representing a week
         from a day in this week.
     """
-    days = []
     if isinstance(dt, datetime.datetime):
         dt = dt.date()
     start = dt - datetime.timedelta(days=dt.weekday())
