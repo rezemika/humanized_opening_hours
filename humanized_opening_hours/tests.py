@@ -184,6 +184,20 @@ class TestFunctions(unittest.TestCase):
                 datetime.date(2018, 2, 11)
             ]
         )
+    
+    def test_days_from_week_number(self):
+        self.assertEqual(
+            main.days_from_week_number(2018, 1),
+            [
+                datetime.date(2018, 1, 1),
+                datetime.date(2018, 1, 2),
+                datetime.date(2018, 1, 3),
+                datetime.date(2018, 1, 4),
+                datetime.date(2018, 1, 5),
+                datetime.date(2018, 1, 6),
+                datetime.date(2018, 1, 7)
+            ]
+        )
 
 if __name__ == '__main__':
     unittest.main()

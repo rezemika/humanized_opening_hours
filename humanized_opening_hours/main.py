@@ -47,7 +47,18 @@ def days_of_week_from_day(dt):
     start = dt - datetime.timedelta(days=dt.weekday())
     return [start+datetime.timedelta(days=i) for i in range(7)]
 
-class OHParser:  # TODO : Opening hours descriptions.
+def days_from_week_number(year, week):
+    """
+        Returns a list of seven datetime.date days representing a week
+        from a year and a week number.
+    """
+    # Code inspired of https://code.activestate.com/recipes/521915-start-date-and-end-date-of-given-week/#c5
+    dt = datetime.date(year, 1, 1)
+    dt = dt - datetime.timedelta(dt.weekday())
+    delta = datetime.timedelta(days=(week-1)*7)
+    return days_of_week_from_day(dt + delta)
+
+class OHParser:
     def __init__(self, field, parser=None):
         """
         A parser for the OSM opening_hours fields.
