@@ -5,7 +5,7 @@ tests:
 	python3 humanized_opening_hours/tests.py
 
 flake8:
-	python3 -m flake8 humanized_opening_hours
+	python3 -m flake8 humanized_opening_hours --ignore=W293,E226 --builtins=_ --max-line-length=80
 
 help:
 	@echo "Available commands:"
