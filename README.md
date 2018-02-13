@@ -7,12 +7,22 @@ Any pull request (following PEP-8) is more than welcome!
 
 ```python
 >>> import humanized_opening_hours as hoh
->>> field = "Mo-Fr 06:00-21:00; Sa,Su 07:00-21:00"
+>>> field = "Mo-Fr 06:00-21:00; Sa,Su 08:00-12:00"
 >>> oh = hoh.HumanizedOpeningHours(field)
 >>> oh.is_open()
 True
 >>> oh.next_change()
-datetime.datetime(2017, 12, 24, 21, 0)
+datetime.datetime(2017, 12, 24, 12, 0)
+>>> print(oh.render().plaintext_week_description())
+"""
+Monday: 06:00 - 21:00
+Tuesday: 06:00 - 21:00
+Wednesday: 06:00 - 21:00
+Thursday: 06:00 - 21:00
+Friday: 06:00 - 21:00
+Saturday: 08:00 - 12:00
+Sunday: 08:00 - 12:00
+"""
 ```
 
 **This module is still in development and bugs may occur. If you discover one, please create an issue.**
