@@ -1,8 +1,10 @@
 # All the exceptions of HOH.
 
+
 class HOHError(Exception):
     """Base class for HOH errors."""
     pass
+
 
 class DoesNotExistError(HOHError):
     """
@@ -10,14 +12,17 @@ class DoesNotExistError(HOHError):
     """
     pass
 
+
 class ParseError(HOHError):
     """
     Raised when field parsing fails.
     """
     pass
 
+
 class SolarHoursNotSetError(HOHError):
     """
-    Raised when trying to get a time from a solar hour without having defined them.
+    Raised when trying to get a time from a solar hour
+    without having defined them.
     """
     pass

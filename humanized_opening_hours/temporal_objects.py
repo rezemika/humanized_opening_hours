@@ -2,7 +2,6 @@ from enum import Enum
 import datetime
 import pytz
 from exceptions import SolarHoursNotSetError
-from collections import OrderedDict
 
 WEEKDAYS = (
     "Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"
@@ -14,6 +13,7 @@ MONTHS = (
 
 # Equality test codes come from
 # https://stackoverflow.com/questions/390250/elegant-ways-to-support-equivalence-equality-in-python-classes
+
 
 class Day:
     def __init__(self, date):
@@ -118,6 +118,7 @@ class Day:
             len(self.periods)
         )
 
+
 class HolidayDay(Day):  # Not used yet.
     def __init__(self, weekday):
         """An holiday day, containing periods.
@@ -139,6 +140,7 @@ class HolidayDay(Day):  # Not used yet.
             WEEKDAYS[self.weekday],
             len(self.periods)
         )
+
 
 class Period:
     """An opening period, containing a beginning and an end.
@@ -163,7 +165,10 @@ class Period:
         bool
             True if the period contains a non-normal moment, False else.
         """
-        return self.beginning.kind.requires_parsing() or self.end.kind.requires_parsing()
+        return (
+            self.beginning.kind.requires_parsing() or
+            self.end.kind.requires_parsing()
+        )
     
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -187,7 +192,9 @@ class Period:
             The moment for which to check. Must be timezone aware.
         """
         if not self.beginning.time() or not self.end.time():
-            raise SolarHoursNotSetError("This period contains an unset solar moment.")
+            raise SolarHoursNotSetError(
+                "This period contains an unset solar moment."
+            )
         if type(moment) is Moment:
             return self.beginning.time() <= moment.time() <= self.end.time()
         elif type(moment) is datetime.time:
@@ -200,10 +207,13 @@ class Period:
             return NotImplemented
     
     def __repr__(self):
-        return "<Period from {} to {}>".format(str(self.beginning), str(self.end))
+        return "<Period from {} to {}>".format(
+            str(self.beginning), str(self.end)
+        )
     
     def __str__(self):
         return "{} - {}".format(str(self.beginning), str(self.end))
+
 
 class MomentKind(Enum):
     """The kinds of moments, as defined in the OSM's doc."""
@@ -217,6 +227,7 @@ class MomentKind(Enum):
     def requires_parsing(self) -> bool:
         """Returns whether a MomentKind requires a solar hours parsing."""
         return bool(self.value)
+
 
 class Moment:
     """A moment in the time, which defines the beginning or the end
@@ -245,7 +256,10 @@ class Moment:
             raise ValueError("A time must be given when kind is 'normal'.")
         self._time = time
         if self.kind != MomentKind.NORMAL and delta is None:
-            raise ValueError("A delta must be given when kind is solar (e.g. 'sunrise', 'sunset', etc).")
+            raise ValueError(
+                "A delta must be given when kind is solar "
+                "(e.g. 'sunrise', 'sunset', etc)."
+            )
         self._delta = delta
         self._solar_hours = {
             "sunrise": None, "sunset": None,
@@ -272,11 +286,16 @@ class Moment:
             return (
                 datetime.datetime.combine(
                     datetime.date(2000, 1, 1),
-                    self._solar_hours.get(self.kind.name.lower()).replace(tzinfo=pytz.UTC)
+                    self._solar_hours.get(
+                        self.kind.name.lower()
+                    ).replace(tzinfo=pytz.UTC)
                 ) + self._delta
             ).timetz()
         except AttributeError:
-            raise SolarHoursNotSetError("This moment is not of 'normal' kind and solar hours have not been set.")
+            raise SolarHoursNotSetError(
+                "This moment is not of 'normal' kind and "
+                "solar hours have not been set."
+            )
     
     def _has_offset(self):
         """Returns whether the moment has an offset.

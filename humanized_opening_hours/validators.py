@@ -1,22 +1,20 @@
 """Provides validators that raise exceptions in case of invalid field."""
 
-from temporal_objects import WEEKDAYS, MONTHS
+import re
 
+from temporal_objects import WEEKDAYS, MONTHS
 from exceptions import (
     ParseError,
     DoesNotExistError,
 )
-
-import re
-
-# TODO : Indexing with 'Mo[-1]'.
 
 ALL_DAYS = WEEKDAYS + ("SH", "PH")
 
 RE_DAYS = '(?:' + '|'.join(ALL_DAYS) + ')'
 RE_MONTHS = '(?:' + '|'.join(MONTHS) + ')'
 
-META = ["open", "off", "closed", "24/7"]
+META = ("open", "off", "closed", "24/7")
+
 
 def validate_field(field):
     splited_field = [part.strip() for part in field.split(';')]
@@ -29,9 +27,12 @@ def validate_field(field):
         validate_part(part)
     return
 
+
 def validate_part(part):
     if re.match("{months} [0-9]+: .+".format(months=RE_MONTHS), part):
-        rest = re.findall("{months} [0-9]+: (.+)".format(months=RE_MONTHS), part)[0]
+        rest = re.findall(
+            "{months} [0-9]+: (.+)".format(months=RE_MONTHS), part
+        )[0]
         if rest in ["open", "closed", "off", "closed"]:
             return
         validate_rest(rest)
@@ -57,23 +58,33 @@ def validate_part(part):
     validate_rest(rest)
     return
 
+
 def validate_fallback(fallback):
     if fallback.startswith('"') and fallback.endswith('"'):
         return
     validate_part(fallback)
 
+
 def validate_concerned_period(field, rest):
     if re.match("{days}(-{days})?(,{days})*".format(days=RE_DAYS), field):
         return
-    if re.match("{months}(-{months})?(,{months})*".format(months=RE_MONTHS), field):
+    if re.match(
+        "{months}(-{months})?(,{months})*".format(months=RE_MONTHS), field
+    ):
         return
     if field.startswith("week"):
         # TODO : Improve.
         if re.match("[1-9][0-9]?(/[1-9][0-9]?)?( .+)?", rest):
             return
-        raise ParseError("Error with the part {part!r}: a week indexing must give a valid index.".format(part=rest))
+        raise ParseError(
+            "Error with the part {part!r}: a week indexing must "
+            "give a valid index.".format(part=rest)
+        )
         return
-    raise DoesNotExistError("The part {part!r} does not exist.".format(part=field))
+    raise DoesNotExistError(
+        "The part {part!r} does not exist.".format(part=field)
+    )
+
 
 def validate_rest(field):
     for word in ["open", "closed", "off", "closed"]:
@@ -88,16 +99,18 @@ def validate_rest(field):
             validate_moment(moment)
     return
 
+
 def validate_moment(moment):
-    if re.match("([0-9]{2}|sunrise|sunset|dawn|dusk):([0-9]{2}|sunrise|sunset|dawn|dusk)", moment):
+    if re.match("([0-9]{2}|sunrise|sunset|dawn|dusk):([0-9]{2}|sunrise|sunset|dawn|dusk)", moment):  # noqa
         return
     if moment in ["(sunrise)", "(sunset)", "(dawn)", "(dusk)"]:
         raise ParseError("The part {part!r} is invalid.".format(part=moment))
     if moment in ["sunrise", "sunset", "dawn", "dusk"]:
         return
-    if re.match("\((sunrise|sunset|dawn|dusk)(\+|-)([0-9][0-9]):([0-9][0-9])\)", moment):
+    if re.match("\((sunrise|sunset|dawn|dusk)(\+|-)([0-9][0-9]):([0-9][0-9])\)", moment):  # noqa
         return
     raise ParseError("The part {part!r} is invalid.".format(part=moment))
+
 
 def rchop(string, end):
     # See https://stackoverflow.com/a/3663505

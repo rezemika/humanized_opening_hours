@@ -3,6 +3,9 @@ import datetime, pytz
 
 import main, exceptions
 
+# flake8: noqa: F841
+# "oh" variables unused in TestSolarHours.
+
 # TODO : Add more unit tests for various formats.
 # TODO : Test renderer methods.
 

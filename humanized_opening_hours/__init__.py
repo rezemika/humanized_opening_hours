@@ -11,6 +11,7 @@ To get started, simply do:
 >>> import humanized_opening_hours as hoh
 >>> oh = hoh.OHParser("Th-Sa 10:00-19:00")
 """
+# flake8: noqa
 
 __version__ = "0.4.1"
 __appname__ = "osm_humanized_opening_hours"

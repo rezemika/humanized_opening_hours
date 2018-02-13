@@ -10,6 +10,7 @@ from temporal_objects import (
     Moment
 )
 
+
 class YearTransformer(Transformer):
     # Moments
     def digital_moment(self, arg):
@@ -106,6 +107,7 @@ class YearTransformer(Transformer):
     def field_part(self, args):
         return tuple(args)
 
+
 # TODO : Build SH and PR weeks.
 class ParsedField:
     def __init__(self, tree):
@@ -120,7 +122,8 @@ class ParsedField:
         self.months = []
         for month in MONTHS:
             self.months.append({
-                "regular_week": [False, [list() for _ in range(7)]],  # Not supported by the parser yet.
+                # Not supported by the parser yet.
+                "regular_week": [False, [list() for _ in range(7)]],
                 "every_days": [False, []]
             })
         for part in self.tree.children:
@@ -149,19 +152,23 @@ class ParsedField:
             if date[0] == (requested_month+1, requested_monthday):
                 return date[1]
         if self.months[requested_month]["regular_week"][0]:
-            return self.months[requested_month]["regular_week"][1][requested_weekday]
+            return self.months[requested_month]["regular_week"][1][requested_weekday]  # noqa
         if self.months[requested_month]["every_days"][0]:
             return self.months[requested_month]["every_days"][1]
         return self.regular_week[requested_weekday]
+
 
 def get_parser():
     """
         Returns a Lark parser able to parse a valid field.
     """
-    base_dir = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+    base_dir = os.path.realpath(os.path.join(
+        os.getcwd(), os.path.dirname(__file__)
+    ))
     with open(os.path.join(base_dir, "field.ebnf"), 'r') as f:
         grammar = f.read()
     return Lark(grammar, start="field", ambiguity="explicit")
+
 
 def parse_field(field, parser):
     tree = YearTransformer().transform(parser.parse(field))

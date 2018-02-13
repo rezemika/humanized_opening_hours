@@ -5,27 +5,20 @@ import babel.dates
 import gettext
 import lark
 from collections import namedtuple
+import os as _os
 
 from exceptions import (
-    HOHError,
     ParseError,
     SolarHoursNotSetError
 )
-
 from temporal_objects import (
     WEEKDAYS,
     MONTHS,
     MomentKind,
-    Day,
-    Period,
-    Moment
+    Day
 )
-
 import field_parser
-import validators
 
-import sys as _sys
-import os as _os
 _os.chdir(_os.path.dirname(_os.path.realpath(__file__)))
 
 # TODO formats
@@ -37,6 +30,7 @@ weeks
 Mo[-1] 10:00-20:00
 """
 
+
 def days_of_week_from_day(dt):
     """
         Returns a list of seven datetime.date days representing a week
@@ -47,16 +41,18 @@ def days_of_week_from_day(dt):
     start = dt - datetime.timedelta(days=dt.weekday())
     return [start+datetime.timedelta(days=i) for i in range(7)]
 
+
 def days_from_week_number(year, week):
     """
         Returns a list of seven datetime.date days representing a week
         from a year and a week number.
     """
-    # Code inspired of https://code.activestate.com/recipes/521915-start-date-and-end-date-of-given-week/#c5
+    # Code inspired of https://code.activestate.com/recipes/521915-start-date-and-end-date-of-given-week/#c5  # noqa
     dt = datetime.date(year, 1, 1)
     dt = dt - datetime.timedelta(dt.weekday())
     delta = datetime.timedelta(days=(week-1)*7)
     return days_of_week_from_day(dt + delta)
+
 
 class OHParser:
     def __init__(self, field, parser=None):
@@ -98,7 +94,7 @@ class OHParser:
         
         Raises
         ------
-        NotImplementedError 
+        NotImplementedError
             When the field contains a rule for which support is
             not available yet.
         humanized_opening_hours.exceptions.ParseError
@@ -107,14 +103,19 @@ class OHParser:
         """
         self.original_field = field
         if not self.is_parsable(field):
-            raise NotImplementedError("This field contains a rule for which support is not implemented yet.")
+            raise NotImplementedError(
+                "This field contains a rule for which support "
+                "is not implemented yet."
+            )
         self.sanitized_field = self.sanitize(self.original_field)
         try:
             if not parser:
                 parser = field_parser.get_parser()
             self._tree = field_parser.parse_field(self.sanitized_field, parser)
         except lark.lexer.UnexpectedInput as e:
-            raise ParseError("The field could not be parsed, it may be invalid.")
+            raise ParseError(
+                "The field could not be parsed, it may be invalid."
+            )
         self.PH_dates = []
         self.SH_dates = []
         self.needs_solar_hours_setting = {
@@ -204,7 +205,7 @@ class OHParser:
             parts.append(part)
         return '; '.join(parts)
     
-    def _get_solar_hour(key):
+    def _get_solar_hour(self, key):
         """Returns a solar hour from a key, or raises an exception.
         
         Parameters
@@ -227,7 +228,9 @@ class OHParser:
         hour = self.solar_hours.get(key)
         if hour:
             return hour
-        raise SolarHoursNotSetError("The {key!r} solar hour is not set.".format(key=key))
+        raise SolarHoursNotSetError(
+            "The {key!r} solar hour is not set.".format(key=key)
+        )
     
     def get_day(self, dt):
         """Returns a Day object from a datetime.date(time)? object.
@@ -310,12 +313,22 @@ class OHParser:
             if day.is_open(moment):
                 for period in day.periods:
                     if moment in period:
-                        return datetime.datetime.combine(day.date, period.end.time()) + datetime.timedelta(days=days_offset)
+                        return (
+                            datetime.datetime.combine(
+                                day.date, period.end.time()
+                            ) + datetime.timedelta(days=days_offset)
+                        )
                 # Should not come here.
             for period in day.periods:
                 # There is no need to check for end of periods as it's closed.
                 if moment.timetz() <= period.beginning.time():
-                    return datetime.datetime.combine(day.date, period.beginning.time()) + datetime.timedelta(days=days_offset)
+                    return (
+                        datetime.datetime.combine(
+                            day.date,
+                            period.beginning.time()
+                        ) +
+                        datetime.timedelta(days=days_offset)
+                    )
             # Should not come here.
         
         if right_day:
@@ -323,11 +336,17 @@ class OHParser:
         days_offset = 0
         while not right_day:
             days_offset += 1
-            current_day = self.get_day(initial_day.date+datetime.timedelta(days=days_offset))
+            current_day = self.get_day(
+                initial_day.date+datetime.timedelta(days=days_offset)
+            )
             if current_day.opens_today():
-                if current_day.periods[-1].end.time() >= datetime.time(0, 0, tzinfo=pytz.UTC):
+                if current_day.periods[-1].end.time() >= datetime.time(0, 0, tzinfo=pytz.UTC):  # noqa
                     right_day = True
-        return get_moment_in_right_day(current_day, datetime.time(0, 0, tzinfo=pytz.UTC), days_offset=days_offset)
+        return get_moment_in_right_day(
+            current_day,
+            datetime.time(0, 0, tzinfo=pytz.UTC),
+            days_offset=days_offset
+        )
     
     def holidays_status(self):
         """Returns the opening statuses of the holidays.
@@ -352,7 +371,11 @@ class OHParser:
         '<Day 'Mo' (2 periods)>'
         
         >>> oh[datetime.date(2018, 1, 1):datetime.date(2018, 1, 3)]
-        ['<Day 'Mo' (2 periods)>', '<Day 'Tu' (2 periods)>', '<Day 'We' (2 periods)>']
+        [
+            '<Day 'Mo' (2 periods)>',
+            '<Day 'Tu' (2 periods)>',
+            '<Day 'We' (2 periods)>'
+        ]
         
         Also supports step with `oh[start:stop:step]` (as int).
         """
@@ -360,7 +383,10 @@ class OHParser:
             return self.get_day(val)
         # Type checking
         if val.start is not None or val.stop is not None:
-            if type(val.start) is not datetime.date or type(val.stop) is not datetime.date:
+            if (
+                type(val.start) is not datetime.date or
+                type(val.stop) is not datetime.date
+            ):
                 raise NotImplementedError
         if val.step is not None and type(val.step) is not int:
             raise NotImplementedError
@@ -375,10 +401,12 @@ class OHParser:
     def __str__(self):
         return "<OHParser field: '{}'>".format(self.sanitized_field)
 
+
 RenderableDay = namedtuple("RenderableDay", ["name", "description"])
 RenderableDay.__doc__ = """A namedtuple containing two strings:
 - "name": the name of the day (e.g. "Monday");
 - "description": the description of the periods of the day."""
+
 
 class HOHRenderer:
     """
