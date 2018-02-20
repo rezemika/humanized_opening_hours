@@ -170,7 +170,10 @@ def get_parser():
     return Lark(grammar, start="field", ambiguity="explicit")
 
 
-def parse_field(field, parser):
-    tree = YearTransformer().transform(parser.parse(field))
+PARSER = get_parser()
+
+
+def parse_field(field):
+    tree = YearTransformer().transform(PARSER.parse(field))
     parsed_field = ParsedField(tree)
     return parsed_field

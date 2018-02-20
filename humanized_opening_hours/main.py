@@ -55,7 +55,7 @@ def days_from_week_number(year, week):
 
 
 class OHParser:
-    def __init__(self, field, parser=None):
+    def __init__(self, field):
         """
         A parser for the OSM opening_hours fields.
         
@@ -65,12 +65,6 @@ class OHParser:
         ----------
         field : str
             The opening_hours field.
-        parser : Lark parser, optional
-            If you care about performance, you can get a Lark parser
-            for the opening_hours field with the
-            `humanized_opening_hours.field_parser.get_parser()`
-            function, which you can pass to the constructor of
-            this class, to avoid having to regenerate it for each field.
         
         Attributes
         ----------
@@ -109,9 +103,7 @@ class OHParser:
             )
         self.sanitized_field = self.sanitize(self.original_field)
         try:
-            if not parser:
-                parser = field_parser.get_parser()
-            self._tree = field_parser.parse_field(self.sanitized_field, parser)
+            self._tree = field_parser.parse_field(self.sanitized_field)
         except lark.lexer.UnexpectedInput as e:
             raise ParseError(
                 "The field could not be parsed, it may be invalid."

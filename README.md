@@ -176,13 +176,11 @@ Apart the main HumanizedOpeningHours class, HOH provides four other objects:
 ### <a name="day"></a>Day
 
 Attributes:
-- `index` (int or str) : an integer from 0 to 6 (index in a week) or "PH" or "SH" for public or school holidays;
 - `periods` (list) : a list of `Period` objects included in this day;
-- `date` (datetime.date) : the date of the day;
-- `month_index` (int) : the index of the month of the day (between 0 and 11).
+- `date` (datetime.date) : the date of the day.
 
 ```python
-# Know whether there is / are opening period(s) in this day.
+# To know whether there is / are opening period(s) in this day.
 >>> day.opens_today()
 True
 ```
@@ -268,9 +266,6 @@ SH Mo 10:00-20:00
 
 HOH uses the module [Lark](https://github.com/erezsh/lark) (with the Earley parser) to parse the fields.
 It has not been optimized yet, and is therefore relatively slow (about 0.05 seconds for a basic field, and 2.8s for a hundred).
-
-However, you can save some time by passing the parser to the constructor, instead to recreate it each time.
-To do this, get the Lark parser with the `humanized_opening_hours.field_parser.get_parser()` function, and pass it to the `OHParser` constructor *via* the `parser` argument.
 
 # Dependencies
 
