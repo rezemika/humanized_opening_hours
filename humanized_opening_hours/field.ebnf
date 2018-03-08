@@ -18,18 +18,17 @@ raw_consecutive_day_range : DAY "-" DAY
 
 raw_consecutive_month_range : MONTH "-" MONTH
 
-HOLIDAYS : PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS
-
 concerned_period : DAY ("," DAY)* ("," (PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS))* " " -> unconsecutive_days
-                 | MONTH ("," MONTH)* ("," HOLIDAYS)* " " -> unconsecutive_months
-                 | HOLIDAYS ["," HOLIDAYS] " " -> holiday
-                 | raw_consecutive_day_range ("," DAY)* ("," HOLIDAYS)* " " -> consecutive_day_range
-                 | raw_consecutive_month_range ("," MONTH)* ("," HOLIDAYS)* " " -> consecutive_month_range
+                 | MONTH ("," MONTH)* ("," (PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS))* " " -> unconsecutive_months
+                 | (PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS) ["," (PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS)] " " -> holiday
+                 | raw_consecutive_day_range ("," DAY)* ("," (PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS))* " " -> consecutive_day_range
+                 | raw_consecutive_month_range ("," MONTH)* ("," (PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS))* " " -> consecutive_month_range
 
 day_periods : period ("," period)*
             | "off" -> period_closed
             | "closed" -> period_closed
 
+// This regex catches one or two digit numbers not followed by a colon ":", to avoid confusion with "DIGITAL_MOMENT".
 date_exceptional_day : MONTH " " /([0-3][0-9])(?!:)|((?<![0-9])[0-9])(?!:)+/ -> exceptional_day
 
 field_part : concerned_period day_periods
