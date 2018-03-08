@@ -167,7 +167,7 @@ def get_parser():
     ))
     with open(os.path.join(base_dir, "field.ebnf"), 'r') as f:
         grammar = f.read()
-    return Lark(grammar, start="field", ambiguity="explicit")
+    return Lark(grammar, start="field", parser="lalr")
 
 
 PARSER = get_parser()
