@@ -1,7 +1,10 @@
 import unittest
 import datetime, pytz
 
-import main, exceptions
+from lark import Tree
+from lark.lexer import Token
+
+import main, exceptions, field_parser
 
 # flake8: noqa: F841
 # "oh" variables unused in TestSolarHours.
@@ -92,6 +95,14 @@ class TestPatterns(unittest.TestCase):
         field = "Jan 1 13:00-19:00; Dec 25 off"
         oh = main.OHParser(field)
         self.assertEqual(len(oh._tree.exceptional_dates), 2)
+    
+    def test_invalid_days(self):
+        field = "Mo,Wx 09:00-12:00,13:00-19:00"
+        with self.assertRaises(exceptions.ParseError) as context:
+            oh = main.OHParser(field)
+        field = "Pl-Mo 09:00-12:00,13:00-19:00"
+        with self.assertRaises(exceptions.ParseError) as context:
+            oh = main.OHParser(field)
 
 class TestSanitize(unittest.TestCase):
     maxDiff = None
@@ -116,14 +127,6 @@ class TestSanitize(unittest.TestCase):
         sanitized_field = "Mo,Th 09:00-12:00,13:00-19:00"
         self.assertEqual(main.OHParser.sanitize(field), sanitized_field)
     
-    def test_invalid_days(self):
-        field = "Mo,Wx 09:00-12:00,13:00-19:00"
-        with self.assertRaises(exceptions.ParseError) as context:
-            oh = main.OHParser(field)
-        field = "Pl-Mo 09:00-12:00,13:00-19:00"
-        with self.assertRaises(exceptions.ParseError) as context:
-            oh = main.OHParser(field)
-        
     def test_holidays(self):
         field = "Mo-Sa,SH 09:00-19:00"
         self.assertEqual(main.OHParser.sanitize(field), field)
@@ -201,6 +204,112 @@ class TestFunctions(unittest.TestCase):
                 datetime.date(2018, 1, 7)
             ]
         )
+
+class TestParsing(unittest.TestCase):
+    maxDiff = None
+    
+    def test_1(self):
+        field = "Mo-Sa 09:00-19:00"
+        expected_tree = Tree('field', [
+            Tree('field_part', [
+                Tree('consecutive_day_range', [
+                    Tree('raw_consecutive_day_range', [
+                        Token('DAY', 'Mo'), Token('DAY', 'Sa')
+                    ])
+                ]),
+                Tree('day_periods', [
+                    Tree('period', [
+                        Tree('digital_moment', [
+                            Token('DIGITAL_MOMENT', '09:00')
+                        ]),
+                        Tree('digital_moment', [
+                            Token('DIGITAL_MOMENT', '19:00')
+                        ])
+                    ])
+                ])
+            ])
+        ])
+        
+        tree = field_parser.PARSER.parse(field)
+        self.assertEqual(tree, expected_tree)
+    
+    def test_2(self):
+        field = "24/7"
+        expected_tree = Tree('field', [Tree('always_open', [])])
+        
+        tree = field_parser.PARSER.parse(field)
+        self.assertEqual(tree, expected_tree)
+    
+    def test_3(self):
+        field = "sunrise-sunset"
+        expected_tree = Tree('field', [
+            Tree('everyday_periods', [
+                Tree('day_periods', [
+                    Tree('period', [
+                        Tree('solar_moment', [
+                            Token('SOLAR', 'sunrise')
+                        ]),
+                        Tree('solar_moment', [
+                            Token('SOLAR', 'sunset')
+                        ])
+                    ])
+                ])
+            ])
+        ])
+        
+        tree = field_parser.PARSER.parse(field)
+        self.assertEqual(tree, expected_tree)
+    
+    def test_4(self):
+        field = "Jan-Feb 08:00-20:00"
+        expected_tree = Tree('field', [
+            Tree('field_part', [
+                Tree('consecutive_month_range', [
+                    Tree('raw_consecutive_month_range', [
+                        Token('MONTH', 'Jan'), Token('MONTH', 'Feb')
+                    ])
+                ]),
+                Tree('day_periods', [
+                    Tree('period', [
+                        Tree('digital_moment', [
+                            Token('DIGITAL_MOMENT', '08:00')
+                        ]),
+                        Tree('digital_moment', [
+                            Token('DIGITAL_MOMENT', '20:00')
+                        ])
+                    ])
+                ])
+            ])
+        ])
+        
+        tree = field_parser.PARSER.parse(field)
+        self.assertEqual(tree, expected_tree)
+    
+    def test_5(self):
+        field = "08:00-20:00; SH off"
+        expected_tree = Tree('field', [
+            Tree('everyday_periods', [
+                Tree('day_periods', [
+                    Tree('period', [
+                        Tree('digital_moment', [
+                            Token('DIGITAL_MOMENT', '08:00')
+                        ]),
+                        Tree('digital_moment', [
+                            Token('DIGITAL_MOMENT', '20:00')
+                        ])
+                    ])
+                ])
+            ]),
+            Tree('field_part', [
+                Tree('holiday', [
+                    Token('SCHOOL_HOLIDAYS', 'SH')
+                ]),
+                Tree('period_closed', [])
+            ])
+        ])
+        
+        tree = field_parser.PARSER.parse(field)
+        self.assertEqual(tree, expected_tree)
 
 if __name__ == '__main__':
     unittest.main()
