@@ -249,17 +249,23 @@ sunrise-sunset  # or "dawn" / "dusk"
 Jan 10:00-20:00
 Jan-Feb 10:00-20:00
 Jan,Dec 10:00-20:00
+Jan Mo 10:00-20:00
+Jan,Feb Mo 10:00-20:00
+Jan-Feb Mo 10:00-20:00
+Jan Mo-Fr 10:00-20:00
+Jan,Feb Mo-Fr 10:00-20:00
+Jan-Feb Mo-Fr 10:00-20:00
 ```
 
 The following formats are NOT supported yet and their parsing will raise ParseErrors.
 
 ```
-Jan Mo 10:00-20:00
 years
 weeks
 easter 10:00-20:00
 Su[1] 10:00-20:00
 SH Mo 10:00-20:00
+Jan-Feb,Aug Mo-Fr,Su 10:00-20:00
 ```
 
 # Performances

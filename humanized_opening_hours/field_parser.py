@@ -84,6 +84,46 @@ class YearTransformer(Transformer):
         month_indexes = list(range(first_month, last_month+1))
         return set([MONTHS[i] for i in month_indexes])
     
+    def days_of_month(self, args):
+        # TODO : Check specifications.
+        output = set()
+        months = []
+        weekdays = []
+        for tk in args:
+            if tk.value in MONTHS:
+                months.append(tk.value)
+            else:
+                weekdays.append(tk.value)
+        for m in months:
+            for wd in weekdays:
+                output.add(m + '-' + wd)
+        return output
+    
+    def consecutive_days_of_month(self, args):
+        months = [tk.value for tk in args[:-1]]
+        days = args[-1]
+        output = set()
+        for m in months:
+            for d in days:
+                output.add(m + '-' + d)
+        return output
+    
+    def days_of_consecutive_months(self, args):
+        months = args[0]
+        days = [tk.value for tk in args[1:]]
+        output = set()
+        for m in months:
+            for d in days:
+                output.add(m + '-' + d)
+        return output
+    
+    def consecutive_days_of_consecutive_months(self, args):
+        output = set()
+        for m in args[0]:
+            for d in args[1]:
+                output.add(m + '-' + d)
+        return output
+    
     # Exceptional days
     def exceptional_day(self, args):
         # "month_index-day" - "Dec 25" -> "12-25"
@@ -112,24 +152,26 @@ class YearTransformer(Transformer):
 class ParsedField:
     def __init__(self, tree):
         self.tree = tree
-        # TODO : Remove.
+        # TODO : Remove all this stuff.
         self.holidays_status = {"PH": None, "SH": None}
         for part in self.tree.children:
             if "PH" in part[0]:
                 self.holidays_status["PH"] = bool(part[1])
             if "SH" in part[0]:
                 self.holidays_status["SH"] = bool(part[1])
-        # TODO : Improve and change "exceptional_day" method.
         self.exceptional_dates = []
         for part in self.tree.children:
             for date in [date for date in part[0] if '-' in date]:
-                month, day = date.split('-')
-                self.exceptional_dates.append(((int(month), int(day)), part[1]))
+                try:
+                    month, day = date.split('-')
+                    self.exceptional_dates.append(((int(month), int(day)), part[1]))
+                except ValueError:  # Temporary fix for "Jan Mo off"
+                    pass
     
     def get_periods_of_day(self, dt):
         # Tries to get the opening periods of a day,
         # with the following patterns:
-        # Jan 1 - Jan Mo - Jan - Mo - *
+        # Jan-1 - Jan-Mo - Jan - Mo - *
         # TODO : Check for PH / SH.
         for date in self.exceptional_dates:
             if date[0] == (dt.month, dt.day):
