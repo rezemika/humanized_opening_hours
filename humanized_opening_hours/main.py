@@ -162,7 +162,8 @@ class OHParser:
             "sunrise", "sunset",
             "dawn", "dusk",
             "PH", "SH",
-            "open", "off", "closed"
+            "open", "off", "closed",
+            "easter"
         )
         splited_field = [part.strip() for part in field.split(';')]
         parts = []
