@@ -31,7 +31,7 @@ class YearTransformer(Transformer):
         else:
             offset_sign = -1
             arg = arg.split('-')
-        kind = arg[0]
+        kind = MomentKind[arg[0].upper()]
         offset_hours, offset_minutes = arg[1].split(':')
         offset_seconds = (
             int(offset_hours) * 60 * 60 +
