@@ -219,6 +219,20 @@ class TestFunctions(unittest.TestCase):
                 datetime.date(2018, 1, 7)
             ]
         )
+    
+    def test_easter_date(self):
+        self.assertEqual(
+            main.easter_date(2000),
+            datetime.date(2000, 4, 23)
+        )
+        self.assertEqual(
+            main.easter_date(2010),
+            datetime.date(2010, 4, 4)
+        )
+        self.assertEqual(
+            main.easter_date(2020),
+            datetime.date(2020, 4, 12)
+        )
 
 class TestParsing(unittest.TestCase):
     maxDiff = None
