@@ -1,0 +1,12 @@
+[flake8]
+
+max_line_length = 80
+ignore = 
+    W293,
+    E226
+exclude =
+    .git,
+    __pycache__,
+    dist,
+    build
+builtins= _
