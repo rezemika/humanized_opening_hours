@@ -108,54 +108,44 @@ class YearTransformer(Transformer):
         return tuple(args)
 
 
-# TODO : Build SH and PR weeks.
+# TODO : Build SH and PH weeks.
 class ParsedField:
     def __init__(self, tree):
         self.tree = tree
-        self.regular_week = [list() for _ in range(7)]
-        for part in self.tree.children:
-            for day in part[0].intersection(WEEKDAYS):
-                self.regular_week[WEEKDAYS.index(day)] = part[1]
-            if '*' in part[0]:
-                self.regular_week = [part[1] for _ in range(7)]
-        
-        self.months = []
-        for month in MONTHS:
-            self.months.append({
-                # Not supported by the parser yet.
-                "regular_week": [False, [list() for _ in range(7)]],
-                "every_days": [False, []]
-            })
-        for part in self.tree.children:
-            for month in part[0].intersection(MONTHS):
-                self.months[MONTHS.index(month)]["every_days"] = [True, part[1]]
-        
-        # TODO : Improve and change "exceptional_day" method.
-        self.exceptional_dates = []
-        for part in self.tree.children:
-            for date in [date for date in part[0] if '-' in date]:
-                month, day = date.split('-')
-                self.exceptional_dates.append(((int(month), int(day)), part[1]))
-        
+        # TODO : Remove.
         self.holidays_status = {"PH": None, "SH": None}
         for part in self.tree.children:
             if "PH" in part[0]:
                 self.holidays_status["PH"] = bool(part[1])
             if "SH" in part[0]:
                 self.holidays_status["SH"] = bool(part[1])
+        # TODO : Improve and change "exceptional_day" method.
+        self.exceptional_dates = []
+        for part in self.tree.children:
+            for date in [date for date in part[0] if '-' in date]:
+                month, day = date.split('-')
+                self.exceptional_dates.append(((int(month), int(day)), part[1]))
     
     def get_periods_of_day(self, dt):
-        requested_month, requested_weekday = dt.month, dt.weekday()
-        requested_month -= 1
-        requested_monthday = dt.day
+        # Tries to get the opening periods of a day,
+        # with the following patterns:
+        # Jan 1 - Jan Mo - Jan - Mo - *
+        # TODO : Check for PH / SH.
         for date in self.exceptional_dates:
-            if date[0] == (requested_month+1, requested_monthday):
+            if date[0] == (dt.month, dt.day):
                 return date[1]
-        if self.months[requested_month]["regular_week"][0]:
-            return self.months[requested_month]["regular_week"][1][requested_weekday]  # noqa
-        if self.months[requested_month]["every_days"][0]:
-            return self.months[requested_month]["every_days"][1]
-        return self.regular_week[requested_weekday]
+        patterns = (
+            str(dt.month) + '-' + str(dt.day),
+            MONTHS[dt.month-1] + '-' + WEEKDAYS[dt.weekday()],
+            MONTHS[dt.month-1],
+            WEEKDAYS[dt.weekday()],
+            '*'
+        )
+        for pattern in patterns:
+            for targets, periods in self.tree.children:
+                if pattern in targets:
+                    return periods
+        return []
 
 
 def get_parser():
