@@ -394,10 +394,11 @@ class OHParser:
         return "<OHParser field: '{}'>".format(self.sanitized_field)
 
 
-RenderableDay = namedtuple("RenderableDay", ["name", "description"])
-RenderableDay.__doc__ = """A namedtuple containing two strings:
-- "name": the name of the day (e.g. "Monday");
-- "description": the description of the periods of the day."""
+RenderableDay = namedtuple("RenderableDay", ["name", "description", "dt"])
+RenderableDay.__doc__ = """A namedtuple containing three attributes:
+- name (str): the name of the day (e.g. "Monday");
+- description (str): the description of the periods of the day;
+- dt (datetime.date): the date of the day."""
 
 
 class HOHRenderer:
@@ -670,7 +671,7 @@ class HOHRenderer:
             )
         rendered_periods = self._join_list(rendered_periods)
         name = self.get_locale_day(day.weekday())
-        return RenderableDay(name=name, description=rendered_periods)
+        return RenderableDay(name=name, description=rendered_periods, dt=d.date)
     
     def plaintext_week_description(self, obj=None):
         """Returns a plaintext descriptions of the schedules of a week.
