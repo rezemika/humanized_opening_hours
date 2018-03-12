@@ -118,7 +118,12 @@ class OHParser:
             self._tree = field_parser.parse_field(self.sanitized_field)
         except lark.lexer.UnexpectedInput as e:
             raise ParseError(
-                "The field could not be parsed, it may be invalid."
+                "The field could not be parsed, it may be invalid. "
+                "Error happened on column {col} when "
+                "parsing {context!r}.".format(
+                    col=e.column,
+                    context=e.context
+                )
             )
         self.PH_dates = []
         self.SH_dates = []
