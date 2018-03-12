@@ -6,13 +6,6 @@ class HOHError(Exception):
     pass
 
 
-class DoesNotExistError(HOHError):
-    """
-    Raised when something in the field does not exist (e.g. a wrong day).
-    """
-    pass
-
-
 class ParseError(HOHError):
     """
     Raised when field parsing fails.

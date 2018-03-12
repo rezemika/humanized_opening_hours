@@ -261,7 +261,7 @@ SH Mo 10:00-20:00
 SH Mo-Fr 10:00-20:00
 ```
 
-The following formats are NOT supported yet and their parsing will raise ParseErrors.
+The following formats are NOT supported yet and their parsing will raise a ParseError.
 
 ```
 years

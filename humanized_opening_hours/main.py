@@ -109,7 +109,7 @@ class OHParser:
         """
         self.original_field = field
         if not self.is_parsable(field):
-            raise NotImplementedError(
+            raise ParseError(
                 "This field contains a rule for which support "
                 "is not implemented yet."
             )
