@@ -108,11 +108,6 @@ class OHParser:
             (e.g. the field is invalid).
         """
         self.original_field = field
-        if not self.is_parsable(field):
-            raise ParseError(
-                "This field contains a rule for which support "
-                "is not implemented yet."
-            )
         self.sanitized_field = self.sanitize(self.original_field)
         try:
             self._tree = field_parser.parse_field(self.sanitized_field)
@@ -137,29 +132,6 @@ class OHParser:
             "sunrise": None, "sunset": None,
             "dawn": None, "dusk": None
         }
-    
-    @staticmethod
-    def is_parsable(field):
-        """Returns whether the field is parsable.
-        /!\ It does not care if it is valid.
-        
-        Parameters
-        ----------
-        str
-            The field to check.
-        
-        Returns
-        -------
-        bool
-            True if the field is parsable, False else.
-        """
-        # TODO : Improve.
-        return not any((
-            '[' in field,  # "Mo[-1] ..."
-            '"' in field,  # "On appointement"
-            "||" in field,  # Fallbacks
-            "year" in field,
-        ))
     
     @staticmethod
     def sanitize(field):
