@@ -5,7 +5,7 @@ import babel.dates
 import gettext
 import lark
 from collections import namedtuple
-import os as _os
+import os
 
 from exceptions import (
     ParseError,
@@ -19,12 +19,10 @@ from temporal_objects import (
 )
 import field_parser
 
-_os.chdir(_os.path.dirname(_os.path.realpath(__file__)))
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
 # TODO formats
 """
-Jan Mo 10:00-20:00
-SH Mo 10:00-20:00
 year
 weeks
 Mo[-1] 10:00-20:00
