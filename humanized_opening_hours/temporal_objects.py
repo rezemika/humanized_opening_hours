@@ -23,10 +23,12 @@ class Day:
         ----------
         periods : list[Period]
             The opening periods of the day.
-        always_open : bool
-            True if it's open all the day (24/7), False else.
         date : datetime.date
             The date of the day.
+        is_PH : bool
+            True if the day is a public holiday. False else.
+        is_SH : bool
+            True if the day is a school holiday. False else.
         """
 
         self.date = date
@@ -35,6 +37,8 @@ class Day:
             "sunrise": None, "sunset": None,
             "dawn": None, "dusk": None
         }
+        self.is_PH = False
+        self.is_SH = False
     
     def opens_today(self) -> bool:
         """Is it open today?

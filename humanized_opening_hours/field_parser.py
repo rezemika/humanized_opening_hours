@@ -168,11 +168,12 @@ class ParsedField:
                 except ValueError:  # Temporary fix for "Jan Mo off"
                     pass
     
-    def get_periods_of_day(self, dt):
+    def get_periods_of_day(self, dt, is_PH=False, is_SH=False):
         # Tries to get the opening periods of a day,
         # with the following patterns:
         # Jan-1 - Jan-Mo - Jan - Mo - *
-        # TODO : Check for PH / SH.
+        if is_PH and is_SH:
+            raise ValueError("A day cannot be both PH and SH.")
         for date in self.exceptional_dates:
             if date[0] == (dt.month, dt.day):
                 return date[1]
@@ -183,6 +184,16 @@ class ParsedField:
             WEEKDAYS[dt.weekday()],
             '*'
         )
+        if is_PH:
+            patterns = (
+                "PH-" + WEEKDAYS[dt.weekday()],  # Not implemented yet.
+                "PH"
+            ) + patterns
+        elif is_SH:
+            patterns = (
+                "SH-" + WEEKDAYS[dt.weekday()],  # Not implemented yet.
+                "SH"
+            ) + patterns
         for pattern in patterns:
             for targets, periods in self.tree.children:
                 if pattern in targets:

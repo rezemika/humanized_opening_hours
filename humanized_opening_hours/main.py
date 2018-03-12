@@ -252,10 +252,18 @@ class OHParser:
         Day
             The requested day.
         """
-        # TODO : Use "PH_dates" and "SH_dates".
+        is_PH, is_SH = False, False
+        if dt in self.PH_dates:
+            is_PH = True
+        elif dt in self.SH_dates:
+            is_SH = True
         d = Day(dt)
-        d.periods = self._tree.get_periods_of_day(dt)
+        d.periods = self._tree.get_periods_of_day(dt, is_PH=is_PH, is_SH=is_SH)
         d._set_solar_hours(self.solar_hours)
+        if is_PH:
+            d.is_PH = True
+        elif is_SH:
+            d.is_SH = True
         return d
     
     def _get_now(self):

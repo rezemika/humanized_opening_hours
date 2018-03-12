@@ -177,7 +177,9 @@ Apart the main HumanizedOpeningHours class, HOH provides four other objects:
 
 Attributes:
 - `periods` (list) : a list of `Period` objects included in this day;
-- `date` (datetime.date) : the date of the day.
+- `date` (datetime.date) : the date of the day;
+- `is_PH` (bool) : True if the day is a public holiday;
+- `is_SH` (bool) : True if the day is a school holiday.
 
 ```python
 # To know whether there is / are opening period(s) in this day.
