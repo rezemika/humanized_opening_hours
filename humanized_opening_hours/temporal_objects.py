@@ -40,7 +40,7 @@ class Day:
         self.is_PH = False
         self.is_SH = False
     
-    def opens_today(self) -> bool:
+    def opens_today(self):
         """Is it open today?
         
         Returns
@@ -228,7 +228,7 @@ class MomentKind(Enum):
     DAWN = 3
     DUSK = 4
     
-    def requires_parsing(self) -> bool:
+    def requires_parsing(self):
         """Returns whether a MomentKind requires a solar hours parsing."""
         return bool(self.value)
 
