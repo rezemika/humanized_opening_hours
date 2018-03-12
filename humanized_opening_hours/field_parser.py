@@ -136,6 +136,15 @@ class YearTransformer(Transformer):
     def holiday(self, args):
         return set([tk.value for tk in args])
     
+    def holidays_unconsecutive_days(self, args):
+        return args[0].value + '-' + args[1].value
+    
+    def holidays_consecutive_days(self, args):
+        output = []
+        for d in args[1]:
+            output.append(args[0].value + '-' + d)
+        return output
+    
     # Always open
     def always_open(self, args):
         return (set('*'), [self.period([

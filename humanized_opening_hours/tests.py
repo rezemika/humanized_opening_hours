@@ -97,6 +97,12 @@ class TestPatterns(unittest.TestCase):
         
         field = "Jan-Feb Mo-Fr 09:00-19:00"
         oh = main.OHParser(field)
+        
+        field = "SH Mo 09:00-19:00"
+        oh = main.OHParser(field)
+        
+        field = "SH Mo-Fr 09:00-19:00"
+        oh = main.OHParser(field)
     
     def test_exceptional_days(self):
         field = "Dec 25 off"
