@@ -277,8 +277,7 @@ class OHParser:
         ----------
         moment : datetime.datetime, optional
             The moment for which to check the opening. None default,
-            meaning use the present time, at the timezone given
-            to the constructor.
+            meaning use the present time.
         
         Returns
         -------
@@ -305,8 +304,7 @@ class OHParser:
         ----------
         moment : datetime.datetime, optional
             The moment for which to check the opening. None default,
-            meaning use the present time, at the timezone given
-            to the constructor.
+            meaning use the present time.
         
         Returns
         -------
