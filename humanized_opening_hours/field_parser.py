@@ -2,7 +2,7 @@ from lark import Lark, Transformer
 import datetime
 import os
 
-from temporal_objects import (
+from humanized_opening_hours.temporal_objects import (
     WEEKDAYS,
     MONTHS,
     MomentKind,

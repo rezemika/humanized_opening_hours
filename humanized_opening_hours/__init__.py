@@ -18,18 +18,13 @@ __appname__ = "osm_humanized_opening_hours"
 __author__ = "rezemika <reze.mika@gmail.com>"
 __licence__ = "AGPLv3"
 
-import sys as _sys
-import os as _os
-_sys.path.append(_os.path.dirname(_os.path.abspath(__file__)))
-
 import gettext
 gettext.install("HOH", "locales/")
 
 from humanized_opening_hours.main import (
     OHParser,
     HOHRenderer,
-    days_of_week_from_day,
-    field_parser
+    days_of_week_from_day
 )
 
 from humanized_opening_hours import exceptions

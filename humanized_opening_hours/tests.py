@@ -4,7 +4,7 @@ import datetime, pytz
 from lark import Tree
 from lark.lexer import Token
 
-import main, exceptions, field_parser
+from humanized_opening_hours import main, exceptions, field_parser
 
 # flake8: noqa: F841
 # "oh" variables unused in TestSolarHours.

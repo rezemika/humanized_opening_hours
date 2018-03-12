@@ -7,17 +7,17 @@ import lark
 from collections import namedtuple
 import os
 
-from exceptions import (
+from humanized_opening_hours.exceptions import (
     ParseError,
     SolarHoursNotSetError
 )
-from temporal_objects import (
+from humanized_opening_hours.temporal_objects import (
     WEEKDAYS,
     MONTHS,
     MomentKind,
     Day
 )
-import field_parser
+from humanized_opening_hours import field_parser
 
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 

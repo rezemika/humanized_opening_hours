@@ -1,7 +1,7 @@
 from enum import Enum
 import datetime
 import pytz
-from exceptions import SolarHoursNotSetError
+from humanized_opening_hours.exceptions import SolarHoursNotSetError
 
 WEEKDAYS = (
     "Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"
