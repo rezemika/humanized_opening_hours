@@ -154,7 +154,9 @@ class OHParser:
             "open", "off", "closed",
             "easter"
         )
-        splited_field = [part.strip() for part in field.strip(' \n\t;').split(';')]
+        splited_field = [
+            part.strip() for part in field.strip(' \n\t;').split(';')
+        ]
         parts = []
         for part in splited_field:
             # Adds or removes spaces when necessary.
