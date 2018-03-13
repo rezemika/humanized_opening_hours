@@ -148,6 +148,11 @@ class TestSanitize(unittest.TestCase):
         sanitized_field = "Mo,Th 09:00-12:00,13:00-19:00"
         self.assertEqual(main.OHParser.sanitize(field), sanitized_field)
     
+    def test_invalid_3(self):
+        field = "Mo 09:00 - 12:00 , 13:00 - 19:00;"
+        sanitized_field = "Mo 09:00-12:00,13:00-19:00"
+        self.assertEqual(main.OHParser.sanitize(field), sanitized_field)
+    
     def test_holidays(self):
         field = "Mo-Sa,SH 09:00-19:00"
         self.assertEqual(main.OHParser.sanitize(field), field)

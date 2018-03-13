@@ -162,6 +162,11 @@ class OHParser:
             part = re.sub("\s*(;)\s*", "\1 ", part)
             # " , " => ","
             part = re.sub(" ?, ?", ",", part)
+            # "10:00 - 20:00" -> "10:00-20:00"
+            part = re.sub(
+                "([0-2][0-9]:[0-5][0-9]) ? - ?([0-2][0-9]:[0-5][0-9])",
+                r"\1-\2", part
+            )
             # Corrects the case errors.
             # "mo" => "Mo"
             for word in special_words:
