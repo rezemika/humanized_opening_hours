@@ -124,6 +124,35 @@ class TestPatterns(unittest.TestCase):
         field = "Pl-Mo 09:00-12:00,13:00-19:00"
         with self.assertRaises(exceptions.ParseError) as context:
             oh = main.OHParser(field)
+    
+    def test_invalid_patterns(self):
+        field = "easter 10:00-20:00"
+        with self.assertRaises(exceptions.ParseError) as context:
+            oh = main.OHParser(field)
+        
+        field = "Mo-Fr 20:00-02:00"
+        with self.assertRaises(exceptions.SpanOverMidnight) as context:
+            oh = main.OHParser(field)
+        
+        field = "Su[1] 10:00-20:00"
+        with self.assertRaises(exceptions.ParseError) as context:
+            oh = main.OHParser(field)
+        
+        field = "SH,PH Mo-Fr 10:00-20:00"
+        with self.assertRaises(exceptions.ParseError) as context:
+            oh = main.OHParser(field)
+        
+        field = "SH,PH Mo-Fr,Su 10:00-20:00"
+        with self.assertRaises(exceptions.ParseError) as context:
+            oh = main.OHParser(field)
+        
+        field = "Jan-Feb,Aug Mo-Fr,Su 10:00-20:00"
+        with self.assertRaises(exceptions.ParseError) as context:
+            oh = main.OHParser(field)
+        
+        field = "week 1-53/2 Fr 09:00-12:00"
+        with self.assertRaises(exceptions.ParseError) as context:
+            oh = main.OHParser(field)
 
 class TestSanitize(unittest.TestCase):
     maxDiff = None

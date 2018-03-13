@@ -9,6 +9,9 @@ from humanized_opening_hours.temporal_objects import (
     Period,
     Moment
 )
+from humanized_opening_hours.exceptions import (
+    SolarHoursNotSetError, SpanOverMidnight
+)
 
 
 class YearTransformer(Transformer):
@@ -154,6 +157,15 @@ class YearTransformer(Transformer):
     
     # Field part
     def field_part(self, args):
+        for period in args[1]:
+            try:
+                if period.beginning.time() > period.end.time():
+                    raise SpanOverMidnight(
+                        "The field contains a period which spans "
+                        "over midnight, which not yet supported."
+                    )
+            except SolarHoursNotSetError:
+                pass
         return tuple(args)
 
 
