@@ -19,3 +19,11 @@ class SolarHoursNotSetError(HOHError):
     without having defined them.
     """
     pass
+
+
+class SpanOverMidnight(HOHError):
+    """
+    Raised when a field has a period which spans over midnight
+    (for example: "Mo-Fr 20:00-02:00"), which is not yet supported..
+    """
+    pass
