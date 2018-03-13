@@ -111,7 +111,7 @@ class OHParser:
         self.sanitized_field = self.sanitize(self.original_field)
         try:
             self._tree = field_parser.parse_field(self.sanitized_field)
-        except lark.lexer.UnexpectedInput as e:
+        except (lark.lexer.UnexpectedInput, lark.common.UnexpectedToken) as e:
             raise ParseError(
                 "The field could not be parsed, it may be invalid. "
                 "Error happened on column {col} when "
