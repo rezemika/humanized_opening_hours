@@ -24,9 +24,9 @@ concerned_period : DAY ("," DAY)* ("," (PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS))* " "
                  | raw_consecutive_day_range ("," DAY)* ("," (PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS))* " " -> consecutive_day_range
                  | raw_consecutive_month_range ("," MONTH)* ("," (PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS))* " " -> consecutive_month_range
                  | MONTH ("," MONTH)* " " DAY ("," DAY)* [":"] " " -> days_of_month
-                 | MONTH ("," MONTH)* " " raw_consecutive_day_range ("," DAY)* [":"] " " -> consecutive_days_of_month
-                 | raw_consecutive_month_range ("," MONTH)* " " DAY ("," DAY)* [":"] " " -> days_of_consecutive_months
-                 | raw_consecutive_month_range " " raw_consecutive_day_range [":"] " " -> consecutive_days_of_consecutive_months  //TODO : Support months or days after commas.
+                 | MONTH ("," MONTH)* [":"] " " raw_consecutive_day_range ("," DAY)* " " -> consecutive_days_of_month
+                 | raw_consecutive_month_range ("," MONTH)* [":"] " " DAY ("," DAY)* " " -> days_of_consecutive_months
+                 | raw_consecutive_month_range [":"] " " raw_consecutive_day_range " " -> consecutive_days_of_consecutive_months  //TODO : Support months or days after commas.
                  | (PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS) " " DAY " " -> holidays_unconsecutive_days
                  | (PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS) " " raw_consecutive_day_range ("," DAY)* " " -> holidays_consecutive_days
 
