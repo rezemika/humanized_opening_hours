@@ -111,7 +111,7 @@ class OHParser:
         self.sanitized_field = self.sanitize(self.original_field)
         try:
             self._tree = field_parser.parse_field(self.sanitized_field)
-        except (lark.lexer.UnexpectedInput, lark.common.UnexpectedToken) as e:
+        except lark.lexer.UnexpectedInput as e:
             raise ParseError(
                 "The field could not be parsed, it may be invalid. "
                 "Error happened on column {col} when "
@@ -120,6 +120,16 @@ class OHParser:
                     context=e.context
                 )
             )
+        except lark.common.UnexpectedToken as e:
+            raise ParseError(
+                "The field could not be parsed, it may be invalid. "
+                "Error happened on column {col} when "
+                "parsing {context!r}.".format(
+                    col=e.column,
+                    context=e.token.value
+                )
+            )
+        
         self.PH_dates = []
         self.SH_dates = []
         self.needs_solar_hours_setting = {
