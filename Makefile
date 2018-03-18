@@ -1,5 +1,5 @@
 freeze:
-	pip3 freeze | grep -Ev "pkg-resources|twine|osm-humanized-opening-hours|mccabe|pycodestyle|pyflakes|flake8" > requirements.txt
+	pip3 freeze | grep -Ev "pkg-resources|twine|osm-humanized-opening-hours|mccabe|pycodestyle|pyflakes|flake8|requests|idna|pkginfo|tqdm|urllib3|chardet|certifi" > requirements.txt
 
 freeze-dev:
 	pip3 freeze | grep -Ev "pkg-resources|osm-humanized-opening-hours" > requirements-dev.txt
