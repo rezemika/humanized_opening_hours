@@ -123,29 +123,6 @@ class Day:
         )
 
 
-class HolidayDay(Day):  # Not used yet.
-    def __init__(self, weekday):
-        """An holiday day, containing periods.
-        
-        Attributes
-        ----------
-        periods : list[Period]
-            The opening periods of the day.
-        always_open : bool
-            True if it's open all the day (24/7), False else.
-        date : datetime.date
-            The date of the day.
-        """
-        self.weekday = weekday
-        self.periods = []
-    
-    def __str__(self):
-        return "<HolidayDay '{}' ({} periods)>".format(
-            WEEKDAYS[self.weekday],
-            len(self.periods)
-        )
-
-
 class Period:
     """An opening period, containing a beginning and an end.
     
