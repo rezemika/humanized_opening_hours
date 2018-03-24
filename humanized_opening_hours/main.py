@@ -179,6 +179,8 @@ class OHParser:
                 "([0-2][0-9]:[0-5][0-9]) ? - ?([0-2][0-9]:[0-5][0-9])",
                 r"\1-\2", part
             )
+            # Replaces "00:00" by "24:00" when necessary.
+            part = part.replace("-00:00", "-24:00")
             # Corrects the case errors.
             # "mo" => "Mo"
             for word in special_words:
@@ -198,6 +200,14 @@ class OHParser:
             part = re.sub("([^0-9]|^)([0-9]:[0-9])", r"\g<1>0\g<2>", part)
             # Adds semicolons when necessary.
             part = re.sub("([0-9]) ?, ?([A-Za-z][a-z][^a-z])", r"\1; \2", part)
+            # Adds comas when necessary.
+            # "10:00-12:00 14:00-19:00" -> "10:00-12:00,14:00-19:00"
+            MOMENT_REGEX = r"\((?:sunrise|sunset|dawn|dusk)(?:\+|-)[0-2][0-9]:[0-5][0-9]\)|[0-2][0-9]:[0-5][0-9]|(?:sunrise|sunset|dawn|dusk)"
+            part = re.sub(
+                "({m}) ?- ?({m}) *({m}) ?- ?({m})".format(m=MOMENT_REGEX),
+                r"\1-\2,\3-\4",
+                part
+            )
             # Replaces "24" by "24/7".
             if part in ("24", "24 hours", "24 Hours", "24h"):
                 part = "24/7"
