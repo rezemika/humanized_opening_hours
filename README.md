@@ -103,7 +103,7 @@ It has several methods to retrieve useful informations.
 This object can also be created from an OHParser instance with its `render()` method.
 
 ```python
-hohr = oh.render(universal=False)
+ohr = oh.render(universal=False)
 ```
 
 ### <a name="available_locales"></a>available_locales
@@ -121,7 +121,7 @@ Returns a dict of lists with the names of months and weekdays in the current loc
 Example:
 
 ```python
->>> hohr.get_human_names()
+>>> ohr.get_human_names()
 {
     'months': [
         'January', 'February', 'March',
@@ -142,9 +142,9 @@ Example:
 Returns a humanized delay before the next change in opening status.
 
 ```python
->>> hohr.humanized_time_before_next_change()
+>>> ohr.humanized_time_before_next_change()
 "in 3 hours"
->>> hohr.humanized_time_before_next_change(word=False)
+>>> ohr.humanized_time_before_next_change(word=False)
 "3 hours"
 ```
 
@@ -156,7 +156,7 @@ In the first case, it is converted into a list of the days in the same week.
 It can also take no parameter, so the described week will be the current one.
 
 ```python
->>> hohr.plaintext_week_description()
+>>> ohr.plaintext_week_description()
 """
 Monday: 08:00 - 19:00
 Tuesday: 08:00 - 19:00
