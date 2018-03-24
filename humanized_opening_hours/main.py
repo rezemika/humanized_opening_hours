@@ -498,7 +498,7 @@ class HOHRenderer:
         self
             The instance itself.
         """
-        if locale_name not in self.available_locales():
+        if locale_name not in HOHRenderer.available_locales():
             raise ValueError(
                 "'locale_name' must be one of the locales given by the "
                 "HOHRenderer`available_locales()` method."
