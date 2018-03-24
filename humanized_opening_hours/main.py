@@ -466,7 +466,6 @@ class HOHRenderer:
         if not locale_name:
             locale_name = "en"
         self.set_locale(locale_name)
-        return
     
     @staticmethod
     def available_locales():
@@ -490,8 +489,8 @@ class HOHRenderer:
         ----------
         locale_name : str
             The locale name. E.g. "en".
-            See HOHRenderer.AVAILABLE_LOCALES to get a tuple of
-            available locales.
+            See HOHRenderer.available_locales() (static method) to get
+            a list of available locales.
         
         Returns
         -------
@@ -526,38 +525,10 @@ class HOHRenderer:
         days = []
         months = []
         for i in range(7):
-            days.append(self.get_locale_day(i))
+            days.append(self.babel_locale.days["format"]["wide"][i])
         for i in range(12):
-            months.append(self.get_locale_month(i))
+            months.append(self.babel_locale.months['format']['wide'][i+1])
         return {"days": days, "months": months}
-    
-    def get_locale_day(self, index):
-        """Returns a day name in the constructor's locale.
-        
-        Parameters
-        ----------
-        int
-            The day's index, between 0 and 6.
-        
-        Returns
-        -------
-        str : The translated day's name.
-        """
-        return self.babel_locale.days["format"]["wide"][index]
-    
-    def get_locale_month(self, index):
-        """Returns a month name in the constructor's locale.
-        
-        Parameters
-        ----------
-        int
-            The month's index, between 0 and 11.
-        
-        Returns
-        -------
-        str : The translated month's name.
-        """
-        return self.babel_locale.months['format']['wide'][index+1]
     
     def _format_date(self, date):
         """Formats a datetime with the appropriate locale.
