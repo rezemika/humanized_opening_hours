@@ -29,6 +29,10 @@ Mo[-1] 10:00-20:00
 """
 
 
+def render_field(field, **kwargs):
+    return OHParser(field).render(**kwargs)
+
+
 def days_of_week_from_day(dt):
     """
         Returns a list of seven datetime.date days representing a week

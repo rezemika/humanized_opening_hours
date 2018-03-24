@@ -106,6 +106,12 @@ This object can also be created from an OHParser instance with its `render()` me
 ohr = oh.render(universal=False)
 ```
 
+Shorter, you can get it directly from a field with the `render_field()` function.
+
+```python
+ohr = hoh.render_field(field, universal=False)
+```
+
 ### <a name="available_locales"></a>available_locales
 
 Returns a list of the available locales (strings).
