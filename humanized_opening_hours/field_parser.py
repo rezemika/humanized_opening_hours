@@ -180,14 +180,18 @@ class ParsedField:
                 self.holidays_status["PH"] = bool(part[1])
             if "SH" in part[0]:
                 self.holidays_status["SH"] = bool(part[1])
-        self.exceptional_dates = []
-        for part in self.tree.children:
-            for date in [date for date in part[0] if '-' in date]:
-                try:
-                    month, day = date.split('-')
-                    self.exceptional_dates.append(((int(month), int(day)), part[1]))
-                except ValueError:  # Temporary fix for "Jan Mo off"
+    
+    def get_exceptional_dates(self):
+        dates = []
+        for targets, periods in self.tree.children:
+            for target in targets:
+                try:  # TODO : Clean.
+                    month, day = target.split('-')
+                    month, day = int(month), int(day)
+                    dates.append((month, day))
+                except ValueError:
                     pass
+        return dates
     
     def get_periods_of_day(self, dt, is_PH=False, is_SH=False):
         # Tries to get the opening periods of a day,
@@ -195,9 +199,6 @@ class ParsedField:
         # Jan-1 - Jan-Mo - Jan - Mo - *
         if is_PH and is_SH:
             raise ValueError("A day cannot be both PH and SH.")
-        for date in self.exceptional_dates:
-            if date[0] == (dt.month, dt.day):
-                return date[1]
         patterns = (
             str(dt.month) + '-' + str(dt.day),
             MONTHS[dt.month-1] + '-' + WEEKDAYS[dt.weekday()],
@@ -207,12 +208,12 @@ class ParsedField:
         )
         if is_PH:
             patterns = (
-                "PH-" + WEEKDAYS[dt.weekday()],  # Not implemented yet.
+                "PH-" + WEEKDAYS[dt.weekday()],
                 "PH"
             ) + patterns
         elif is_SH:
             patterns = (
-                "SH-" + WEEKDAYS[dt.weekday()],  # Not implemented yet.
+                "SH-" + WEEKDAYS[dt.weekday()],
                 "SH"
             ) + patterns
         for pattern in patterns:

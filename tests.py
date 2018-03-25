@@ -107,15 +107,15 @@ class TestPatterns(unittest.TestCase):
     def test_exceptional_days(self):
         field = "Dec 25 off"
         oh = main.OHParser(field)
-        self.assertEqual(len(oh._tree.exceptional_dates), 1)
+        self.assertEqual(len(oh._tree.get_exceptional_dates()), 1)
         
         field = "Jan 1 13:00-19:00"
         oh = main.OHParser(field)
-        self.assertEqual(len(oh._tree.exceptional_dates), 1)
+        self.assertEqual(len(oh._tree.get_exceptional_dates()), 1)
         
         field = "Jan 1 13:00-19:00; Dec 25 off"
         oh = main.OHParser(field)
-        self.assertEqual(len(oh._tree.exceptional_dates), 2)
+        self.assertEqual(len(oh._tree.get_exceptional_dates()), 2)
     
     def test_invalid_days(self):
         field = "Mo,Wx 09:00-12:00,13:00-19:00"
