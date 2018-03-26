@@ -286,7 +286,7 @@ Jan-Feb,Aug Mo-Fr,Su 10:00-20:00
 # Performances
 
 HOH uses the module [Lark](https://github.com/erezsh/lark) (with the LALR parser) to parse the fields.
-It takes about 0.0007 seconds to parse a basic field, 0.08 seconds to parse a hundred, and 0.5 for a thousand.
+It takes about 0.0005 seconds to parse a basic field, 0.05 seconds to parse a hundred, and 0.4 for a thousand.
 
 # Dependencies
 

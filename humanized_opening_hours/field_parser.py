@@ -224,15 +224,22 @@ class ParsedField:
         return []
 
 
-def get_parser():
+def get_parser(include_transformer=True):
     """
         Returns a Lark parser able to parse a valid field.
+        Set "include_transformer" to False to make the parser return
+        a Tree instead of a parsed tree.
     """
     base_dir = os.path.realpath(os.path.join(
         os.getcwd(), os.path.dirname(__file__)
     ))
     with open(os.path.join(base_dir, "field.ebnf"), 'r') as f:
         grammar = f.read()
+    if include_transformer:
+        return Lark(
+            grammar, start="field", parser="lalr",
+            transformer=YearTransformer()
+        )
     return Lark(grammar, start="field", parser="lalr")
 
 
@@ -240,6 +247,6 @@ PARSER = get_parser()
 
 
 def parse_field(field):
-    tree = YearTransformer().transform(PARSER.parse(field))
+    tree = PARSER.parse(field)
     parsed_field = ParsedField(tree)
     return parsed_field

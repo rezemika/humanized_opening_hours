@@ -1,6 +1,7 @@
 import unittest
-import datetime, pytz
+import datetime
 
+import pytz
 from lark import Tree
 from lark.lexer import Token
 
@@ -11,6 +12,8 @@ from humanized_opening_hours import main, exceptions, field_parser
 
 # TODO : Add more unit tests for various formats.
 # TODO : Test renderer methods.
+
+PARSER_TREE = field_parser.get_parser(include_transformer=False)
 
 class TestGlobal(unittest.TestCase):
     maxDiff = None
@@ -304,14 +307,14 @@ class TestParsing(unittest.TestCase):
             ])
         ])
         
-        tree = field_parser.PARSER.parse(field)
+        tree = PARSER_TREE.parse(field)
         self.assertEqual(tree, expected_tree)
     
     def test_2(self):
         field = "24/7"
         expected_tree = Tree('field', [Tree('always_open', [])])
         
-        tree = field_parser.PARSER.parse(field)
+        tree = PARSER_TREE.parse(field)
         self.assertEqual(tree, expected_tree)
     
     def test_3(self):
@@ -331,7 +334,7 @@ class TestParsing(unittest.TestCase):
             ])
         ])
         
-        tree = field_parser.PARSER.parse(field)
+        tree = PARSER_TREE.parse(field)
         self.assertEqual(tree, expected_tree)
     
     def test_4(self):
@@ -356,7 +359,7 @@ class TestParsing(unittest.TestCase):
             ])
         ])
         
-        tree = field_parser.PARSER.parse(field)
+        tree = PARSER_TREE.parse(field)
         self.assertEqual(tree, expected_tree)
     
     def test_5(self):
@@ -382,7 +385,7 @@ class TestParsing(unittest.TestCase):
             ])
         ])
         
-        tree = field_parser.PARSER.parse(field)
+        tree = PARSER_TREE.parse(field)
         self.assertEqual(tree, expected_tree)
 
 if __name__ == '__main__':
