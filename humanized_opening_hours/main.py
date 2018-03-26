@@ -21,15 +21,13 @@ from humanized_opening_hours import field_parser
 
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-# TODO formats
-"""
-year
-weeks
-Mo[-1] 10:00-20:00
-"""
-
 
 def render_field(field, **kwargs):
+    """
+        Returns an HOHRenderer object directly from a field.
+        In addition to the field, it can take all the arguments
+        of the __init__ method of HOHRenderer.
+    """
     return OHParser(field).render(**kwargs)
 
 
