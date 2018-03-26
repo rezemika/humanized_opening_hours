@@ -1,6 +1,7 @@
-from lark import Lark, Transformer
 import datetime
 import os
+
+from lark import Lark, Transformer
 
 from humanized_opening_hours.temporal_objects import (
     WEEKDAYS,

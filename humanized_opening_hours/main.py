@@ -1,11 +1,12 @@
-import re
 import datetime
-import pytz
-import babel.dates
 import gettext
-import lark
 from collections import namedtuple
 import os
+import re
+
+import pytz
+import babel.dates
+import lark
 
 from humanized_opening_hours.exceptions import (
     ParseError,

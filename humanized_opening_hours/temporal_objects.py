@@ -1,6 +1,8 @@
 from enum import Enum
 import datetime
+
 import pytz
+
 from humanized_opening_hours.exceptions import SolarHoursNotSetError
 
 WEEKDAYS = (
