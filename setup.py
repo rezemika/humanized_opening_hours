@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
+import os
+
 import humanized_opening_hours
 
-# `open("README.md", 'r')` doesn't work without this.
-import os, sys
-os.chdir(sys.path[0])
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 setup(
     name="osm_humanized_opening_hours",
@@ -12,7 +12,7 @@ setup(
     author="rezemika",
     author_email="reze.mika@gmail.com",
     description="A parser for the opening_hours fields from OpenStreetMap.",
-    long_description=open("README.md", 'r').read(),
+    long_description=open(BASE_DIR + "/README.md", 'r').read(),
     install_requires=["pytz", "lark-parser", "babel"],
     include_package_data=True,
     url='http://github.com/rezemika/humanized_opening_hours',
