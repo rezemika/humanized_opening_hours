@@ -230,9 +230,7 @@ def get_parser(include_transformer=True):
         Set "include_transformer" to False to make the parser return
         a Tree instead of a parsed tree.
     """
-    base_dir = os.path.realpath(os.path.join(
-        os.getcwd(), os.path.dirname(__file__)
-    ))
+    base_dir = os.path.dirname(os.path.realpath(__file__))
     with open(os.path.join(base_dir, "field.ebnf"), 'r') as f:
         grammar = f.read()
     if include_transformer:

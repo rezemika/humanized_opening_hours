@@ -20,8 +20,6 @@ from humanized_opening_hours.temporal_objects import (
 )
 from humanized_opening_hours import field_parser
 
-os.chdir(os.path.dirname(os.path.realpath(__file__)))
-
 
 def render_field(field, **kwargs):
     """
