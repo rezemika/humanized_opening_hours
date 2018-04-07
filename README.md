@@ -49,25 +49,37 @@ True
 
 ## Basic methods
 
+To know if the facility is open at the present time. Returns a boolean.
+Can take a datetime.datetime moment to check for another time.
+
 ```python
-# To know if the facility is open at the present time. Returns a boolean. Can take a datetime.datetime moment to check for another time.
 >>> oh.is_open()
 True
+```
 
-# To know at which time the facility status (open / closed) will change. Returns a datetime.datetime object.
-# Can take a datetime.datetime moment to check for another time.
-# If we are on December 24 before 21:00 / 09:00PM...
+-----
+
+To know at which time the facility status (open / closed) will change.
+Returns a datetime.datetime object.
+Can take a datetime.datetime moment to check for another time.
+If we are on December 24 before 21:00 / 09:00PM...
+
+```python
 >>> oh.next_change()
 datetime.datetime(2017, 12, 24, 21, 0, tzinfo=<UTC>)
+```
 
-# For consecutive days fully open ("Mo-Fr 00:00-24:00"), you can allow recursion with the "allow_recursion" parameter
-# to get the true next change, but it will raise a "RecursionError" with "24/7" fields.
+For consecutive days fully open ("Mo-Fr 00:00-24:00"), you can allow recursion with the "allow_recursion" parameter to get the true next change, but it will raise a "RecursionError" with "24/7" fields.
+
+```python
 >>> oh = hoh.OHParser("Mo-Fr 00:00-24:00")
 >>> oh.next_change(allow_recursion=False)
 datetime.datetime(2018, 1, 8, 0, 0, tzinfo=<UTC>)
 >>> oh.next_change(allow_recursion=True)
 datetime.datetime(2018, 1, 11, 23, 59, 59, 999999, tzinfo=<UTC>)
 ```
+
+-----
 
 You can get a sanitized version of the field given to the constructor with the *sanitize* staticmethod or the **sanitized_field** attribute.
 
@@ -101,7 +113,7 @@ Attention, except if the facility is on the equator, this setting will be valid 
 ## Have nice schedules
 
 The `HOHRenderer` class allows you to get various representations of the schedules.
-Its *init* method takes an OHParser object in argument, and two optional arguments:
+Its `__init__` method takes an OHParser object in argument, and two optional arguments:
 
 - `universal` (bool) : allows to have human-readable descriptions without having to parse the solar hours (True default).
 - `locale_name` (str) : the language to use ("en" default), which can be changed with the `set_locale()` method.
@@ -120,15 +132,13 @@ Shorter, you can get it directly from a field with the `render_field()` function
 ohr = hoh.render_field(field, universal=False)
 ```
 
-### <a name="available_locales"></a>available_locales
+### Locales management
 
-Returns a list of the available locales (strings).
+The `available_locales()` method returns a list of the available locales (strings).
 
-### <a name="set_locale"></a>set_locale
+The `set_locale()` method allows to set a new locale for rendering. It takes a single argument: the locale_name.
 
-Allows to set a new locale for rendering. Takes a single argument: the locale_name.
-
-### <a name="get_human_names"></a>get_human_names
+### get_human_names
 
 Returns a dict of lists with the names of months and weekdays in the current locale.
 
@@ -151,7 +161,7 @@ Example:
 }
 ```
 
-### <a name="humanized_time_before_next_change"></a>humanized_time_before_next_change
+### humanized_time_before_next_change
 
 Returns a humanized delay before the next change in opening status.
 
@@ -162,7 +172,7 @@ Returns a humanized delay before the next change in opening status.
 "3 hours"
 ```
 
-### <a name="plaintext_week_description"></a>plaintext_week_description
+### plaintext_week_description
 
 Returns a plaintext description of the schedules of a week.
 This method takes either a `datetime.date` object or a list of `datetime.date` objects.
@@ -190,7 +200,7 @@ Apart the main HumanizedOpeningHours class, HOH provides four other objects:
 - `MomentKind` : the kind of a period;
 - `Moment` : a moment in time, which can be a beginning or an end of a period.
 
-### <a name="day"></a>Day
+### Day
 
 Attributes:
 - `periods` (list) : a list of `Period` objects included in this day;
@@ -215,7 +225,7 @@ You can also use slicing with `datetime.date` object(s). It also supports steppi
 ['<Day 'Mo' (2 periods)>', '<Day 'Tu' (2 periods)>', '<Day 'We' (2 periods)>']
 ```
 
-### <a name="period"></a>Period
+### Period
 
 Attributes:
 - `beginning` (Moment object) : the beginning of the period;
@@ -232,7 +242,7 @@ datetime.timedelta(0, 10800)
 True
 ```
 
-### <a name="momentkind"></a>MomentKind
+### MomentKind
 
 A simple Enum with the following values:
 - `NORMAL`;
@@ -241,7 +251,7 @@ A simple Enum with the following values:
 - `DAWN`;
 - `DUSK`.
 
-### <a name="moment"></a>Moment
+### Moment
 
 Attributes:
 - `kind` (MomentKind) : the kind of this moment;
