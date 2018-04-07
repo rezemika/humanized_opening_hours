@@ -56,6 +56,42 @@ class TestGlobal(unittest.TestCase):
             oh.get_day(datetime.date.today()).periods[0].beginning.time(),
             datetime.time.min.replace(tzinfo=pytz.UTC)
         )
+    
+    def test_4(self):
+        field = "Mo-Fr 00:00-24:00"
+        oh = main.OHParser(field)
+        # Is it open?
+        dt = datetime.datetime(2018, 1, 1, 10, 0, tzinfo=pytz.timezone("UTC"))
+        self.assertTrue(oh.is_open(dt))
+        dt = datetime.datetime(2018, 1, 5, 10, 0, tzinfo=pytz.timezone("UTC"))
+        self.assertTrue(oh.is_open(dt))
+        dt = datetime.datetime(2018, 1, 6, 10, 0, tzinfo=pytz.timezone("UTC"))
+        self.assertFalse(oh.is_open(dt))
+        dt = datetime.datetime(2018, 1, 7, 10, 0, tzinfo=pytz.timezone("UTC"))
+        self.assertFalse(oh.is_open(dt))
+        # Periods
+        dt = datetime.datetime(2018, 1, 1, 10, 0, tzinfo=pytz.timezone("UTC"))
+        self.assertEqual(
+            len(oh.get_day(dt).periods),
+            1
+        )
+        self.assertEqual(
+            oh.get_day(dt).periods[0].beginning.time(),
+            datetime.time.min.replace(tzinfo=pytz.UTC)
+        )
+        # Handling of 'next_change()'
+        dt = datetime.datetime(2018, 1, 7, 10, 0, tzinfo=pytz.timezone("UTC"))
+        self.assertEqual(
+            oh.next_change(dt, allow_recursion=False),
+            datetime.datetime(2018, 1, 8, 0, 0, tzinfo=pytz.timezone("UTC"))
+        )
+        self.assertEqual(
+            oh.next_change(dt, allow_recursion=True),
+            datetime.datetime.combine(
+                datetime.date(2018, 1, 11),
+                datetime.time.max.replace(tzinfo=pytz.timezone("UTC"))
+            )
+        )
 
 class TestPatterns(unittest.TestCase):
     # Checks there is no error with regular fields.

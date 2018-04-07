@@ -305,7 +305,7 @@ class OHParser:
         day = self.get_day(dt=dt)
         return day.is_open(dt)
     
-    def next_change(self, moment=None):
+    def next_change(self, moment=None, allow_recursion=False):
         """Gets the next opening status change.
         
         Parameters
@@ -313,6 +313,10 @@ class OHParser:
         moment : datetime.datetime, optional
             The moment for which to check the opening. None default,
             meaning use the present time.
+        allow_recursion : bool, optional
+            Allows to use recursion to get the true next change if it
+            is in another day. It may cause 'RecusionError' with "24/7"
+            fields. False default, meaning return the first period ending.
         
         Returns
         -------
@@ -330,30 +334,49 @@ class OHParser:
             if initial_day.periods[-1].end.time() >= moment.timetz():
                 right_day = True
         
-        def get_moment_in_right_day(day, moment, days_offset=0):
+        def get_moment_in_right_day(day, moment, days_offset=0, allow_recursion=False, in_recursion=False):
+            if allow_recursion and in_recursion:
+                output_moment = (
+                    datetime.datetime.combine(
+                        day.date, day.periods[0].end.time()
+                    ) + datetime.timedelta(days=days_offset)
+                )
+                return output_moment
             if day.is_open(moment):
+                if moment == day.periods[0].beginning.time() and not allow_recursion:
+                    output_moment = (
+                        datetime.datetime.combine(
+                            day.date, day.periods[0].beginning.time()
+                        )
+                    )
+                    return output_moment
                 for period in day.periods:
                     if moment in period:
-                        return (
+                        if period.end.time() == datetime.time.max.replace(tzinfo=pytz.UTC) and allow_recursion:  # "-24:00"
+                            tomorrow = self.get_day(day.date+datetime.timedelta(days=1))
+                            days_offset += 1
+                            return get_moment_in_right_day(tomorrow, datetime.time.min, days_offset, allow_recursion=True, in_recursion=True)
+                        output_moment = (
                             datetime.datetime.combine(
                                 day.date, period.end.time()
-                            ) + datetime.timedelta(days=days_offset)
+                            )### + datetime.timedelta(days=days_offset)
                         )
+                        return output_moment
                 # Should not come here.
             for period in day.periods:
                 # There is no need to check for end of periods as it's closed.
                 if moment.timetz() <= period.beginning.time():
-                    return (
+                    output_moment = (
                         datetime.datetime.combine(
                             day.date,
                             period.beginning.time()
-                        ) +
-                        datetime.timedelta(days=days_offset)
+                        ) + datetime.timedelta(days=days_offset)
                     )
+                    return output_moment
             # Should not come here.
         
         if right_day:
-            return get_moment_in_right_day(initial_day, moment)
+            return get_moment_in_right_day(initial_day, moment, allow_recursion=allow_recursion)
         days_offset = 0
         while not right_day:
             days_offset += 1
@@ -366,7 +389,8 @@ class OHParser:
         return get_moment_in_right_day(
             current_day,
             datetime.time(0, 0, tzinfo=pytz.UTC),
-            days_offset=days_offset
+            days_offset=days_offset,
+            allow_recursion=allow_recursion
         )
     
     def holidays_status(self):
@@ -555,7 +579,7 @@ class HOHRenderer:
             format=pattern
         )
     
-    def humanized_time_before_next_change(self, moment=None, word=True):
+    def humanized_time_before_next_change(self, moment=None, allow_recursion=False, word=True):
         """Returns a human-readable string of the remaining time
         before the next opening status change.
         
@@ -565,6 +589,10 @@ class HOHRenderer:
             The moment for which to check the opening. None default,
             meaning use the present time. Same as for the
             `next_change()` method of OHParser.
+        allow_recursion : bool, optional
+            Allows to use recursion to get the true next change if it
+            is in another day. It may cause 'RecusionError' with "24/7"
+            fields. False default, meaning return the first period ending.
         word : bool, optional
             Defines whether to add a descriptive word before the delay.
             For example: "in X minutes" if True, "X minutes" if False.

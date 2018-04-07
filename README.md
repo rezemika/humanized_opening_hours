@@ -59,6 +59,14 @@ True
 # If we are on December 24 before 21:00 / 09:00PM...
 >>> oh.next_change()
 datetime.datetime(2017, 12, 24, 21, 0, tzinfo=<UTC>)
+
+# For consecutive days fully open ("Mo-Fr 00:00-24:00"), you can allow recursion with the "allow_recursion" parameter
+# to get the true next change, but it will raise a "RecursionError" with "24/7" fields.
+>>> oh = hoh.OHParser("Mo-Fr 00:00-24:00")
+>>> oh.next_change(allow_recursion=False)
+datetime.datetime(2018, 1, 8, 0, 0, tzinfo=<UTC>)
+>>> oh.next_change(allow_recursion=True)
+datetime.datetime(2018, 1, 11, 23, 59, 59, 999999, tzinfo=<UTC>)
 ```
 
 You can get a sanitized version of the field given to the constructor with the *sanitize* staticmethod or the **sanitized_field** attribute.
