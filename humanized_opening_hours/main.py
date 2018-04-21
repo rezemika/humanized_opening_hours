@@ -1,7 +1,6 @@
 import datetime
 import gettext
 from collections import namedtuple
-import os
 import re
 
 import pytz
@@ -322,7 +321,7 @@ class OHParser:
             if initial_day.periods[-1].end.time() >= moment.timetz():
                 right_day = True
         
-        def get_moment_in_right_day(day, moment, days_offset=0, allow_recursion=False, in_recursion=False):
+        def get_moment_in_right_day(day, moment, days_offset=0, allow_recursion=False, in_recursion=False):  # noqa
             if allow_recursion and in_recursion:
                 output_moment = (
                     datetime.datetime.combine(
@@ -331,7 +330,10 @@ class OHParser:
                 )
                 return output_moment
             if day.is_open(moment):
-                if moment == day.periods[0].beginning.time() and not allow_recursion:
+                if (
+                    moment == day.periods[0].beginning.time() and
+                    not allow_recursion
+                ):
                     output_moment = (
                         datetime.datetime.combine(
                             day.date, day.periods[0].beginning.time()
@@ -340,14 +342,21 @@ class OHParser:
                     return output_moment
                 for period in day.periods:
                     if moment in period:
-                        if period.end.time() == datetime.time.max.replace(tzinfo=pytz.UTC) and allow_recursion:  # "-24:00"
-                            tomorrow = self.get_day(day.date+datetime.timedelta(days=1))
+                        # "-24:00"
+                        if period.end.time() == datetime.time.max.replace(tzinfo=pytz.UTC) and allow_recursion:  # noqa
+                            tomorrow = self.get_day(
+                                day.date+datetime.timedelta(days=1)
+                            )
                             days_offset += 1
-                            return get_moment_in_right_day(tomorrow, datetime.time.min, days_offset, allow_recursion=True, in_recursion=True)
+                            return get_moment_in_right_day(
+                                tomorrow, datetime.time.min,
+                                days_offset, allow_recursion=True,
+                                in_recursion=True
+                            )
                         output_moment = (
                             datetime.datetime.combine(
                                 day.date, period.end.time()
-                            )### + datetime.timedelta(days=days_offset)
+                            )
                         )
                         return output_moment
                 # Should not come here.
@@ -364,7 +373,9 @@ class OHParser:
             # Should not come here.
         
         if right_day:
-            return get_moment_in_right_day(initial_day, moment, allow_recursion=allow_recursion)
+            return get_moment_in_right_day(
+                initial_day, moment, allow_recursion=allow_recursion
+            )
         days_offset = 0
         while not right_day:
             days_offset += 1
@@ -567,7 +578,7 @@ class HOHRenderer:
             format=pattern
         )
     
-    def humanized_time_before_next_change(self, moment=None, allow_recursion=False, word=True):
+    def humanized_time_before_next_change(self, moment=None, allow_recursion=False, word=True):  # noqa
         """Returns a human-readable string of the remaining time
         before the next opening status change.
         
