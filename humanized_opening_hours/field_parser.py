@@ -15,6 +15,20 @@ from humanized_opening_hours.exceptions import (
 )
 
 
+def easter_date(year):
+    """Returns the datetime.date of easter for a given year (int)."""
+    # Code from https://github.com/ActiveState/code/tree/master/recipes/Python/576517_Calculate_Easter_Western_given  # noqa
+    a = year % 19
+    b = year // 100
+    c = year % 100
+    d = (19 * a + b - b // 4 - ((b - (b + 8) // 25 + 1) // 3) + 15) % 30
+    e = (32 + 2 * (b % 4) + 2 * (c // 4) - d - (c % 4)) % 7
+    f = d + e - 7 * ((a + 11 * d + 22 * e) // 451) + 114
+    month = f // 31
+    day = f % 31 + 1
+    return datetime.date(year, month, day)
+
+
 class YearTransformer(Transformer):
     # Moments
     def digital_moment(self, arg):
@@ -136,6 +150,14 @@ class YearTransformer(Transformer):
     def exceptional_dates(self, args):
         return tuple((set(args[:-1]), args[-1]))
     
+    def easter(self, args):
+        arg = args[0]
+        if arg == "easter":
+            return "easter"
+        _, offset, _ = arg.split()
+        offset_sign, days = offset[0], offset[1:]
+        return "easter" + offset_sign + days
+    
     # Holidays
     def holiday(self, args):
         return set([tk.value for tk in args])
@@ -194,13 +216,23 @@ class ParsedField:
                     pass
         return dates
     
+    def get_easter_string(self, dt):
+        easter = easter_date(dt.year)
+        if easter == dt:
+            return "easter"
+        offset = (easter - dt.date()).days
+        sign = '+' if offset > 0 else '-'
+        return "easter" + sign + str(abs(offset))
+    
     def get_periods_of_day(self, dt, is_PH=False, is_SH=False):
         # Tries to get the opening periods of a day,
         # with the following patterns:
         # Jan-1 - Jan-Mo - Jan - Mo - *
         if is_PH and is_SH:
             raise ValueError("A day cannot be both PH and SH.")
+        easter_string = self.get_easter_string(dt)
         patterns = (
+            easter_string,
             str(dt.month) + '-' + str(dt.day),
             MONTHS[dt.month-1] + '-' + WEEKDAYS[dt.weekday()],
             MONTHS[dt.month-1],

@@ -8,6 +8,8 @@ DIGITAL_MOMENT : /[0-2][0-9]:[0-5][0-9]+/
 
 SOLAR_COMPLEX_MOMENT : "(" SOLAR ("+"|"-") DIGITAL_MOMENT ")"
 
+easter : /((easter (\+|-)[1-9][0-9]? days?)|(easter))+/
+
 moment : DIGITAL_MOMENT -> digital_moment
        | SOLAR -> solar_moment
        | SOLAR_COMPLEX_MOMENT -> solar_complex_moment
@@ -38,6 +40,7 @@ day_periods : period ("," period)*
 date_exceptional_day : MONTH " " /([0-3][0-9])(?!:)|((?<![0-9])[0-9])(?!:)+/ -> exceptional_day
 
 field_part : concerned_period day_periods
+           | easter " " day_periods
            | day_periods -> everyday_periods
            | "24/7" -> always_open
            | date_exceptional_day ("," date_exceptional_day)* ":"? " " day_periods -> exceptional_dates

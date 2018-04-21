@@ -142,6 +142,13 @@ class TestPatterns(unittest.TestCase):
         
         field = "SH Mo-Fr 09:00-19:00"
         oh = main.OHParser(field)
+        
+        field = "easter 09:00-19:00"
+        oh = main.OHParser(field)
+        
+        field = "easter +2 days 09:00-19:00"
+        oh = main.OHParser(field)
+        
     
     def test_exceptional_days(self):
         field = "Dec 25 off"
@@ -165,10 +172,6 @@ class TestPatterns(unittest.TestCase):
             oh = main.OHParser(field)
     
     def test_invalid_patterns(self):
-        field = "easter 10:00-20:00"
-        with self.assertRaises(exceptions.ParseError) as context:
-            oh = main.OHParser(field)
-        
         field = "Mo-Fr 20:00-02:00"
         with self.assertRaises(exceptions.SpanOverMidnight) as context:
             oh = main.OHParser(field)
@@ -306,15 +309,15 @@ class TestFunctions(unittest.TestCase):
     
     def test_easter_date(self):
         self.assertEqual(
-            main.easter_date(2000),
+            field_parser.easter_date(2000),
             datetime.date(2000, 4, 23)
         )
         self.assertEqual(
-            main.easter_date(2010),
+            field_parser.easter_date(2010),
             datetime.date(2010, 4, 4)
         )
         self.assertEqual(
-            main.easter_date(2020),
+            field_parser.easter_date(2020),
             datetime.date(2020, 4, 12)
         )
 

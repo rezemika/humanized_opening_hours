@@ -286,6 +286,9 @@ Jan,Feb Mo-Fr 10:00-20:00
 Jan-Feb Mo-Fr 10:00-20:00
 SH Mo 10:00-20:00
 SH Mo-Fr 10:00-20:00
+easter 10:00-20:00
+easter +1 day 10:00-20:00
+easter +2 days 10:00-20:00
 ```
 
 The following formats are NOT supported yet and their parsing will raise a ParseError.
@@ -294,7 +297,6 @@ The following formats are NOT supported yet and their parsing will raise a Parse
 20:00-02:00  # Span over midnight.
 years
 weeks
-easter 10:00-20:00
 Su[1] 10:00-20:00
 SH,PH Mo-Fr 10:00-20:00
 SH,PH Mo-Fr,Su 10:00-20:00
