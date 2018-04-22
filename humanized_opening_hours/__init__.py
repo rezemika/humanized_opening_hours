@@ -18,8 +18,10 @@ __appname__ = "osm_humanized_opening_hours"
 __author__ = "rezemika <reze.mika@gmail.com>"
 __licence__ = "AGPLv3"
 
+import os
 import gettext
-gettext.install("HOH", "locales/")
+base_dir = os.path.dirname(os.path.realpath(__file__))
+gettext.install("HOH", os.path.join(base_dir, "locales"))
 
 from humanized_opening_hours.main import (
     OHParser,

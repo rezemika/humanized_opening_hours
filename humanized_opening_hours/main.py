@@ -2,6 +2,7 @@ import datetime
 import gettext
 from collections import namedtuple
 import re
+import os
 
 import pytz
 import babel.dates
@@ -21,6 +22,9 @@ from humanized_opening_hours.utils import (
     days_of_week_from_day, days_from_week_number
 )
 from humanized_opening_hours import field_parser
+
+
+BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 def render_field(field, **kwargs):
@@ -476,7 +480,7 @@ class OHRenderer:
         list[str]
             The list of all suported languages.
         """
-        locales = gettext.find("HOH", "locales/", all=True)
+        locales = gettext.find("HOH", os.path.join(BASE_DIR, "locales/"), all=True)
         locales = [l.split('/')[-3] for l in locales]
         locales.append("en")
         return locales
@@ -504,9 +508,9 @@ class OHRenderer:
         self.locale_name = locale_name
         self.babel_locale = babel.Locale.parse(locale_name)
         lang = self.babel_locale.language
-        gettext.install("HOH", "locales/")
+        gettext.install("HOH", os.path.join(BASE_DIR, "locales/"))
         i18n_lang = gettext.translation(
-            "HOH", localedir="locales/",
+            "HOH", localedir=os.path.join(BASE_DIR, "locales/"),
             languages=[lang],
             fallback=True
         )
