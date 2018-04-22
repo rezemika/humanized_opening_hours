@@ -17,6 +17,9 @@ from humanized_opening_hours.temporal_objects import (
     MomentKind,
     Day
 )
+from humanized_opening_hours.utils import (
+    days_of_week_from_day, days_from_week_number
+)
 from humanized_opening_hours import field_parser
 
 
@@ -27,29 +30,6 @@ def render_field(field, **kwargs):
         of the __init__ method of OHRenderer.
     """
     return OHParser(field).render(**kwargs)
-
-
-def days_of_week_from_day(dt):
-    """
-        Returns a list of seven datetime.date days representing a week
-        from a day in this week.
-    """
-    if isinstance(dt, datetime.datetime):
-        dt = dt.date()
-    start = dt - datetime.timedelta(days=dt.weekday())
-    return [start+datetime.timedelta(days=i) for i in range(7)]
-
-
-def days_from_week_number(year, week):
-    """
-        Returns a list of seven datetime.date days representing a week
-        from a year and a week number.
-    """
-    # Code inspired of https://code.activestate.com/recipes/521915-start-date-and-end-date-of-given-week/#c5  # noqa
-    dt = datetime.date(year, 1, 1)
-    dt = dt - datetime.timedelta(dt.weekday())
-    delta = datetime.timedelta(days=(week-1)*7)
-    return days_of_week_from_day(dt + delta)
 
 
 class OHParser:

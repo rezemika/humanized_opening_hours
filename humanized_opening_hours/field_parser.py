@@ -13,20 +13,7 @@ from humanized_opening_hours.temporal_objects import (
 from humanized_opening_hours.exceptions import (
     SolarHoursNotSetError, SpanOverMidnight
 )
-
-
-def easter_date(year):
-    """Returns the datetime.date of easter for a given year (int)."""
-    # Code from https://github.com/ActiveState/code/tree/master/recipes/Python/576517_Calculate_Easter_Western_given  # noqa
-    a = year % 19
-    b = year // 100
-    c = year % 100
-    d = (19 * a + b - b // 4 - ((b - (b + 8) // 25 + 1) // 3) + 15) % 30
-    e = (32 + 2 * (b % 4) + 2 * (c // 4) - d - (c % 4)) % 7
-    f = d + e - 7 * ((a + 11 * d + 22 * e) // 451) + 114
-    month = f // 31
-    day = f % 31 + 1
-    return datetime.date(year, month, day)
+from humanized_opening_hours.utils import easter_date
 
 
 class YearTransformer(Transformer):
