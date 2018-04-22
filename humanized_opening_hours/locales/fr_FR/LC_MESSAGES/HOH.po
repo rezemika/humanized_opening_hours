@@ -1,84 +1,165 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# French translation of HOH's strings.
+# Copyright (C) 2018
+# This file is distributed under the same license as the HOH package.
+# rezemika, 2018.
 #
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: main.py\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-09 22:47+0100\n"
+"POT-Creation-Date: 2018-04-24 21:02+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Last-Translator: rezemika\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"Language: fr_FR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
 
-#: main.py:532 humanized_opening_hours/main.py:555
+#: main.py:532 humanized_opening_hours/main.py:555 main.py:612 main.py:744
+#: main.py:752 main.py:632 main.py:774 main.py:817 main.py:824 main.py:839
 msgid " and "
 msgstr " et "
 
-#: humanized_opening_hours/main.py:560
+#: humanized_opening_hours/main.py:560 main.py:617 main.py:767 main.py:638
+#: main.py:737
 msgid "sunrise"
 msgstr "lever du soleil"
 
-#: humanized_opening_hours/main.py:561
+#: humanized_opening_hours/main.py:561 main.py:618 main.py:768 main.py:639
+#: main.py:738
 msgid "sunset"
 msgstr "coucher du soleil"
 
-#: humanized_opening_hours/main.py:562
+#: humanized_opening_hours/main.py:562 main.py:619 main.py:769 main.py:640
+#: main.py:739
 msgid "dawn"
 msgstr "aurore"
 
-#: humanized_opening_hours/main.py:563
+#: humanized_opening_hours/main.py:563 main.py:620 main.py:770 main.py:641
+#: main.py:740
 msgid "dusk"
 msgstr "crépuscule"
 
 #: humanized_opening_hours/main.py:569 humanized_opening_hours/main.py:571
-#: humanized_opening_hours/main.py:590
+#: humanized_opening_hours/main.py:590 main.py:626 main.py:628 main.py:647
+#: main.py:649 main.py:668
 msgid "%H:%M"
 msgstr "%H:%M"
 
-#: humanized_opening_hours/main.py:575
+#: humanized_opening_hours/main.py:575 main.py:632 main.py:653
 msgid "{} after sunrise"
 msgstr "{} après le lever du soleil"
 
-#: humanized_opening_hours/main.py:576
+#: humanized_opening_hours/main.py:576 main.py:633 main.py:654
 msgid "{} after sunset"
 msgstr "{} après le coucher du soleil"
 
-#: humanized_opening_hours/main.py:577
+#: humanized_opening_hours/main.py:577 main.py:634 main.py:655
 msgid "{} after dawn"
 msgstr "{} après l'aurore"
 
-#: humanized_opening_hours/main.py:578
+#: humanized_opening_hours/main.py:578 main.py:635 main.py:656
 msgid "{} after dusk"
 msgstr "{} après le cépuscule"
 
-#: humanized_opening_hours/main.py:582
+#: humanized_opening_hours/main.py:582 main.py:639 main.py:660
 msgid "{} before sunrise"
 msgstr "{} avant le lever du soleil"
 
-#: humanized_opening_hours/main.py:583
+#: humanized_opening_hours/main.py:583 main.py:640 main.py:661
 msgid "{} before sunset"
 msgstr "{} avant le lever du soleil"
 
-#: humanized_opening_hours/main.py:584
+#: humanized_opening_hours/main.py:584 main.py:641 main.py:662
 msgid "{} before dawn"
 msgstr "{} avant l'aurore"
 
-#: humanized_opening_hours/main.py:585
+#: humanized_opening_hours/main.py:585 main.py:642 main.py:663
 msgid "{} before dusk"
 msgstr "{} avant le crépuscule"
 
-#: humanized_opening_hours/main.py:643
+#: humanized_opening_hours/main.py:643 main.py:700 main.py:721 main.py:791
 msgid "closed"
 msgstr "fermé"
 
-#: humanized_opening_hours/main.py:644
+#: humanized_opening_hours/main.py:644 main.py:701 main.py:722 main.py:780
+#: main.py:857
 #, python-brace-format
 msgid "{name}: {periods}"
 msgstr "{name} : {periods}"
+
+#: main.py:723
+msgid ": "
+msgstr " : "
+
+#: main.py:729 main.py:737 main.py:788 main.py:803 main.py:849
+msgid " to "
+msgstr " à "
+
+#: main.py:755 main.py:827
+msgid "Every days: "
+msgstr "Tous les jours : "
+
+#: main.py:741
+msgid "public holidays"
+msgstr "jours fériés"
+
+#: main.py:742
+msgid "school holidays"
+msgstr "vacances scolaires"
+
+#: main.py:743
+msgid "public and school holidays"
+msgstr "jours fériés et vacances scolaires"
+
+#: main.py:833 main.py:841 main.py:844
+msgid " (every days)"
+msgstr " (tous les jours)"
+
+#: main.py:872 main.py:884
+#, python-brace-format
+msgid "{months}, on {wd}"
+msgid_plural "{months}, on {wd}"
+msgstr[0] "{months}, le {wd}"
+msgstr[1] "{months}, les {wd}"
+
+#: main.py:890
+#, python-brace-format
+msgid "{months}, from {weekdays}"
+msgstr "{months}, du {weekdays}"
+
+#: main.py:898
+msgid "Easter"
+msgstr "Pâques"
+
+#: main.py:903
+#, python-brace-format
+msgid "{n} day after easter"
+msgid_plural "{n} days after easter"
+msgstr[0] "{n} jour après Pâques"
+msgstr[1] "{n} jours après Pâques"
+
+#: main.py:909
+#, python-brace-format
+msgid "{n} day before easter"
+msgid_plural "{n} days before easter"
+msgstr[0] "{n} jour avant Pâques"
+msgstr[1] "{n} jours avant Pâques"
+
+#: main.py:928
+#, python-brace-format
+msgid "{holiday}, on {wd}"
+msgid_plural "{holiday}, on {wd}"
+msgstr[0] "{holiday}, le {wd}"
+msgstr[1] "{holiday}, les {wd}"
+
+#: main.py:934
+#, python-brace-format
+msgid "{holidays}, from {weekdays}"
+msgstr "{holidays}, du {weekdayes}"
+
+#: main.py:940
+msgid "Open 24 hours a day and 7 days a week."
+msgstr "Ouvert 24 heures sur 24 et 7 jours sur 7."

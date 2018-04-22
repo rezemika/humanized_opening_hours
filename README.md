@@ -23,6 +23,11 @@ Friday: 06:00 - 21:00
 Saturday: 08:00 - 12:00
 Sunday: 08:00 - 12:00
 """
+>>> print('\n'.join(oh.render().full_description()))
+"""
+Monday to Friday: 06:00 to 21:00.
+Saturday and Sunday: 08:00 to 12:00.
+"""
 ```
 
 **This module is still in development and bugs may occur. If you discover one, please create an issue.**
@@ -191,6 +196,18 @@ Saturday: 08:00 - 12:00
 Sunday: closed
 """
 ```
+
+### full_description
+
+Returns a list of strings (sentences) describing the whole field.
+
+```python
+# Field: "Mo-Fr 10:00-19:00; Sa 10:00-12:00; Dec 25 off"
+>>> print(' '.join(oh.render().full_description()))
+"Monday to Friday: 10:00 to 19:00. Saturday: 10:00 to 12:00. 25 December: closed."
+```
+
+You can get the same result with the `field_description()` function, which takes the field and an optional `locale_name` parameter.
 
 ## Objects
 

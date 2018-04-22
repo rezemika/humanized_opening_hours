@@ -19,7 +19,8 @@ from humanized_opening_hours.temporal_objects import (
     Day
 )
 from humanized_opening_hours.utils import (
-    days_of_week_from_day, days_from_week_number
+    days_of_week_from_day,
+    days_from_week_number  # Not used yet.
 )
 from humanized_opening_hours import field_parser
 
@@ -34,6 +35,17 @@ def render_field(field, **kwargs):
         of the __init__ method of OHRenderer.
     """
     return OHParser(field).render(**kwargs)
+
+
+def field_description(field, locale_name="en", **kwargs):
+    """Returns a textual description (list of strings) of the given field.
+    
+    Like 'OHRenderer', it takes a 'locale_name' parameter.
+    It may raise a 'NotImplementedError' if the renderer
+    for a field pattern is not implemented yet.
+    """
+    oh = OHParser(field, **kwargs)
+    return oh.render(locale_name).full_description()
 
 
 class OHParser:
@@ -480,7 +492,11 @@ class OHRenderer:
         list[str]
             The list of all suported languages.
         """
-        locales = gettext.find("HOH", os.path.join(BASE_DIR, "locales/"), all=True)
+        locales = gettext.find(
+            "HOH",
+            os.path.join(BASE_DIR, "locales"),
+            all=True
+        )
         locales = [l.split('/')[-3] for l in locales]
         locales.append("en")
         return locales
@@ -508,9 +524,9 @@ class OHRenderer:
         self.locale_name = locale_name
         self.babel_locale = babel.Locale.parse(locale_name)
         lang = self.babel_locale.language
-        gettext.install("HOH", os.path.join(BASE_DIR, "locales/"))
+        gettext.install("HOH", os.path.join(BASE_DIR, "locales"))
         i18n_lang = gettext.translation(
-            "HOH", localedir=os.path.join(BASE_DIR, "locales/"),
+            "HOH", localedir=os.path.join(BASE_DIR, "locales"),
             languages=[lang],
             fallback=True
         )
@@ -533,6 +549,7 @@ class OHRenderer:
             months.append(self.babel_locale.months['format']['wide'][i+1])
         return {"days": days, "months": months}
     
+    # TODO : Make it a staticmethod.
     def _format_date(self, date):
         """Formats a datetime with the appropriate locale.
         
@@ -614,6 +631,7 @@ class OHRenderer:
             return values[0]
         return ', '.join(values[:-1]) + _(" and ") + values[-1]
     
+    # TODO : Make it a staticmethod.
     def _render_universal_moment(self, moment):
         if not moment._has_offset():
             string = {
@@ -707,8 +725,216 @@ class OHRenderer:
             ) + '\n'
         return output.rstrip()
     
+    def full_description(self):
+        parser = field_parser.get_parser(include_transformer=False)
+        human_names = self.get_human_names()
+        days = dict(zip(WEEKDAYS, human_names["days"]))
+        months = dict(zip(MONTHS, human_names["months"]))
+        human_names = {
+            "days": days,
+            "months": months,
+            "special": {  # Needs translation.
+                "sunrise": _("sunrise"),
+                "sunset": _("sunset"),
+                "dawn": _("dawn"),
+                "dusk": _("dusk"),
+                "PH": _("public holidays"),
+                "SH": _("school holidays"),
+                "PH+SH": _("public and school holidays")
+            }
+        }
+        transformer = DescriptionTransformer(human_names, self)
+        return transformer.transform(
+            parser.parse(self.ohparser.sanitized_field)
+        )
+    
     def __repr__(self):
         return str(self)
     
     def __str__(self):
         return "<OHRenderer>"
+
+
+class DescriptionTransformer(lark.Transformer):
+    """Transforms a lark Tree to a descriptive list of strings."""
+    def __init__(self, localized_names, ohrenderer, *args, **kwargs):
+        self.localized_names = localized_names
+        self.ohrenderer = ohrenderer
+        i18n_lang = gettext.translation(
+            "HOH", localedir="locales",
+            languages=[ohrenderer.babel_locale.language],
+            fallback=True
+        )
+        i18n_lang.install()
+        super().__init__(*args, **kwargs)
+    
+    def _join_and(self, l):
+        if len(l) == 1:
+            return l[0]
+        return ', '.join(l[:-1]) + _(" and ") + l[-1]
+    
+    def field(self, args):
+        return args
+    
+    def field_part(self, args):
+        return _("{name}: {periods}").format(
+            name=args[0][0].upper() + args[0][1:], periods=args[1]
+        ) + '.'
+    
+    def digital_moment(self, args):
+        return args[0]
+    
+    def period(self, args):
+        return args[0] + _(" to ") + args[1]
+    
+    def period_closed(self, args):
+        return _("closed")
+    
+    def solar_moment(self, args):
+        return self.localized_names["special"].get(args[0])
+    
+    def solar_complex_moment(self, args):
+        moment = field_parser.YearTransformer.solar_complex_moment(None, args)
+        return OHRenderer._render_universal_moment(None, moment)
+    
+    def raw_consecutive_day_range(self, args):
+        return (
+            self.localized_names["days"].get(args[0]) +
+            _(" to ") +
+            self.localized_names["days"].get(args[1])
+        )
+    
+    def consecutive_day_range(self, args):
+        return self._join_and(args)
+    
+    def unconsecutive_days(self, args):
+        if len(args) == 1:
+            return self.localized_names["days"].get(args[0])
+        return (
+            ', '.join(
+                [self.localized_names["days"].get(m) for m in args[:-1]]
+            ) +
+            _(" and ") +
+            self.localized_names["days"].get(args[-1])
+        )
+    
+    def day_periods(self, args):
+        if len(args) == 1:
+            return args[0]
+        return ', '.join(args[:-1]) + _(" and ") + args[-1]
+    
+    def everyday_periods(self, args):
+        return _("Every days: ") + args[0] + '.'
+    
+    def unconsecutive_months(self, args):
+        if len(args) == 1:
+            return (
+                self.localized_names["months"].get(args[0]) +
+                _(" (every days)")
+            )
+        return (
+            ', '.join(
+                [self.localized_names["months"].get(m) for m in args[:-1]]
+            ) +
+            _(" and ") +
+            self.localized_names["months"].get(args[-1])
+        ) + _(" (every days)")
+    
+    def consecutive_month_range(self, args):
+        return args[0] + _(" (every days)")
+    
+    def raw_consecutive_month_range(self, args):
+        first_month = self.localized_names["months"].get(args[0])
+        last_month = self.localized_names["months"].get(args[1])
+        return first_month + _(" to ") + last_month
+    
+    def exceptional_day(self, args):
+        dt = datetime.date(2000, MONTHS.index(args[0])+1, int(args[1]))
+        return OHRenderer._format_date(self.ohrenderer, dt)
+    
+    def exceptional_dates(self, args):
+        dates = self.day_periods(args[:-1])
+        return _("{name}: {periods}").format(
+            name=dates, periods=args[-1]
+        ) + '.'
+    
+    def days_of_month(self, args):
+        months = []
+        weekdays = []
+        for tk in args:
+            if tk.value in MONTHS:
+                months.append(self.localized_names["months"].get(tk.value))
+            else:
+                weekdays.append(self.localized_names["days"].get(tk.value))
+        months_string = self._join_and(months)
+        weekdays_string = self._join_and(weekdays)
+        concerned_moments_string = gettext.ngettext(
+            "{months}, on {wd}",
+            "{months}, on {wd}",
+            len(weekdays)
+        ).format(months=months_string, wd=weekdays_string)
+        return concerned_moments_string
+    
+    def days_of_consecutive_months(self, args):
+        months = args[0]
+        days = self._join_and(
+            [self.localized_names["days"].get(tk.value) for tk in args[1:]]
+        )
+        return gettext.ngettext(
+            "{months}, on {wd}",
+            "{months}, on {wd}",
+            len(days)
+        ).format(months=months, wd=days)
+    
+    def consecutive_days_of_consecutive_months(self, args):
+        return _("{months}, from {weekdays}").format(
+            months=args[0],
+            weekdays=args[1]
+        )
+    
+    def easter(self, args):
+        arg = args[0]
+        if arg == "easter":
+            return _("Easter")
+        x, offset, x = arg.split()
+        offset_sign, days = offset[0], int(offset[1:])
+        if offset_sign == '+':
+            return gettext.ngettext(
+                "{n} day after easter",
+                "{n} days after easter",
+                days
+            ).format(n=days)
+        else:
+            return gettext.ngettext(
+                "{n} day before easter",  # TODO : Use "eve"?
+                "{n} days before easter",
+                days
+            ).format(n=days)
+    
+    def holiday(self, args):
+        holidays = [
+            self.localized_names["special"].get(tk.value) for tk in args
+        ]
+        if len(holidays) == 1:
+            return holidays[0]
+        return self.localized_names["special"].get("PH+SH")
+    
+    def holidays_unconsecutive_days(self, args):
+        holidays_string = self.localized_names["special"].get(args[0])
+        days = self._join_and(
+            [self.localized_names["days"].get(tk.value) for tk in args[1:]]
+        )
+        return gettext.ngettext(
+            "{holiday}, on {wd}",
+            "{holiday}, on {wd}",
+            len(days)
+        ).format(holiday=holidays_string, wd=days)
+    
+    def holidays_consecutive_days(self, args):
+        return _("{holidays}, from {weekdays}").format(
+            holidays=self.localized_names["special"].get(args[0]),
+            weekdays=args[1]
+        )
+    
+    def always_open(self, args):
+        return _("Open 24 hours a day and 7 days a week.")

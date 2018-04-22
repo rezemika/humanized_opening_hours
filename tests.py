@@ -275,6 +275,133 @@ class TestSolarHours(unittest.TestCase):
         with self.assertRaises(exceptions.ParseError) as context:
             oh = main.OHParser(field)
 
+
+class TestFieldDescription(unittest.TestCase):
+    maxDiff = None
+    
+    def test_regulars(self):
+        field = "Mo-Fr 10:00-19:00; Sa 10:00-12:00"
+        self.assertEqual(
+            main.field_description(field),
+            ["Monday to Friday: 10:00 to 19:00.", "Saturday: 10:00 to 12:00."]
+        )
+        
+        field = "sunrise-sunset"
+        self.assertEqual(
+            main.field_description(field),
+            ["Every days: sunrise to sunset."]
+        )
+        
+        field = "sunrise-sunset; Su off; PH 10:00-20:00"
+        self.assertEqual(
+            main.field_description(field),
+            [
+                "Every days: sunrise to sunset.",
+                "Sunday: closed.",
+                "Public holidays: 10:00 to 20:00."
+            ]
+        )
+        
+        field = "10:00-(sunset+02:00)"
+        self.assertEqual(
+            main.field_description(field),
+            ["Every days: 10:00 to 02:00 after sunset."]
+        )
+        
+        field = "Jan-Feb 10:00-20:00"
+        self.assertEqual(
+            main.field_description(field),
+            ["January to February (every days): 10:00 to 20:00."]
+        )
+        
+        field = "Jan 10:00-20:00"
+        self.assertEqual(
+            main.field_description(field),
+            ["January (every days): 10:00 to 20:00."]
+        )
+        
+        field = "Jan,Dec 10:00-20:00"
+        self.assertEqual(
+            main.field_description(field),
+            ["January and December (every days): 10:00 to 20:00."]
+        )
+        
+        field = "Jan,Dec 10:00-20:00"
+        self.assertEqual(
+            main.field_description(field),
+            ["January and December (every days): 10:00 to 20:00."]
+        )
+        
+        field = "Dec 25 09:00-12:00"
+        self.assertEqual(
+            main.field_description(field),
+            ["25 December: 09:00 to 12:00."]
+        )
+        
+        field = "Dec 25,Jan 1 09:00-12:00"
+        self.assertEqual(
+            main.field_description(field),
+            ["25 December and 1 January: 09:00 to 12:00."]
+        )
+        
+        field = "Dec Mo 10:00-20:00"
+        self.assertEqual(
+            main.field_description(field),
+            ["December, on Monday: 10:00 to 20:00."]
+        )
+        
+        field = "Jan-Feb Mo 10:00-20:00"
+        self.assertEqual(
+            main.field_description(field),
+            ["January to February, on Monday: 10:00 to 20:00."]
+        )
+        
+        field = "Jan-Feb Mo-Fr 10:00-20:00"
+        self.assertEqual(
+            main.field_description(field),
+            ["January to February, from Monday to Friday: 10:00 to 20:00."]
+        )
+        
+        field = "easter 10:00-20:00"
+        self.assertEqual(
+            main.field_description(field),
+            ["Easter: 10:00 to 20:00."]
+        )
+        
+        field = "PH,SH 10:00-20:00"
+        self.assertEqual(
+            main.field_description(field),
+            ["Public and school holidays: 10:00 to 20:00."]
+        )
+        
+        field = "PH Sa 10:00-20:00"
+        self.assertEqual(
+            main.field_description(field),
+            ["Public holidays, on Saturday: 10:00 to 20:00."]
+        )
+        
+        field = "SH Mo-Fr 10:00-20:00"
+        self.assertEqual(
+            main.field_description(field),
+            ["School holidays, from Monday to Friday: 10:00 to 20:00."]
+        )
+        
+        field = "24/7"
+        self.assertEqual(
+            main.field_description(field),
+            ["Open 24 hours a day and 7 days a week."]
+        )
+        
+        field = "24/7; PH closed"
+        self.assertEqual(
+            main.field_description(field),
+            [
+                "Open 24 hours a day and 7 days a week.",
+                "Public holidays: closed."
+            ]
+        )
+
+
 class TestFunctions(unittest.TestCase):
     maxDiff = None
     
@@ -320,6 +447,7 @@ class TestFunctions(unittest.TestCase):
             field_parser.easter_date(2020),
             datetime.date(2020, 4, 12)
         )
+
 
 class TestParsing(unittest.TestCase):
     maxDiff = None
