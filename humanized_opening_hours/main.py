@@ -34,8 +34,7 @@ def render_field(field, **kwargs):
 
 class OHParser:
     def __init__(self, field):
-        """
-        A parser for the OSM opening_hours fields.
+        """A parser for the OSM opening_hours fields.
         
         >>> oh = hoh.OHParser("Th-Sa 10:00-19:00")
         
@@ -431,8 +430,7 @@ RenderableDay.__doc__ = """A namedtuple containing three attributes:
 
 
 class OHRenderer:
-    """
-    A renderer for the OSM opening_hours fields.
+    """A renderer for the OSM opening_hours fields.
     
     >>> ohr = hoh.OHRenderer(oh_parser_instance)
     OR
@@ -471,8 +469,7 @@ class OHRenderer:
     
     @staticmethod
     def available_locales():
-        """
-        Returns a list of all suported languages.
+        """Returns a list of all suported languages.
         
         Returns
         -------
