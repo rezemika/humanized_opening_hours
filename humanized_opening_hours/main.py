@@ -66,12 +66,9 @@ class OHParser:
         
         Raises
         ------
-        NotImplementedError
-            When the field contains a rule for which support is
-            not available yet.
         humanized_opening_hours.exceptions.ParseError
             When something goes wrong during the parsing
-            (e.g. the field is invalid).
+            (e.g. the field is invalid or contains an unsupported pattern).
         """
         self.original_field = field
         self.sanitized_field = self.sanitize(self.original_field)
@@ -401,7 +398,7 @@ class OHParser:
             '<Day 'We' (2 periods)>'
         ]
         
-        Also supports step with `oh[start:stop:step]` (as int).
+        Also supports stepping with `oh[start:stop:step]` (as int).
         """
         if type(val) is datetime.date:
             return self.get_day(val)
@@ -411,9 +408,9 @@ class OHParser:
                 type(val.start) is not datetime.date or
                 type(val.stop) is not datetime.date
             ):
-                raise NotImplementedError
+                return NotImplemented
         if val.step is not None and type(val.step) is not int:
-            raise NotImplementedError
+            return NotImplemented
         
         step = val.step if val.step is not None else 1
         ordinals = range(val.start.toordinal(), val.stop.toordinal()+1, step)
