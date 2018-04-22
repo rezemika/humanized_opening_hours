@@ -23,7 +23,7 @@ gettext.install("HOH", "locales/")
 
 from humanized_opening_hours.main import (
     OHParser,
-    HOHRenderer,
+    OHRenderer,
     days_of_week_from_day,
     render_field
 )

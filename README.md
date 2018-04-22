@@ -112,7 +112,7 @@ Attention, except if the facility is on the equator, this setting will be valid 
 
 ## Have nice schedules
 
-The `HOHRenderer` class allows you to get various representations of the schedules.
+The `OHRenderer` class allows you to get various representations of the schedules.
 Its `__init__` method takes an OHParser object in argument, and two optional arguments:
 
 - `universal` (bool) : allows to have human-readable descriptions without having to parse the solar hours (True default).

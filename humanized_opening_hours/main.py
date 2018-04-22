@@ -22,9 +22,9 @@ from humanized_opening_hours import field_parser
 
 def render_field(field, **kwargs):
     """
-        Returns an HOHRenderer object directly from a field.
+        Returns an OHRenderer object directly from a field.
         In addition to the field, it can take all the arguments
-        of the __init__ method of HOHRenderer.
+        of the __init__ method of OHRenderer.
     """
     return OHParser(field).render(**kwargs)
 
@@ -405,8 +405,8 @@ class OHParser:
         return self._tree.holidays_status
     
     def render(self, *args, **kwargs):
-        """Returns a HOHRenderer object. See its docstring for details."""
-        return HOHRenderer(self, *args, **kwargs)
+        """Returns an OHRenderer object. See its docstring for details."""
+        return OHRenderer(self, *args, **kwargs)
     
     def __getitem__(self, val):
         """Allows to get Day object(s) with slicing. Takes datetime.date objects.
@@ -453,13 +453,13 @@ RenderableDay.__doc__ = """A namedtuple containing three attributes:
 - dt (datetime.date): the date of the day."""
 
 
-class HOHRenderer:
+class OHRenderer:
     """
     A renderer for the OSM opening_hours fields.
     
-    >>> hohr = hoh.HOHRenderer(oh_parser_instance)
+    >>> ohr = hoh.OHRenderer(oh_parser_instance)
     OR
-    >>> hohr = oh_parser_instance.render()
+    >>> ohr = oh_parser_instance.render()
     
     Parameters
     ----------
@@ -470,7 +470,7 @@ class HOHRenderer:
         True default, meaning "sunrise".
     locale_name : str, optional
         The name of the locale to use. "en" default.
-        See HOHRenderer.available_locales() to get the
+        See OHRenderer.available_locales() to get the
         available locales.
     
     Attributes
@@ -514,7 +514,7 @@ class HOHRenderer:
         ----------
         locale_name : str
             The locale name. E.g. "en".
-            See HOHRenderer.available_locales() (static method) to get
+            See OHRenderer.available_locales() (static method) to get
             a list of available locales.
         
         Returns
@@ -522,10 +522,10 @@ class HOHRenderer:
         self
             The instance itself.
         """
-        if locale_name not in HOHRenderer.available_locales():
+        if locale_name not in OHRenderer.available_locales():
             raise ValueError(
                 "'locale_name' must be one of the locales given by the "
-                "HOHRenderer`available_locales()` method."
+                "OHRenderer`available_locales()` method."
             )
         self.locale_name = locale_name
         self.babel_locale = babel.Locale.parse(locale_name)
@@ -733,4 +733,4 @@ class HOHRenderer:
         return str(self)
     
     def __str__(self):
-        return "<HOHRenderer>"
+        return "<OHRenderer>"
