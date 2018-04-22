@@ -578,7 +578,7 @@ class OHRenderer:
             format=pattern
         )
     
-    def humanized_time_before_next_change(self, moment=None, allow_recursion=False, word=True):  # noqa
+    def time_before_next_change(self, moment=None, allow_recursion=False, word=True):  # noqa
         """Returns a human-readable string of the remaining time
         before the next opening status change.
         

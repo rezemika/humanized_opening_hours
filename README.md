@@ -161,14 +161,14 @@ Example:
 }
 ```
 
-### humanized_time_before_next_change
+### time_before_next_change
 
 Returns a humanized delay before the next change in opening status.
 
 ```python
->>> ohr.humanized_time_before_next_change()
+>>> ohr.time_before_next_change()
 "in 3 hours"
->>> ohr.humanized_time_before_next_change(word=False)
+>>> ohr.time_before_next_change(word=False)
 "3 hours"
 ```
 
