@@ -20,8 +20,11 @@ __licence__ = "AGPLv3"
 
 import os
 import gettext
-base_dir = os.path.dirname(os.path.realpath(__file__))
-gettext.install("HOH", os.path.join(base_dir, "locales"))
+gettext.install("HOH",
+    os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "locales"
+    )
+)
 
 from humanized_opening_hours.main import (
     OHParser,
