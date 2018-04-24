@@ -1,0 +1,188 @@
+# English translation (default) of HOH's strings.
+# Copyright (C) 2018
+# This file is distributed under the same license as the HOH package.
+# rezemika, 2018.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: field_parser.py\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-06-01 15:20+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: rezemika\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+
+#: field_parser.py:249 field_parser.py:432
+msgid " and "
+msgstr " and "
+
+#: field_parser.py:264
+msgid "Every days"
+msgstr "Every days"
+
+#: field_parser.py:269
+#, python-brace-format
+msgid "{range_selectors}: {time_selector}."
+msgstr "{range_selectors}: {time_selector}."
+
+#: field_parser.py:275
+msgid "open 24 hours a day and 7 days a week"
+msgstr "open 24 hours a day and 7 days a week"
+
+#: field_parser.py:303
+msgid ": "
+msgstr ": "
+
+#: field_parser.py:313
+msgid "%-d %B"
+msgstr "%-d %B"
+
+#: field_parser.py:319
+msgid "%Y %-d %B"
+msgstr "%Y %-d %B"
+
+#: field_parser.py:328
+msgid "easter"
+msgstr "easter"
+
+#: field_parser.py:342
+#, python-brace-format
+msgid "{year}, from {month1} to {month2}"
+msgstr "{year}, from {month1} to {month2}"
+
+#: field_parser.py:348
+#, python-brace-format
+msgid "{year} in {month}"
+msgstr "{year} in {month}"
+
+#: field_parser.py:354
+#, python-brace-format
+msgid "from {month1} to {month2}"
+msgstr "from {month1} to {month2}"
+
+#: field_parser.py:364
+#, python-brace-format
+msgid "from {date1_from} to the {date1_to}"
+msgstr "from {date1_from} to the {date1_to}"
+
+#: field_parser.py:367
+#, python-brace-format
+msgid "from {date1} to {date2}"
+msgstr "from {date1} to {date2}"
+
+#: field_parser.py:377
+#, python-brace-format
+msgid "week {n}"
+msgstr "week {n}"
+
+#: field_parser.py:379
+#, python-brace-format
+msgid "from week {week1} to week {week2}"
+msgstr "from week {week1} to week {week2}"
+
+#: field_parser.py:384
+#, python-brace-format
+msgid "from week {week1} to week {week2}, every {n} weeks"
+msgstr "from week {week1} to week {week2}, every {n} weeks"
+
+#: field_parser.py:400
+#, python-brace-format
+msgid "from {year1} to {year2}"
+msgstr "from {year1} to {year2}"
+
+#: field_parser.py:404
+#, python-brace-format
+msgid "from {year1} to {year2}, every {n} years"
+msgstr "from {year1} to {year2}, every {n} years"
+
+#: field_parser.py:415
+#, python-brace-format
+msgid "on {wd}"
+msgstr "on {wd}"
+
+#: field_parser.py:420
+#, python-brace-format
+msgid "from {wd1} to {wd2}"
+msgstr "from {wd1} to {wd2}"
+
+#: field_parser.py:429
+msgid "Public and school holidays"
+msgstr "Public and school holidays"
+
+#: field_parser.py:439
+#, python-brace-format
+msgid "{holiday}, {wd}"
+msgstr "{holiday}, {wd}"
+
+#: field_parser.py:443
+msgid "public holidays"
+msgstr "public holidays"
+
+#: field_parser.py:445
+msgid "school holidays"
+msgstr "school holidays"
+
+#: field_parser.py:464
+msgid "from {} to {}"
+msgstr "from {} to {}"
+
+#: field_parser.py:474
+msgid "sunrise"
+msgstr "sunrise"
+
+#: field_parser.py:475
+msgid "sunset"
+msgstr "sunset"
+
+#: field_parser.py:476
+msgid "dawn"
+msgstr ""
+
+#: field_parser.py:477
+msgid "dusk"
+msgstr ""
+
+#: field_parser.py:482
+#, python-brace-format
+msgid "{time} after sunrise"
+msgstr ""
+
+#: field_parser.py:483
+#, python-brace-format
+msgid "{time} after sunset"
+msgstr ""
+
+#: field_parser.py:484
+#, python-brace-format
+msgid "{time} after dawn"
+msgstr ""
+
+#: field_parser.py:485
+#, python-brace-format
+msgid "{time} after dusk"
+msgstr ""
+
+#: field_parser.py:489
+#, python-brace-format
+msgid "{time} before sunrise"
+msgstr ""
+
+#: field_parser.py:490
+#, python-brace-format
+msgid "{time} before sunset"
+msgstr ""
+
+#: field_parser.py:491
+#, python-brace-format
+msgid "{time} before dawn"
+msgstr ""
+
+#: field_parser.py:492
+#, python-brace-format
+msgid "{time} before dusk"
+msgstr ""

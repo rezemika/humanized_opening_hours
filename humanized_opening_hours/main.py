@@ -1,63 +1,36 @@
-import datetime
-import gettext
-from collections import namedtuple
-import re
 import os
+import re
+import datetime
+import warnings
 
-import pytz
-import babel.dates
 import lark
+import babel.dates
 
+from humanized_opening_hours.temporal_objects import WEEKDAYS, MONTHS
+from humanized_opening_hours.field_parser import (
+    PARSER, LOCALES, MainTransformer, DescriptionTransformer
+)
 from humanized_opening_hours.exceptions import (
     ParseError,
-    SolarHoursNotSetError
+    NextChangeError
 )
-from humanized_opening_hours.temporal_objects import (
-    WEEKDAYS,
-    MONTHS,
-    MomentKind,
-    Day
-)
-from humanized_opening_hours.utils import (
-    days_of_week_from_day,
-    days_from_week_number  # Not used yet.
-)
-from humanized_opening_hours import field_parser
 
 
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
-def render_field(field, **kwargs):
-    """
-        Returns an OHRenderer object directly from a field.
-        In addition to the field, it can take all the arguments
-        of the __init__ method of OHRenderer.
-    """
-    return OHParser(field).render(**kwargs)
-
-
-def field_description(field, locale_name="en", **kwargs):
-    """Returns a textual description (list of strings) of the given field.
-    
-    Like 'OHRenderer', it takes a 'locale_name' parameter.
-    It may raise a 'NotImplementedError' if the renderer
-    for a field pattern is not implemented yet.
-    """
-    oh = OHParser(field, **kwargs)
-    return oh.render(locale_name).full_description()
-
-
 class OHParser:
-    def __init__(self, field):
+    def __init__(self, field, locale="en"):
         """A parser for the OSM opening_hours fields.
         
-        >>> oh = hoh.OHParser("Th-Sa 10:00-19:00")
+        >>> oh = hoh.OHParser("Mo-Fr 10:00-19:00")
         
         Parameters
         ----------
         field : str
             The opening_hours field.
+        locale : str, optional
+            The locale to use. "en" default.
         
         Attributes
         ----------
@@ -77,18 +50,23 @@ class OHParser:
         solar_hours : dict{str: datetime.time}
             A dict containing hours of sunrise, sunset, dawn and dusk.
             Empty default, you have to fill it yourself with
-            datetime.time objects.
+            **not** localized datetime.time objects.
         
         Raises
         ------
-        humanized_opening_hours.exceptions.ParseError
+        humanized_opening_hours.ParseError
             When something goes wrong during the parsing
             (e.g. the field is invalid or contains an unsupported pattern).
+        humanized_opening_hours.SpanOverMidnight
+            When a field has a period which spans over midnight
+            (for example: "Mo-Fr 20:00-02:00"), which is not yet supported.
         """
         self.original_field = field
         self.sanitized_field = self.sanitize(self.original_field)
+        
         try:
-            self._tree = field_parser.parse_field(self.sanitized_field)
+            self._tree = PARSER.parse(self.sanitized_field)
+            self.rules = MainTransformer().transform(self._tree)
         except lark.lexer.UnexpectedInput as e:
             raise ParseError(
                 "The field could not be parsed, it may be invalid. "
@@ -107,6 +85,21 @@ class OHParser:
                     context=e.token.value
                 )
             )
+        except lark.common.ParseError as e:
+            raise ParseError(
+                "The field could not be parsed, it may be invalid."
+            )
+        
+        self.babel_locale = babel.Locale.parse(locale)
+        if locale not in LOCALES.keys():  # TODO : Warning.
+            warnings.warn(
+                (
+                    "The locale {!r} is not supported "
+                    "by the 'description()' method, "
+                    "using it will raise an exception."
+                ).format(locale),
+                UserWarning
+            )
         
         self.PH_dates = []
         self.SH_dates = []
@@ -120,6 +113,54 @@ class OHParser:
             "sunrise": None, "sunset": None,
             "dawn": None, "dusk": None
         }
+    
+    @staticmethod
+    def get_solar_hours(lat, lon, dt=None, tz="UTC"):
+        """Returns a dict containing hours of sunrise, sunset, dawn and dusk.
+        
+        Requires the 'astral' module. Sets values to None (like default)
+        in case of error.
+        
+        Parameters
+        ----------
+        float
+            The latitude of the location.
+        float
+            The longitude of the location.
+        datetime.date, optional
+            The date for which to get solar hours.
+            None default, meaning use the present day.
+        str, optional
+            The timezone name of the location. "UTC" default.
+        
+        Returns
+        -------
+        solar_hours : dict{str: datetime.time}
+            A dict containing hours of sunrise, sunset, dawn and dusk
+            (or None in case of error).
+        
+        Raises
+        ------
+        ImportError
+            If the 'astral' module is not available.
+        """
+        if not dt:
+            dt = datetime.date.now()
+        import astral
+        loc = astral.Location(["Location", "Region", lat, lon, tz, 0])
+        solar_hours = {
+            "sunrise": None, "sunset": None,
+            "dawn": None, "dusk": None
+        }
+        for event in solar_hours:
+            try:
+                solar_hours[event] = (
+                    getattr(loc, event)(dt)
+                    .time().replace(tzinfo=None)
+                )
+            except astral.AstralError:
+                solar_hours[event] = None
+        return solar_hours
     
     @staticmethod
     def sanitize(field):
@@ -197,341 +238,53 @@ class OHParser:
             parts.append(part)
         return '; '.join(parts)
     
-    def _get_solar_hour(self, key):
-        """Returns a solar hour from a key, or raises an exception.
-        
-        Parameters
-        ----------
-        key : str
-            The name of the solar moment to get.
-        
-        Returns
-        -------
-        datetime.time
-            The time of the solar moment.
-        
-        Raises
-        ------
-        humanized_opening_hours.exceptions.SolarHoursNotSetError
-            When the requested solar hour is not set.
-        """
-        if key not in self.solar_hours.keys():
-            raise KeyError("The solar hour {key!r} does not exist.".format(key))
-        hour = self.solar_hours.get(key)
-        if hour:
-            return hour
-        raise SolarHoursNotSetError(
-            "The {key!r} solar hour is not set.".format(key=key)
-        )
-    
-    def get_day(self, dt):
-        """Returns a Day object from a datetime.date(time)? object.
-        
-        Parameters
-        ----------
-        dt : datetime.date / datetime.datetime
-            The date of the day to get.
-        
-        Returns
-        -------
-        Day
-            The requested day.
-        """
-        is_PH, is_SH = False, False
-        if dt in self.PH_dates:
-            is_PH = True
-        elif dt in self.SH_dates:
-            is_SH = True
-        if isinstance(dt, datetime.date):
-            dt = datetime.datetime.combine(dt, datetime.time())
-        d = Day(dt)
-        d.periods = self._tree.get_periods_of_day(dt, is_PH=is_PH, is_SH=is_SH)
-        d._set_solar_hours(self.solar_hours)
-        if is_PH:
-            d.is_PH = True
-        elif is_SH:
-            d.is_SH = True
-        return d
-    
-    def _get_now(self):
-        """Returns a datetime.datetime object localized on UTC timzone."""
-        return datetime.datetime.now().replace(tzinfo=pytz.UTC)
-    
-    def is_open(self, dt=None):
-        """Is it open?
-        
-        Parameters
-        ----------
-        moment : datetime.datetime, optional
-            The moment for which to check the opening. None default,
-            meaning use the present time.
-        
-        Returns
-        -------
-        bool
-            True if it's open, False else.
-        
-        Raises
-        ------
-        humanized_opening_hours.exceptions.ParseError
-            When something goes wrong during the parsing
-            (e.g. the field is invalid).
-        """
-        if not dt:
-            dt = datetime.datetime.now().replace(tzinfo=pytz.UTC)
-        elif dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
-            dt = pytz.UTC.localize(dt)
-        day = self.get_day(dt=dt)
-        return day.is_open(dt)
-    
-    def next_change(self, moment=None, allow_recursion=False):
-        """Gets the next opening status change.
-        
-        Parameters
-        ----------
-        moment : datetime.datetime, optional
-            The moment for which to check the opening. None default,
-            meaning use the present time.
-        allow_recursion : bool, optional
-            Allows to use recursion to get the true next change if it
-            is in another day. It may cause 'RecusionError' with "24/7"
-            fields. False default, meaning return the first period ending.
-        
-        Returns
-        -------
-        datetime.datetime
-            The datetime of the next change.
-        """
-        # TODO : Handle the cases where it's never open.
-        if not moment:
-            moment = datetime.datetime.now().replace(tzinfo=pytz.UTC)
-        elif moment.tzinfo is None or moment.tzinfo.utcoffset(moment) is None:
-            moment = pytz.UTC.localize(moment)
-        initial_day = self.get_day(dt=moment)
-        right_day = False
-        if initial_day.opens_today():
-            if initial_day.periods[-1].end.time() >= moment.timetz():
-                right_day = True
-        
-        def get_moment_in_right_day(day, moment, days_offset=0, allow_recursion=False, in_recursion=False):  # noqa
-            if allow_recursion and in_recursion:
-                output_moment = (
-                    datetime.datetime.combine(
-                        day.date, day.periods[0].end.time()
-                    ) + datetime.timedelta(days=days_offset)
-                )
-                return output_moment
-            if day.is_open(moment):
-                if (
-                    moment == day.periods[0].beginning.time() and
-                    not allow_recursion
-                ):
-                    output_moment = (
-                        datetime.datetime.combine(
-                            day.date, day.periods[0].beginning.time()
-                        )
-                    )
-                    return output_moment
-                for period in day.periods:
-                    if moment in period:
-                        # "-24:00"
-                        if period.end.time() == datetime.time.max.replace(tzinfo=pytz.UTC) and allow_recursion:  # noqa
-                            tomorrow = self.get_day(
-                                day.date+datetime.timedelta(days=1)
-                            )
-                            days_offset += 1
-                            return get_moment_in_right_day(
-                                tomorrow, datetime.time.min,
-                                days_offset, allow_recursion=True,
-                                in_recursion=True
-                            )
-                        output_moment = (
-                            datetime.datetime.combine(
-                                day.date, period.end.time()
-                            )
-                        )
-                        return output_moment
-                # Should not come here.
-            for period in day.periods:
-                # There is no need to check for end of periods as it's closed.
-                if moment <= period.beginning.time():
-                    output_moment = (
-                        datetime.datetime.combine(
-                            day.date,
-                            period.beginning.time()
-                        )
-                    )
-                    return output_moment
-            # Should not come here.
-        
-        if right_day:
-            return get_moment_in_right_day(
-                initial_day, moment.timetz(), allow_recursion=allow_recursion
-            )
-        days_offset = 0
-        while not right_day:
-            days_offset += 1
-            current_day = self.get_day(
-                initial_day.date+datetime.timedelta(days=days_offset)
-            )
-            if current_day.opens_today():
-                if current_day.periods[-1].end.time() >= datetime.time(0, 0, tzinfo=pytz.UTC):  # noqa
-                    right_day = True
-        
-        return get_moment_in_right_day(
-            current_day, datetime.time(0, 0, tzinfo=pytz.UTC),
-            days_offset=days_offset,
-            allow_recursion=allow_recursion
-        )
-    
-    def holidays_status(self):
-        """Returns the opening statuses of the holidays.
-        
-        Returns
-        -------
-        dict
-            The opening statuses of the holidays (None if undefined).
-            Shape : {"PH": bool/None, "SH": bool/None}
-        """
-        # TODO : Use an "opens_this_week()" method or something?
-        return self._tree.holidays_status
-    
-    def render(self, *args, **kwargs):
-        """Returns an OHRenderer object. See its docstring for details."""
-        return OHRenderer(self, *args, **kwargs)
-    
-    def __getitem__(self, val):
-        """Allows to get Day object(s) with slicing. Takes datetime.date objects.
-        
-        >>> oh[datetime.date.today()]
-        '<Day 'Mo' (2 periods)>'
-        
-        >>> oh[datetime.date(2018, 1, 1):datetime.date(2018, 1, 3)]
-        [
-            '<Day 'Mo' (2 periods)>',
-            '<Day 'Tu' (2 periods)>',
-            '<Day 'We' (2 periods)>'
-        ]
-        
-        Also supports stepping with `oh[start:stop:step]` (as int).
-        """
-        if type(val) is datetime.date:
-            return self.get_day(val)
-        # Type checking
-        if val.start is not None or val.stop is not None:
-            if (
-                type(val.start) is not datetime.date or
-                type(val.stop) is not datetime.date
-            ):
-                return NotImplemented
-        if val.step is not None and type(val.step) is not int:
-            return NotImplemented
-        
-        step = val.step if val.step is not None else 1
-        ordinals = range(val.start.toordinal(), val.stop.toordinal()+1, step)
-        return [self.get_day(datetime.date.fromordinal(o)) for o in ordinals]
-    
-    def __repr__(self):
-        return str(self)
-    
-    def __str__(self):
-        return "<OHParser field: '{}'>".format(self.sanitized_field)
-
-
-RenderableDay = namedtuple("RenderableDay", ["name", "description", "dt"])
-RenderableDay.__doc__ = """A namedtuple containing three attributes:
-- name (str): the name of the day (e.g. "Monday");
-- description (str): the description of the periods of the day;
-- dt (datetime.date): the date of the day."""
-
-
-class OHRenderer:
-    """A renderer for the OSM opening_hours fields.
-    
-    >>> ohr = hoh.OHRenderer(oh_parser_instance)
-    OR
-    >>> ohr = oh_parser_instance.render()
-    
-    Parameters
-    ----------
-    ohparser : OHParser
-        An instance of OHParser.
-    universal : bool, optional
-        Defines whether to print (e.g.) "sunrise" or "21:05".
-        True default, meaning "sunrise".
-    locale_name : str, optional
-        The name of the locale to use. "en" default.
-        See OHRenderer.available_locales() to get the
-        available locales.
-    
-    Attributes
-    ----------
-    ohparser : OHParser
-        The OHParser object given to the constructor.
-    universal : bool
-        The universal state given to the constructor.
-    
-    Raises
-    ------
-    ValueError
-        When the requested "locale_name" is not available.
-    """
-    def __init__(self, ohparser, universal=True, locale_name="en"):
-        self.ohparser = ohparser
-        self.universal = universal
-        if not locale_name:
-            locale_name = "en"
-        self.set_locale(locale_name)
-    
-    @staticmethod
-    def available_locales():
-        """Returns a list of all suported languages.
+    def description(self):
+        """Returns a list of strings (sentences) describing all opening hours.
         
         Returns
         -------
         list[str]
-            The list of all suported languages.
+            A list of sentences (beginning with a capital letter and ending
+            with a point). Ex: ['From Monday to Friday: 10:00 - 20:00.']
         """
-        locales = gettext.find(
-            "HOH",
-            os.path.join(BASE_DIR, "locales"),
-            all=True
-        )
-        locales = [l.split('/')[-3] for l in locales]
-        locales.append("en")
-        return locales
+        transformer = DescriptionTransformer()
+        transformer._locale = self.babel_locale
+        transformer._human_names = self.get_human_names()
+        transformer._install_locale()
+        return transformer.transform(self._tree)
     
-    def set_locale(self, locale_name):
-        """Sets a new locale to the renderer.
+    def time_before_next_change(self, dt=None, word=True):
+        """Returns a human-readable string of the remaining time
+        before the next opening status change.
         
         Parameters
         ----------
-        locale_name : str
-            The locale name. E.g. "en".
-            See OHRenderer.available_locales() (static method) to get
-            a list of available locales.
+        dt : datetime.datetime, optional
+            The moment for which to check the opening. None default,
+            meaning use the present time. Same as for the
+            `next_change()` method of OHParser.
+        word : bool, optional
+            Defines whether to add a descriptive word before the delay.
+            For example: "in X minutes" if True, "X minutes" if False.
+            True default.
         
         Returns
         -------
-        self
-            The instance itself.
+        str : The descriptive string (not capitalized at the beginning).
+            For example: "in 15 minutes" (en) or "dans 2 jours" (fr).
         """
-        if locale_name not in OHRenderer.available_locales():
-            raise ValueError(
-                "'locale_name' must be one of the locales given by the "
-                "OHRenderer`available_locales()` method."
-            )
-        self.locale_name = locale_name
-        self.babel_locale = babel.Locale.parse(locale_name)
-        lang = self.babel_locale.language
-        gettext.install("HOH", os.path.join(BASE_DIR, "locales"))
-        i18n_lang = gettext.translation(
-            "HOH", localedir=os.path.join(BASE_DIR, "locales"),
-            languages=[lang],
-            fallback=True
+        if not dt:
+            dt = datetime.datetime.now()
+        next_change = self.next_change(dt=dt)
+        delta = next_change - dt
+        # TODO : Check granularity.
+        return babel.dates.format_timedelta(
+            delta,
+            granularity="minute",
+            threshold=2,
+            locale=self.babel_locale,
+            add_direction=word
         )
-        i18n_lang.install()
-        return self
     
     def get_human_names(self):
         """Gets months and days names in the locale given to the constructor.
@@ -549,392 +302,139 @@ class OHRenderer:
             months.append(self.babel_locale.months['format']['wide'][i+1])
         return {"days": days, "months": months}
     
-    # TODO : Make it a staticmethod.
-    def _format_date(self, date):
-        """Formats a datetime with the appropriate locale.
+    def is_open(self, dt=None):
+        """Is it open?
         
         Parameters
         ----------
-        date : datetime.date
-            The date to format.
-        
-        Returns
-        -------
-        str
-            The formatted date.
-        """
-        # Gets the locale pattern.
-        pattern = babel.dates.get_date_format(format="long").pattern
-        # Removes the year.
-        pattern = pattern.replace('y', ' ').replace('  ', '')
-        return babel.dates.format_date(
-            date,
-            locale=self.babel_locale,
-            format=pattern
-        )
-    
-    def time_before_next_change(self, moment=None, allow_recursion=False, word=True):  # noqa
-        """Returns a human-readable string of the remaining time
-        before the next opening status change.
-        
-        Parameters
-        ----------
-        moment : datetime.datetime, optional
+        dt : datetime.datetime, optional
             The moment for which to check the opening. None default,
-            meaning use the present time. Same as for the
-            `next_change()` method of OHParser.
-        allow_recursion : bool, optional
-            Allows to use recursion to get the true next change if it
-            is in another day. It may cause 'RecusionError' with "24/7"
-            fields. False default, meaning return the first period ending.
-        word : bool, optional
-            Defines whether to add a descriptive word before the delay.
-            For example: "in X minutes" if True, "X minutes" if False.
-            True default.
+            meaning use the present time.
         
         Returns
         -------
-        str : The descriptive string (not capitalized at the beginning).
-            For example: "in 15 minutes" (en) or "dans 2 jours" (fr).
+        bool
+            True if it's open, False else.
         """
-        next_change = self.ohparser.next_change(moment=moment)
-        if not moment:
-            moment = self.ohparser._get_now()
-        delta = next_change - moment
-        # TODO : Check granularity.
-        return babel.dates.format_timedelta(
-            delta,
-            granularity="minute",
-            threshold=2,
-            locale=self.babel_locale,
-            add_direction=word
-        )
+        if not dt:
+            dt = datetime.datetime.now()
+        for rule in self.rules:
+            if rule.range_selectors.is_included(
+                dt.date(), self.SH_dates, self.PH_dates
+            ):
+                return rule.get_status_at(dt, self.solar_hours)
+        return False
     
-    def _join_list(self, l):
-        """Returns a string from a list.
+    def get_current_rule(self, dt=None):
+        """Returns the rule corresponding to the given day.
         
         Parameters
         ----------
-        list
-            The list to join.
+        dt : datetime.date, optional
+            The day for which to get the rule. None default,
+            meaning use the present day.
         
         Returns
         -------
-        str
-            The joined list.
+        humanized_opening_hours.Rule or None
+            The rule matching the given datetime, if available.
         """
-        
-        if not l:
-            return ''
-        values = [str(value) for value in l]
-        if len(values) == 1:
-            return values[0]
-        return ', '.join(values[:-1]) + _(" and ") + values[-1]
+        if not dt:
+            dt = datetime.date.today()
+        for rule in self.rules:
+            if rule.range_selectors.is_included(
+                dt, self.SH_dates, self.PH_dates
+            ):
+                return rule
+        return None
     
-    # TODO : Make it a staticmethod.
-    def _render_universal_moment(self, moment):
-        if not moment._has_offset():
-            string = {
-                MomentKind.SUNRISE: _("sunrise"),
-                MomentKind.SUNSET: _("sunset"),
-                MomentKind.DAWN: _("dawn"),
-                MomentKind.DUSK: _("dusk")
-            }.get(moment.kind)
-            if string:
-                return string
-            elif moment._time == datetime.time.max:
-                # TODO : Relevant?
-                return _("%H:%M").replace('%H', '00').replace('%M', '00')
-            else:
-                return moment.time().strftime(_("%H:%M"))
-        else:
-            if moment._delta.days == 0:
-                string = {
-                    MomentKind.SUNRISE: _("{} after sunrise"),
-                    MomentKind.SUNSET: _("{} after sunset"),
-                    MomentKind.DAWN: _("{} after dawn"),
-                    MomentKind.DUSK: _("{} after dusk")
-                }.get(moment.kind)
-            else:
-                string = {
-                    MomentKind.SUNRISE: _("{} before sunrise"),
-                    MomentKind.SUNSET: _("{} before sunset"),
-                    MomentKind.DAWN: _("{} before dawn"),
-                    MomentKind.DUSK: _("{} before dusk")
-                }.get(moment.kind)
-            delta = (
-                datetime.datetime(2000, 1, 1, 0) +
-                moment._delta
-            ).time().strftime(_("%H:%M"))
-        return string.format(delta)
-    
-    def periods_of_day(self, day):
-        """Returns a description of the opening periods of a day.
+    def next_change(self, dt=None):
+        """Gets the next opening status change.
         
         Parameters
         ----------
-        day : datetime.date
-            The day for which to get the periods description.
+        dt : datetime.datetime, optional
+            The moment for which to check the opening. None default,
+            meaning use the present time.
         
         Returns
         -------
-        RenderableDay (collections.namedtuple)
-            A namedtuple containing two strings:
-            - "name": the name of the day (e.g. "Monday");
-            - "description": the description of the periods of the day.
+        datetime.datetime
+            The datetime of the next change.
         """
-        d = self.ohparser.get_day(day)
-        rendered_periods = []
-        for period in d.periods:
-            rendered_periods.append(
-                "{} - {}".format(
-                    self._render_universal_moment(period.beginning),
-                    self._render_universal_moment(period.end)
+        if not dt:
+            dt = datetime.datetime.now()
+        current_rule = self.get_current_rule(dt.date())
+        days = 1
+        if (
+            current_rule is None or
+            current_rule.get_status_at(dt, self.solar_hours) is False
+        ):
+            current_rule = None
+            i = 0
+            while current_rule is None:
+                i += 1
+                if i == 365:
+                    raise NextChangeError("Can't get the next opening period.")
+                if days == 1:
+                    new_dt = dt + datetime.timedelta(days)
+                else:
+                    new_dt = datetime.datetime.combine(
+                        (dt + datetime.timedelta(days)).date(),
+                        datetime.time.min
+                    )
+                current_rule = self.get_current_rule(new_dt.date())
+                if (
+                    (current_rule is None or self.is_open(dt) is False) and
+                    days != 1
+                ):
+                    current_rule = None
+                    days += 1
+                elif days == 1:
+                    days = 2
+        
+        if current_rule.always_open:  # TODO : Find a better solution.
+            raise NextChangeError("This facility is always open.")
+        
+        if days == 1:
+            for timespan in current_rule.time_selectors:
+                if timespan.is_open(dt.time(), self.solar_hours):
+                    return datetime.datetime.combine(
+                        dt.date(),
+                        timespan.end.get_time(self.solar_hours)
+                    )
+            # Should not come here.
+        else:  # TODO : Check for "off".
+            return datetime.datetime.combine(
+                new_dt.date(),
+                current_rule.time_selectors[0].beginning.get_time(
+                    self.solar_hours
                 )
             )
-        rendered_periods = self._join_list(rendered_periods)
-        name = self.get_human_names()["days"][day.weekday()]
-        return RenderableDay(name=name, description=rendered_periods, dt=d.date)
     
-    def plaintext_week_description(self, obj=None):
-        """Returns a plaintext descriptions of the schedules of a week.
+    def get_day_periods(self, dt=None):  # "dt" must be "datetime.date".
+        """Returns the opening periods of the given day.
         
         Parameters
         ----------
-        datetime.date / list[datetime.date] : optional
-            A day in the week to render, or a list of the week days
-            to render. May be None to mean "the current week".
+        dt : datetime.date
+            The day for which to get the rule. None default,
+            meaning use the present day.
         
         Returns
         -------
-        str
-            The plaintext schedules of the week. Contains 7 lines,
-            or as many lines as in the given list.
+        list[humanized_opening_hours.TimeSpan]
+            The timespans of the given day.
         """
-        if not obj:
-            obj = datetime.date.today()
-        if type(obj) is not list:
-            obj = days_of_week_from_day(obj)
-        output = ''
-        for day in obj:
-            d = self.periods_of_day(day)
-            description = d.description if d.description else _("closed")
-            output += _("{name}: {periods}").format(
-                name=d.name,
-                periods=description
-            ) + '\n'
-        return output.rstrip()
-    
-    def full_description(self):
-        parser = field_parser.get_parser(include_transformer=False)
-        human_names = self.get_human_names()
-        days = dict(zip(WEEKDAYS, human_names["days"]))
-        months = dict(zip(MONTHS, human_names["months"]))
-        human_names = {
-            "days": days,
-            "months": months,
-            "special": {  # Needs translation.
-                "sunrise": _("sunrise"),
-                "sunset": _("sunset"),
-                "dawn": _("dawn"),
-                "dusk": _("dusk"),
-                "PH": _("public holidays"),
-                "SH": _("school holidays"),
-                "PH+SH": _("public and school holidays")
-            }
-        }
-        transformer = DescriptionTransformer(human_names, self)
-        return transformer.transform(
-            parser.parse(self.ohparser.sanitized_field)
-        )
+        if not dt:
+            dt = datetime.date.today()
+        current_rule = self.get_current_rule(dt)
+        if current_rule is None:
+            return []
+        return current_rule.time_selectors
     
     def __repr__(self):
         return str(self)
     
     def __str__(self):
-        return "<OHRenderer>"
-
-
-class DescriptionTransformer(lark.Transformer):
-    """Transforms a lark Tree to a descriptive list of strings."""
-    def __init__(self, localized_names, ohrenderer, *args, **kwargs):
-        self.localized_names = localized_names
-        self.ohrenderer = ohrenderer
-        i18n_lang = gettext.translation(
-            "HOH", localedir="locales",
-            languages=[ohrenderer.babel_locale.language],
-            fallback=True
-        )
-        i18n_lang.install()
-        super().__init__(*args, **kwargs)
-    
-    def _join_and(self, l):
-        if len(l) == 1:
-            return l[0]
-        return ', '.join(l[:-1]) + _(" and ") + l[-1]
-    
-    def field(self, args):
-        return args
-    
-    def field_part(self, args):
-        return _("{name}: {periods}").format(
-            name=args[0][0].upper() + args[0][1:], periods=args[1]
-        ) + '.'
-    
-    def digital_moment(self, args):
-        return args[0]
-    
-    def period(self, args):
-        return args[0] + _(" to ") + args[1]
-    
-    def period_closed(self, args):
-        return _("closed")
-    
-    def solar_moment(self, args):
-        return self.localized_names["special"].get(args[0])
-    
-    def solar_complex_moment(self, args):
-        moment = field_parser.YearTransformer.solar_complex_moment(None, args)
-        return OHRenderer._render_universal_moment(None, moment)
-    
-    def raw_consecutive_day_range(self, args):
-        return (
-            self.localized_names["days"].get(args[0]) +
-            _(" to ") +
-            self.localized_names["days"].get(args[1])
-        )
-    
-    def consecutive_day_range(self, args):
-        return self._join_and(args)
-    
-    def unconsecutive_days(self, args):
-        if len(args) == 1:
-            return self.localized_names["days"].get(args[0])
-        return (
-            ', '.join(
-                [self.localized_names["days"].get(m) for m in args[:-1]]
-            ) +
-            _(" and ") +
-            self.localized_names["days"].get(args[-1])
-        )
-    
-    def day_periods(self, args):
-        if len(args) == 1:
-            return args[0]
-        return ', '.join(args[:-1]) + _(" and ") + args[-1]
-    
-    def everyday_periods(self, args):
-        return _("Every days: ") + args[0] + '.'
-    
-    def unconsecutive_months(self, args):
-        if len(args) == 1:
-            return (
-                self.localized_names["months"].get(args[0]) +
-                _(" (every days)")
-            )
-        return (
-            ', '.join(
-                [self.localized_names["months"].get(m) for m in args[:-1]]
-            ) +
-            _(" and ") +
-            self.localized_names["months"].get(args[-1])
-        ) + _(" (every days)")
-    
-    def consecutive_month_range(self, args):
-        return args[0] + _(" (every days)")
-    
-    def raw_consecutive_month_range(self, args):
-        first_month = self.localized_names["months"].get(args[0])
-        last_month = self.localized_names["months"].get(args[1])
-        return first_month + _(" to ") + last_month
-    
-    def exceptional_day(self, args):
-        dt = datetime.date(2000, MONTHS.index(args[0])+1, int(args[1]))
-        return OHRenderer._format_date(self.ohrenderer, dt)
-    
-    def exceptional_dates(self, args):
-        dates = self.day_periods(args[:-1])
-        return _("{name}: {periods}").format(
-            name=dates, periods=args[-1]
-        ) + '.'
-    
-    def days_of_month(self, args):
-        months = []
-        weekdays = []
-        for tk in args:
-            if tk.value in MONTHS:
-                months.append(self.localized_names["months"].get(tk.value))
-            else:
-                weekdays.append(self.localized_names["days"].get(tk.value))
-        months_string = self._join_and(months)
-        weekdays_string = self._join_and(weekdays)
-        concerned_moments_string = gettext.ngettext(
-            "{months}, on {wd}",
-            "{months}, on {wd}",
-            len(weekdays)
-        ).format(months=months_string, wd=weekdays_string)
-        return concerned_moments_string
-    
-    def days_of_consecutive_months(self, args):
-        months = args[0]
-        days = self._join_and(
-            [self.localized_names["days"].get(tk.value) for tk in args[1:]]
-        )
-        return gettext.ngettext(
-            "{months}, on {wd}",
-            "{months}, on {wd}",
-            len(days)
-        ).format(months=months, wd=days)
-    
-    def consecutive_days_of_consecutive_months(self, args):
-        return _("{months}, from {weekdays}").format(
-            months=args[0],
-            weekdays=args[1]
-        )
-    
-    def easter(self, args):
-        arg = args[0]
-        if arg == "easter":
-            return _("Easter")
-        x, offset, x = arg.split()
-        offset_sign, days = offset[0], int(offset[1:])
-        if offset_sign == '+':
-            return gettext.ngettext(
-                "{n} day after easter",
-                "{n} days after easter",
-                days
-            ).format(n=days)
-        else:
-            return gettext.ngettext(
-                "{n} day before easter",  # TODO : Use "eve"?
-                "{n} days before easter",
-                days
-            ).format(n=days)
-    
-    def holiday(self, args):
-        holidays = [
-            self.localized_names["special"].get(tk.value) for tk in args
-        ]
-        if len(holidays) == 1:
-            return holidays[0]
-        return self.localized_names["special"].get("PH+SH")
-    
-    def holidays_unconsecutive_days(self, args):
-        holidays_string = self.localized_names["special"].get(args[0])
-        days = self._join_and(
-            [self.localized_names["days"].get(tk.value) for tk in args[1:]]
-        )
-        return gettext.ngettext(
-            "{holiday}, on {wd}",
-            "{holiday}, on {wd}",
-            len(days)
-        ).format(holiday=holidays_string, wd=days)
-    
-    def holidays_consecutive_days(self, args):
-        return _("{holidays}, from {weekdays}").format(
-            holidays=self.localized_names["special"].get(args[0]),
-            weekdays=args[1]
-        )
-    
-    def always_open(self, args):
-        return _("Open 24 hours a day and 7 days a week.")
+        return "<OHParser field: '{}'>".format(self.sanitized_field)

@@ -1,6 +1,3 @@
-# All the exceptions of HOH.
-
-
 class HOHError(Exception):
     """Base class for HOH errors."""
     pass
@@ -24,6 +21,14 @@ class SolarHoursNotSetError(HOHError):
 class SpanOverMidnight(HOHError):
     """
     Raised when a field has a period which spans over midnight
-    (for example: "Mo-Fr 20:00-02:00"), which is not yet supported..
+    (for example: "Mo-Fr 20:00-02:00"), which is not yet supported.
+    """
+    pass
+
+
+class NextChangeError(HOHError):
+    """
+    Raised when something goes wrong in the 'next_change()' method,
+    for example if the facility is always open.
     """
     pass

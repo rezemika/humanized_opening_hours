@@ -1,48 +1,72 @@
-DAY : "Mo" | "Tu" | "We" | "Th" | "Fr" | "Sa" | "Su"
+WDAY : "Mo" | "Tu" | "We" | "Th" | "Fr" | "Sa" | "Su"
 MONTH : "Jan" | "Feb" | "Mar" | "Apr" | "May" | "Jun" | "Jul" | "Aug" | "Sep" | "Oct" | "Nov" | "Dec"
-PUBLIC_HOLIDAYS : "PH"
-SCHOOL_HOLIDAYS : "SH"
+PUBLIC_HOLIDAY : "PH"
+SCHOOL_HOLIDAY : "SH"
+EVENT : "dawn" | "sunrise" | "sunset" | "dusk"
+EASTER : "easter"
+OPEN : " open"
+CLOSED : " closed" | " off"
+ALWAYS_OPEN.2 : "24/7"
+WEEK.2 : "week "
 
-SOLAR : "sunrise" | "sunset" | "dawn" | "dusk"
-DIGITAL_MOMENT : /[0-2][0-9]:[0-5][0-9]+/
+TWO_DIGITS.1 : /[0-9][0-9]+/
+PLUS_OR_MINUS : "+" | "-"
 
-SOLAR_COMPLEX_MOMENT : "(" SOLAR ("+"|"-") DIGITAL_MOMENT ")"
+time_domain : rule_sequence ("; " rule_sequence)*
 
-easter : /((easter (\+|-)[1-9][0-9]? days?)|(easter))+/
+rule_sequence : selector_sequence [rule_modifier]
+              | rule_modifier
 
-moment : DIGITAL_MOMENT -> digital_moment
-       | SOLAR -> solar_moment
-       | SOLAR_COMPLEX_MOMENT -> solar_complex_moment
+rule_modifier : OPEN -> rule_modifier_open
+              | CLOSED -> rule_modifier_closed
 
-period : moment "-" moment
 
-raw_consecutive_day_range : DAY "-" DAY
+selector_sequence : ALWAYS_OPEN -> always_open
+                  | range_selectors [" " time_selector]
+                  | time_selector
 
-raw_consecutive_month_range : MONTH "-" MONTH
+range_selectors : [monthday_selector] [week_selector] [":"] [" "] [weekday_selector]
+//range_selectors : [year_selector] [monthday_selector] [week_selector] [":"] [" "] [weekday_selector]
 
-concerned_period : DAY ("," DAY)* ("," (PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS))* " " -> unconsecutive_days
-                 | MONTH ("," MONTH)* ("," (PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS))* " " -> unconsecutive_months
-                 | (PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS) ["," (PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS)] " " -> holiday
-                 | raw_consecutive_day_range ("," DAY)* ("," (PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS))* " " -> consecutive_day_range
-                 | raw_consecutive_month_range ("," MONTH)* ("," (PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS))* " " -> consecutive_month_range
-                 | MONTH ("," MONTH)* " " DAY ("," DAY)* [":"] " " -> days_of_month
-                 | MONTH ("," MONTH)* [":"] " " raw_consecutive_day_range ("," DAY)* " " -> consecutive_days_of_month
-                 | raw_consecutive_month_range ("," MONTH)* [":"] " " DAY ("," DAY)* " " -> days_of_consecutive_months
-                 | raw_consecutive_month_range [":"] " " raw_consecutive_day_range " " -> consecutive_days_of_consecutive_months  //TODO : Support months or days after commas.
-                 | (PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS) " " DAY " " -> holidays_unconsecutive_days
-                 | (PUBLIC_HOLIDAYS | SCHOOL_HOLIDAYS) " " raw_consecutive_day_range ("," DAY)* " " -> holidays_consecutive_days
+weekday_selector : (weekday_sequence | holiday ("," holiday)*) -> weekday_or_holiday_sequence_selector
+                 | holiday ("," holiday)* "," weekday_sequence -> holiday_and_weekday_sequence_selector
+                 | holiday ("," holiday)* " " weekday_sequence -> holiday_in_weekday_sequence_selector
 
-day_periods : period ("," period)*
-            | "off" -> period_closed
-            | "closed" -> period_closed
+weekday_sequence : weekday_range ("," weekday_range)*
+weekday_range : WDAY
+              | WDAY "-" WDAY
 
-// This regex catches one or two digit numbers not followed by a colon ":", to avoid confusion with "DIGITAL_MOMENT".
-date_exceptional_day : MONTH " " /([0-3][0-9])(?!:[0-9])|((?<![0-9])[0-9])(?!:[0-9])+/ -> exceptional_day
+holiday : PUBLIC_HOLIDAY
+        | SCHOOL_HOLIDAY
 
-field_part : concerned_period day_periods
-           | easter " " day_periods
-           | day_periods -> everyday_periods
-           | "24/7" -> always_open
-           | date_exceptional_day ("," date_exceptional_day)* ":"? " " day_periods -> exceptional_dates
+%import common.INT
+//day_offset : " " PLUS_OR_MINUS INT " day" ["s"]
 
-field : field_part ("; " field_part)*
+time_selector : timespan ("," timespan)*
+timespan : time "-" time
+time : hour_minutes | variable_time
+hour_minutes : TWO_DIGITS ":" TWO_DIGITS
+variable_time : EVENT
+              | "(" EVENT PLUS_OR_MINUS hour_minutes ")"
+
+year_selector : year_range ("," year_range)*
+year_range : year
+           | year "-" year
+           | year "-" year "/" INT
+year : /([12][0-9]{3})+/
+
+monthday_selector : monthday_range ("," monthday_range)*
+monthday_range : [year] MONTH ["-" MONTH] -> monthday_range_year_month
+               | date_from -> monthday_range_date_from  //TODO : "+" version
+               | date_from "-" date_to -> monthday_range_date_from_to
+date_from : [year " "] MONTH " " INT
+          | [year " "] variable_date //[day_offset]  //TODO
+date_to : date_from
+        | INT
+variable_date : EASTER
+
+week_selector : WEEK week ("," week)*  // TODO
+week : weeknum
+     | weeknum "-" weeknum
+     | weeknum "-" weeknum "/" INT
+weeknum : INT

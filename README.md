@@ -8,25 +8,15 @@ Any pull request (following PEP-8) is more than welcome!
 ```python
 >>> import humanized_opening_hours as hoh
 >>> field = "Mo-Fr 06:00-21:00; Sa,Su 08:00-12:00"
->>> oh = hoh.OHParser(field)
+>>> oh = hoh.OHParser(field, locale="en")
 >>> oh.is_open()
 True
 >>> oh.next_change()
 datetime.datetime(2017, 12, 24, 12, 0)
->>> print(oh.render().plaintext_week_description())
+>>> print('\n'.join(oh.description()))
 """
-Monday: 06:00 - 21:00
-Tuesday: 06:00 - 21:00
-Wednesday: 06:00 - 21:00
-Thursday: 06:00 - 21:00
-Friday: 06:00 - 21:00
-Saturday: 08:00 - 12:00
-Sunday: 08:00 - 12:00
-"""
->>> print('\n'.join(oh.render().full_description()))
-"""
-Monday to Friday: 06:00 to 21:00.
-Saturday and Sunday: 08:00 to 12:00.
+From Monday to Friday: from 06:00 to 21:00.
+On Saturday: from 08:00 to 12:00.
 """
 ```
 
@@ -42,14 +32,13 @@ Also, it is available on PyPi.
 # How to use it
 
 The only mandatory argument to give to the constructor is the field, which must be a string.
+It can also take a `locale` argument, which can be any valid locale name.
+However, to be able to use the `description()` method, it must be in `hoh.DESCRIPTION_LOCALES` (a warning will be printed otherwise).
 
 ```python
 >>> import humanized_opening_hours as hoh
 >>> field = "Mo-Fr 06:00-21:00; Sa,Su 07:00-21:00"
->>> 
 >>> oh = hoh.OHParser(field)
->>> oh.is_open()
-True
 ```
 
 ## Basic methods
@@ -71,17 +60,15 @@ If we are on December 24 before 21:00 / 09:00PM...
 
 ```python
 >>> oh.next_change()
-datetime.datetime(2017, 12, 24, 21, 0, tzinfo=<UTC>)
+datetime.datetime(2017, 12, 24, 21, 0)
 ```
 
-For consecutive days fully open ("Mo-Fr 00:00-24:00"), you can allow recursion with the "allow_recursion" parameter to get the true next change, but it will raise a "RecursionError" with "24/7" fields.
+For consecutive days fully open ("Mo-Fr 00:00-24:00"), it will return the first hour of the next day instead of the true next change. This should be fixed in a later version.
 
 ```python
 >>> oh = hoh.OHParser("Mo-Fr 00:00-24:00")
->>> oh.next_change(allow_recursion=False)
-datetime.datetime(2018, 1, 8, 0, 0, tzinfo=<UTC>)
->>> oh.next_change(allow_recursion=True)
-datetime.datetime(2018, 1, 11, 23, 59, 59, 999999, tzinfo=<UTC>)
+>>> oh.next_change()
+datetime.datetime(2018, 1, 8, 0, 0)
 ```
 
 -----
@@ -111,41 +98,27 @@ oh.solar_hours["sunrise"] = datetime.time(8, 0)
 oh.solar_hours["sunset"] = datetime.time(20, 0)
 ```
 
-**If you try to do something with a field requiring setting without setting it, you will get a "SolarHoursNotSetError".**
+Alternatively, if you have the coordinates and the timezone of the facility and you have the `astral` module, you can use the `get_solar_hours()` staticmethod.
+
+```python
+# To get the solar hours at Stonehenge on 1st January 2018...
+lat, lon = 51.18, -1.83
+dt = datetime.date(2018, 1, 1)
+oh.solar_hours = hoh.OHParser.get_solar_hours(lat, lon, dt, "UTC")
+```
+
+**If you try to do something with a field requiring setting without setting it, you will get a `SolarHoursNotSetError`.**
 
 Attention, except if the facility is on the equator, this setting will be valid only for a short period.
 
 ## Have nice schedules
 
-The `OHRenderer` class allows you to get various representations of the schedules.
-Its `__init__` method takes an OHParser object in argument, and two optional arguments:
+You can pass any valid locale name to `OHParser`, it will work for the majority of methods, cause they only need Babel's translations.
+However, the `description()` method needs more translations, so it works only with a few locales, whose list is available with `hoh.DESCRIPTION_LOCALE`. Use another one will raise an exception.
 
-- `universal` (bool) : allows to have human-readable descriptions without having to parse the solar hours (True default).
-- `locale_name` (str) : the language to use ("en" default), which can be changed with the `set_locale()` method.
+-----
 
-It has several methods to retrieve useful informations.
-
-This object can also be created from an OHParser instance with its `render()` method.
-
-```python
-ohr = oh.render(universal=False)
-```
-
-Shorter, you can get it directly from a field with the `render_field()` function.
-
-```python
-ohr = hoh.render_field(field, universal=False)
-```
-
-### Locales management
-
-The `available_locales()` method returns a list of the available locales (strings).
-
-The `set_locale()` method allows to set a new locale for rendering. It takes a single argument: the locale_name.
-
-### get_human_names
-
-Returns a dict of lists with the names of months and weekdays in the current locale.
+The `get_human_names()` method returns a dict of lists with the names of months and weekdays in the current locale.
 
 Example:
 
@@ -166,118 +139,60 @@ Example:
 }
 ```
 
-### time_before_next_change
+-----
 
-Returns a humanized delay before the next change in opening status.
+`time_before_next_change()` returns a humanized delay before the next change in opening status.
 
 ```python
->>> ohr.time_before_next_change()
+>>> oh.time_before_next_change()
 "in 3 hours"
->>> ohr.time_before_next_change(word=False)
+>>> oh.time_before_next_change(word=False)
 "3 hours"
 ```
 
-### plaintext_week_description
+-----
 
-Returns a plaintext description of the schedules of a week.
-This method takes either a `datetime.date` object or a list of `datetime.date` objects.
-In the first case, it is converted into a list of the days in the same week.
-It can also take no parameter, so the described week will be the current one.
-
-```python
->>> ohr.plaintext_week_description()
-"""
-Monday: 08:00 - 19:00
-Tuesday: 08:00 - 19:00
-Wednesday: 08:00 - 19:00
-Thursday: 08:00 - 19:00
-Friday: 08:00 - 19:00
-Saturday: 08:00 - 12:00
-Sunday: closed
-"""
-```
-
-### full_description
-
-Returns a list of strings (sentences) describing the whole field.
+`description()` returns a list of strings (sentences) describing the whole field.
 
 ```python
 # Field: "Mo-Fr 10:00-19:00; Sa 10:00-12:00; Dec 25 off"
->>> print(' '.join(oh.render().full_description()))
+>>> print(' '.join(oh.description()))
 "Monday to Friday: 10:00 to 19:00. Saturday: 10:00 to 12:00. 25 December: closed."
 ```
 
-You can get the same result with the `field_description()` function, which takes the field and an optional `locale_name` parameter.
-
 ## Objects
 
-Apart the main HumanizedOpeningHours class, HOH provides four other objects:
-- `Day` : a weekday, or public or schoold holidays;
-- `Period` : a period with two `Moment` objects : a beginning and an end;
-- `MomentKind` : the kind of a period;
-- `Moment` : a moment in time, which can be a beginning or an end of a period.
+Apart the main OHParser class, HOH provides other objects representing the parts of the field. Their names are based on the official specifications, available [here](https://wiki.openstreetmap.org/wiki/Key:opening_hours/specification).
 
-### Day
+Here are the most useful:
+- `Rule` : a rule, a part of the field delimited by semicolons;
+- `TimeSpan` : an opening period, containing two `Time` objects (the beginning and the end of the period);
+- `Time` : a moment in time, which can be a beginning or an end of a `TimeSpan`.
 
-Attributes:
-- `periods` (list) : a list of `Period` objects included in this day;
-- `date` (datetime.date) : the date of the day;
-- `is_PH` (bool) : True if the day is a public holiday;
-- `is_SH` (bool) : True if the day is a school holiday.
-
-```python
-# To know whether there is / are opening period(s) in this day.
->>> day.opens_today()
-True
-```
-
-You can get a Day in two ways. Firstly with the `get_day()` method of OHParser, which takes a `datetime.date` object.
-You can also use slicing with `datetime.date` object(s). It also supports stepping (with an integer).
-
-```python
->>> oh[datetime.date.today()]
-'<Day 'Mo' (2 periods)>'
-
->>> oh[datetime.date(2018, 1, 1):datetime.date(2018, 1, 3)]
-['<Day 'Mo' (2 periods)>', '<Day 'Tu' (2 periods)>', '<Day 'We' (2 periods)>']
-```
-
-### Period
+### Rule
 
 Attributes:
-- `beginning` (Moment object) : the beginning of the period;
-- `end` (Moment object) : the end of the period.
+- `status` (str) : a string which can be `open` or `closed` (**the handling of this is not yet fully implemented**);
+- `range_selectors` (RangeSelector) : an object representing the moments concerned by opening periods;
+- `time_selectors` (bool) : a list of `TimeSpan` objects;
+- `always_open` (bool) : True if it's open from 00:00 to 24:00, False else.
 
-```python
-# To know if a period contains a solar hour, use the `is_variable()` method.
->>> period.is_variable()
-datetime.timedelta(0, 10800)
+You can get a rule by two ways. The first is to access to the `rules` attribute of `OHParser`, containing all the rules of the field. The second is to use the `get_current_rule()` method, which can take a `datetime.date` object, and returns the rule corresponding to this date.
 
-# Know if a datetime.time object is between the beginning and the end of this period (i.e. it is open at this time).
->>> moment = datetime.time(18, 30)
->>> moment in period
-True
-```
-
-### MomentKind
-
-A simple Enum with the following values:
-- `NORMAL`;
-- `SUNRISE`;
-- `SUNSET`;
-- `DAWN`;
-- `DUSK`.
-
-### Moment
+### TimeSpan
 
 Attributes:
-- `kind` (MomentKind) : the kind of this moment;
+- `beginning` (Time object) : the beginning of the TimeSpan;
+- `end` (Time object) : the end of the TimeSpan.
 
-```python
-# Gets a datetime.time object (localized on UTC), or None if the moment is variable.
->>> moment.time()
-datetime.time(18, 30, tzinfo=<UTC>)
-```
+A TimeSpan is an opening period, with a beginning and an end. It provides an `is_open()` method, which takes a `datetime.time` object and the dict of solar hours, and returns whether it's open at the given time.
+
+### Time
+
+Attributes:
+- `t` (tuple) : a tuple containing raw informations, probably not useful for you.
+
+A `Time` object provides a `get_time()` method, which takes the dict of solar hours in argument and returns a not localized `datetime.time`.
 
 # Supported field formats
 
@@ -304,8 +219,12 @@ Jan-Feb Mo-Fr 10:00-20:00
 SH Mo 10:00-20:00
 SH Mo-Fr 10:00-20:00
 easter 10:00-20:00
-easter +1 day 10:00-20:00
-easter +2 days 10:00-20:00
+SH,PH Mo-Fr 10:00-20:00
+SH,PH Mo-Fr,Su 10:00-20:00
+Jan-Feb,Aug Mo-Fr,Su 10:00-20:00
+week 1 Mo 09:00-12:00
+week 1-10 Su 09:00-12:00
+week 1-10/2 Sa-Su 09:00-12:00
 ```
 
 The following formats are NOT supported yet and their parsing will raise a ParseError.
@@ -313,17 +232,15 @@ The following formats are NOT supported yet and their parsing will raise a Parse
 ```
 20:00-02:00  # Span over midnight.
 years
-weeks
 Su[1] 10:00-20:00
-SH,PH Mo-Fr 10:00-20:00
-SH,PH Mo-Fr,Su 10:00-20:00
-Jan-Feb,Aug Mo-Fr,Su 10:00-20:00
+easter +1 day 10:00-20:00
+easter +2 days 10:00-20:00
 ```
 
 # Performances
 
-HOH uses the module [Lark](https://github.com/erezsh/lark) (with the LALR parser) to parse the fields.
-It takes about 0.0005 seconds to parse a basic field, 0.05 seconds to parse a hundred, and 0.4 for a thousand.
+HOH uses the module [Lark](https://github.com/erezsh/lark) (with the Earley parser) to parse the fields.
+It takes about 0.003 seconds to parse a basic field, 0.3 seconds to parse a hundred, and 3.4 for a thousand.
 
 # Dependencies
 
@@ -334,6 +251,8 @@ lark-parser
 pytz
 babel
 ```
+
+If you want to use the `get_solar_hours()` method, you will also need the `astral` module.
 
 # Licence
 

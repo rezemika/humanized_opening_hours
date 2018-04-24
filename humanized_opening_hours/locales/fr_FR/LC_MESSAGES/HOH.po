@@ -5,9 +5,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: main.py\n"
+"Project-Id-Version: field_parser.py\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-04-24 21:02+0200\n"
+"POT-Creation-Date: 2018-06-01 15:04+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: rezemika\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,149 +17,173 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 
-#: main.py:532 humanized_opening_hours/main.py:555 main.py:612 main.py:744
-#: main.py:752 main.py:632 main.py:774 main.py:817 main.py:824 main.py:839
+#: field_parser.py:238 field_parser.py:419 field_parser.py:254
+#: field_parser.py:437
 msgid " and "
 msgstr " et "
 
-#: humanized_opening_hours/main.py:560 main.py:617 main.py:767 main.py:638
-#: main.py:737
-msgid "sunrise"
-msgstr "lever du soleil"
+#: field_parser.py:253 field_parser.py:269
+msgid "Every days"
+msgstr "Tous les jours"
 
-#: humanized_opening_hours/main.py:561 main.py:618 main.py:768 main.py:639
-#: main.py:738
-msgid "sunset"
-msgstr "coucher du soleil"
-
-#: humanized_opening_hours/main.py:562 main.py:619 main.py:769 main.py:640
-#: main.py:739
-msgid "dawn"
-msgstr "aurore"
-
-#: humanized_opening_hours/main.py:563 main.py:620 main.py:770 main.py:641
-#: main.py:740
-msgid "dusk"
-msgstr "crépuscule"
-
-#: humanized_opening_hours/main.py:569 humanized_opening_hours/main.py:571
-#: humanized_opening_hours/main.py:590 main.py:626 main.py:628 main.py:647
-#: main.py:649 main.py:668
-msgid "%H:%M"
-msgstr "%H:%M"
-
-#: humanized_opening_hours/main.py:575 main.py:632 main.py:653
-msgid "{} after sunrise"
-msgstr "{} après le lever du soleil"
-
-#: humanized_opening_hours/main.py:576 main.py:633 main.py:654
-msgid "{} after sunset"
-msgstr "{} après le coucher du soleil"
-
-#: humanized_opening_hours/main.py:577 main.py:634 main.py:655
-msgid "{} after dawn"
-msgstr "{} après l'aurore"
-
-#: humanized_opening_hours/main.py:578 main.py:635 main.py:656
-msgid "{} after dusk"
-msgstr "{} après le cépuscule"
-
-#: humanized_opening_hours/main.py:582 main.py:639 main.py:660
-msgid "{} before sunrise"
-msgstr "{} avant le lever du soleil"
-
-#: humanized_opening_hours/main.py:583 main.py:640 main.py:661
-msgid "{} before sunset"
-msgstr "{} avant le lever du soleil"
-
-#: humanized_opening_hours/main.py:584 main.py:641 main.py:662
-msgid "{} before dawn"
-msgstr "{} avant l'aurore"
-
-#: humanized_opening_hours/main.py:585 main.py:642 main.py:663
-msgid "{} before dusk"
-msgstr "{} avant le crépuscule"
-
-#: humanized_opening_hours/main.py:643 main.py:700 main.py:721 main.py:791
-msgid "closed"
-msgstr "fermé"
-
-#: humanized_opening_hours/main.py:644 main.py:701 main.py:722 main.py:780
-#: main.py:857
+#: field_parser.py:258 field_parser.py:274
 #, python-brace-format
-msgid "{name}: {periods}"
-msgstr "{name} : {periods}"
+msgid "{range_selectors}: {time_selector}."
+msgstr "{range_selectors} : {time_selector}."
 
-#: main.py:723
+#: field_parser.py:264 field_parser.py:280
+msgid "open 24 hours a day and 7 days a week"
+msgstr "ouvert 24 heures sur 24 et 7 jours sur 7"
+
+#: field_parser.py:292 field_parser.py:308
 msgid ": "
 msgstr " : "
 
-#: main.py:729 main.py:737 main.py:788 main.py:803 main.py:849
-msgid " to "
-msgstr " à "
+#: field_parser.py:302 field_parser.py:318
+msgid "%-d %B"
+msgstr "%-d %B"
 
-#: main.py:755 main.py:827
-msgid "Every days: "
-msgstr "Tous les jours : "
+#: field_parser.py:308 field_parser.py:324
+msgid "%Y %-d %B"
+msgstr "%-d %B %Y"
 
-#: main.py:741
+#: field_parser.py:317 field_parser.py:333
+msgid "easter"
+msgstr "pâques"
+
+#: field_parser.py:331 field_parser.py:347
+#, python-brace-format
+msgid "{year}, from {month1} to {month2}"
+msgstr "de {month1} à {month2} {year}"
+
+#: field_parser.py:337 field_parser.py:353
+#, python-brace-format
+msgid "{year} in {month}"
+msgstr "{month} {year}"
+
+#: field_parser.py:343 field_parser.py:359
+#, python-brace-format
+msgid "from {month1} to {month2}"
+msgstr "de {month1} à {month2}"
+
+#: field_parser.py:353 field_parser.py:369
+#, python-brace-format
+msgid "from {date1_from} to the {date1_to}"
+msgstr "de {date1_from} au {date1_to}"
+
+#: field_parser.py:356 field_parser.py:372
+#, python-brace-format
+msgid "from {date1} to {date2}"
+msgstr "du {date1} à {date2}"
+
+#: field_parser.py:366 field_parser.py:382
+#, python-brace-format
+msgid "week {n}"
+msgstr "semaine {4}"
+
+#: field_parser.py:368 field_parser.py:384
+#, python-brace-format
+msgid "from week {week1} to week {week2}"
+msgstr "de la semaine {week1} à la semaine {week2}"
+
+#: field_parser.py:372 field_parser.py:389
+#, python-brace-format
+msgid "from week {week1} to week {week2}, every {n} weeks"
+msgstr "de la semaine {week1} à la semaine {week2}, toutes les {n} semaines"
+
+#: field_parser.py:387 field_parser.py:405
+#, python-brace-format
+msgid "from {year1} to {year2}"
+msgstr "de {year1} à {year2}"
+
+#: field_parser.py:391 field_parser.py:409
+#, python-brace-format
+msgid "from {year1} to {year2}, every {n} years"
+msgstr "de {year1} à {year2}, tous les {n} ans"
+
+#: field_parser.py:402 field_parser.py:420
+#, python-brace-format
+msgid "on {wd}"
+msgstr "le {wd}"
+
+#: field_parser.py:407 field_parser.py:425
+#, python-brace-format
+msgid "from {wd1} to {wd2}"
+msgstr "du {wd1} au {wd2}"
+
+#: field_parser.py:416 field_parser.py:434
+msgid "Public and school holidays"
+msgstr "Jours fériés et vacances scolaires"
+
+#: field_parser.py:426 field_parser.py:444
+#, python-brace-format
+msgid "{holiday}, {wd}"
+msgstr "{holiday}, {wd}"
+
+#: field_parser.py:430 field_parser.py:448
 msgid "public holidays"
 msgstr "jours fériés"
 
-#: main.py:742
+#: field_parser.py:432 field_parser.py:450
 msgid "school holidays"
 msgstr "vacances scolaires"
 
-#: main.py:743
-msgid "public and school holidays"
-msgstr "jours fériés et vacances scolaires"
+#: field_parser.py:461 field_parser.py:479
+msgid "sunrise"
+msgstr "lever du soleil"
 
-#: main.py:833 main.py:841 main.py:844
-msgid " (every days)"
-msgstr " (tous les jours)"
+#: field_parser.py:462 field_parser.py:480
+msgid "sunset"
+msgstr "coucher du soleil"
 
-#: main.py:872 main.py:884
+#: field_parser.py:463 field_parser.py:481
+msgid "dawn"
+msgstr "aurore"
+
+#: field_parser.py:464 field_parser.py:482
+msgid "dusk"
+msgstr "crépuscule"
+
+#: field_parser.py:469 field_parser.py:487
 #, python-brace-format
-msgid "{months}, on {wd}"
-msgid_plural "{months}, on {wd}"
-msgstr[0] "{months}, le {wd}"
-msgstr[1] "{months}, les {wd}"
+msgid "{time} after sunrise"
+msgstr "{time} après le lever du soleil"
 
-#: main.py:890
+#: field_parser.py:470 field_parser.py:488
 #, python-brace-format
-msgid "{months}, from {weekdays}"
-msgstr "{months}, du {weekdays}"
+msgid "{time} after sunset"
+msgstr "{time} après le coucher du soleil"
 
-#: main.py:898
-msgid "Easter"
-msgstr "Pâques"
-
-#: main.py:903
+#: field_parser.py:471 field_parser.py:489
 #, python-brace-format
-msgid "{n} day after easter"
-msgid_plural "{n} days after easter"
-msgstr[0] "{n} jour après Pâques"
-msgstr[1] "{n} jours après Pâques"
+msgid "{time} after dawn"
+msgstr "{time} après l'aurore"
 
-#: main.py:909
+#: field_parser.py:472 field_parser.py:490
 #, python-brace-format
-msgid "{n} day before easter"
-msgid_plural "{n} days before easter"
-msgstr[0] "{n} jour avant Pâques"
-msgstr[1] "{n} jours avant Pâques"
+msgid "{time} after dusk"
+msgstr "{time} après le crépuscule"
 
-#: main.py:928
+#: field_parser.py:476 field_parser.py:494
 #, python-brace-format
-msgid "{holiday}, on {wd}"
-msgid_plural "{holiday}, on {wd}"
-msgstr[0] "{holiday}, le {wd}"
-msgstr[1] "{holiday}, les {wd}"
+msgid "{time} before sunrise"
+msgstr "{time} avant le lever du soleil"
 
-#: main.py:934
+#: field_parser.py:477 field_parser.py:495
 #, python-brace-format
-msgid "{holidays}, from {weekdays}"
-msgstr "{holidays}, du {weekdayes}"
+msgid "{time} before sunset"
+msgstr "{time} avant le coucher du soleil"
 
-#: main.py:940
-msgid "Open 24 hours a day and 7 days a week."
-msgstr "Ouvert 24 heures sur 24 et 7 jours sur 7."
+#: field_parser.py:478 field_parser.py:496
+#, python-brace-format
+msgid "{time} before dawn"
+msgstr "{time} avant l'aurore"
+
+#: field_parser.py:479 field_parser.py:497
+#, python-brace-format
+msgid "{time} before dusk"
+msgstr "{time} avant le crépuscule"
+
+#: field_parser.py:469
+msgid "from {} to {}"
+msgstr "de {} à {}"

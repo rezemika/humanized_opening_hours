@@ -3,7 +3,7 @@ import os
 
 import humanized_opening_hours
 
-BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 setup(
     name="osm_humanized_opening_hours",
