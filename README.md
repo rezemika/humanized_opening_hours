@@ -8,7 +8,7 @@ Any pull request (following PEP-8) is more than welcome!
 ```python
 >>> import humanized_opening_hours as hoh
 >>> field = "Mo-Fr 06:00-21:00; Sa,Su 08:00-12:00"
->>> oh = hoh.HumanizedOpeningHours(field)
+>>> oh = hoh.OHParser(field)
 >>> oh.is_open()
 True
 >>> oh.next_change()
