@@ -290,7 +290,7 @@ class OHParser:
         datetime.datetime
             The datetime of the next change.
         """
-        # TODO : Handle the cases where it's always / never open.
+        # TODO : Handle the cases where it's never open.
         if not moment:
             moment = datetime.datetime.now().replace(tzinfo=pytz.UTC)
         elif moment.tzinfo is None or moment.tzinfo.utcoffset(moment) is None:
@@ -342,19 +342,19 @@ class OHParser:
                 # Should not come here.
             for period in day.periods:
                 # There is no need to check for end of periods as it's closed.
-                if moment.timetz() <= period.beginning.time():
+                if moment <= period.beginning.time():
                     output_moment = (
                         datetime.datetime.combine(
                             day.date,
                             period.beginning.time()
-                        ) + datetime.timedelta(days=days_offset)
+                        )
                     )
                     return output_moment
             # Should not come here.
         
         if right_day:
             return get_moment_in_right_day(
-                initial_day, moment, allow_recursion=allow_recursion
+                initial_day, moment.timetz(), allow_recursion=allow_recursion
             )
         days_offset = 0
         while not right_day:
@@ -365,9 +365,9 @@ class OHParser:
             if current_day.opens_today():
                 if current_day.periods[-1].end.time() >= datetime.time(0, 0, tzinfo=pytz.UTC):  # noqa
                     right_day = True
+        
         return get_moment_in_right_day(
-            current_day,
-            datetime.time(0, 0, tzinfo=pytz.UTC),
+            current_day, datetime.time(0, 0, tzinfo=pytz.UTC),
             days_offset=days_offset,
             allow_recursion=allow_recursion
         )
