@@ -693,7 +693,7 @@ class OHRenderer:
                 )
             )
         rendered_periods = self._join_list(rendered_periods)
-        name = self.get_locale_day(day.weekday())
+        name = self.get_human_names()["days"][day.weekday()]
         return RenderableDay(name=name, description=rendered_periods, dt=d.date)
     
     def plaintext_week_description(self, obj=None):

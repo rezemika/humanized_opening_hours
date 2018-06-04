@@ -24,6 +24,14 @@ class TestGlobal(unittest.TestCase):
         dt = datetime.datetime(2017, 1, 2, 15, 30, tzinfo=pytz.timezone("Europe/Paris"))
         # Is it open?
         self.assertTrue(oh.is_open(dt))
+        # Rendering.
+        self.assertEqual(
+            oh.render().plaintext_week_description(),
+            "Monday: 09:00 - 19:00\nTuesday: 09:00 - 19:00\n"
+            "Wednesday: 09:00 - 19:00\nThursday: 09:00 - 19:00\n"
+            "Friday: 09:00 - 19:00\nSaturday: 09:00 - 19:00\n"
+            "Sunday: closed"
+        )
     
     def test_2(self):
         field = "Mo,Th 09:00-12:00,13:00-19:00"
@@ -40,6 +48,13 @@ class TestGlobal(unittest.TestCase):
             oh.next_change(dt),
             datetime.datetime(2016, 2, 1, 13, 0, tzinfo=pytz.timezone("UTC"))
         )
+        # Rendering.
+        self.assertEqual(
+            oh.render().plaintext_week_description(),
+            "Monday: 09:00 - 12:00 and 13:00 - 19:00\nTuesday: closed\n"
+            "Wednesday: closed\nThursday: 09:00 - 12:00 and 13:00 - 19:00\n"
+            "Friday: closed\nSaturday: closed\nSunday: closed"
+        )
     
     def test_3(self):
         field = "24/7"
@@ -55,6 +70,14 @@ class TestGlobal(unittest.TestCase):
         self.assertEqual(
             oh.get_day(datetime.date.today()).periods[0].beginning.time(),
             datetime.time.min.replace(tzinfo=pytz.UTC)
+        )
+        # Rendering.
+        self.assertEqual(
+            oh.render().plaintext_week_description(),
+            "Monday: 00:00 - 00:00\nTuesday: 00:00 - 00:00\n"
+            "Wednesday: 00:00 - 00:00\nThursday: 00:00 - 00:00\n"
+            "Friday: 00:00 - 00:00\nSaturday: 00:00 - 00:00\n"
+            "Sunday: 00:00 - 00:00"
         )
     
     def test_4(self):
@@ -91,6 +114,13 @@ class TestGlobal(unittest.TestCase):
                 datetime.date(2018, 1, 11),
                 datetime.time.max.replace(tzinfo=pytz.timezone("UTC"))
             )
+        )
+        # Rendering.
+        self.assertEqual(
+            oh.render().plaintext_week_description(),
+            "Monday: 00:00 - 00:00\nTuesday: 00:00 - 00:00\n"
+            "Wednesday: 00:00 - 00:00\nThursday: 00:00 - 00:00\n"
+            "Friday: 00:00 - 00:00\nSaturday: closed\nSunday: closed"
         )
 
 class TestPatterns(unittest.TestCase):
