@@ -1,10 +1,7 @@
 import datetime
 import calendar
 
-from humanized_opening_hours.exceptions import (
-    SolarHoursNotSetError,
-    SpanOverMidnight
-)
+from humanized_opening_hours.exceptions import SolarHoursNotSetError
 
 
 WEEKDAYS = (
@@ -54,7 +51,7 @@ class Rule:
     
     def get_status_at(self, dt: datetime.datetime, solar_hours):
         for timespan in self.time_selectors:
-            if timespan.is_open(dt.time(), solar_hours):
+            if timespan.is_open(dt, solar_hours):
                 if self.status == "open":
                     return True
                 else:  # self.status == "closed"
@@ -342,27 +339,65 @@ class TimeSpan:
     def __init__(self, beginning, end):
         self.beginning = beginning
         self.end = end
-        if self.beginning.t[0] == self.end.t[0] == "normal":
-            if self.beginning.t[1] > self.end.t[1]:
-                raise SpanOverMidnight(
-                    "The field contains a period which spans "
-                    "over midnight, which not yet supported."
-                )
+    
+    def spans_over_midnight(self):
+        """Returns whether the TimeSpan spans over midnight."""
+        if (
+            self.beginning.t[0] == self.end.t[0] == "normal" and
+            self.beginning.t[1] > self.end.t[1]
+        ):
+                return True
+        elif any((
+            self.beginning.t[0] == "sunset" and self.end.t[0] == "sunrise",
+            self.beginning.t[0] == "sunset" and self.end.t[0] == "dawn",
+            self.beginning.t[0] == "sunrise" and self.end.t[0] == "dawn",
+            self.beginning.t[0] == "dusk"
+        )):
+            return True
         else:
-            if any((
-                self.beginning.t[0] == "sunset" and self.end.t[0] == "sunrise",
-                self.beginning.t[0] == "sunset" and self.end.t[0] == "dawn",
-                self.beginning.t[0] == "sunrise" and self.end.t[0] == "dawn",
-                self.beginning.t[0] == "dusk"
-            )):
-                raise SpanOverMidnight(
-                    "The field contains a period which spans "
-                    "over midnight, which not yet supported."
-                )
+            return False
+    
+    def get_times(self, date, solar_hours):
+        """Returns the beginning and the end of the TimeSpan.
+        
+        /!\ If the TimeSpan spans over midnight, the second datetime of the
+        returned tuple will be one day later than the first.
+        
+        Parameters
+        ----------
+        date: datetime.date
+            The day to use for returned datetimes.
+        solar_hours: dict{str: datetime.time}
+            A dict containing hours of sunrise, sunset, dawn and dusk.
+        
+        Returns
+        -------
+        tuple[datetime.datetime]
+            A tuple containing the beginning and the end of the TimeSpan.
+        """
+        beginning_time = self.beginning.get_time(solar_hours, date)
+        end_time = self.end.get_time(solar_hours, date)
+        if not self.spans_over_midnight():
+            return (beginning_time, end_time)
+        else:
+            return (beginning_time, end_time+datetime.timedelta(1))
     
     def is_open(self, dt, solar_hours):
-        beginning_time = self.beginning.get_time(solar_hours)
-        end_time = self.end.get_time(solar_hours)
+        """Returns the beginning and the end of the TimeSpan.
+        
+        Parameters
+        ----------
+        datetime.datetime
+            The date for which to check the opening.
+        solar_hours: dict{str: datetime.time}
+            A dict containing hours of sunrise, sunset, dawn and dusk.
+        
+        Returns
+        -------
+        bool
+            True if it's open, False else.
+        """
+        beginning_time, end_time = self.get_times(dt.date(), solar_hours)
         return beginning_time <= dt <= end_time
     
     def __repr__(self):
@@ -380,26 +415,44 @@ class Time:
         # ("normal", datetime.time) / ("name", "offset_sign", "delta_seconds")
         # TODO : Use named tupple.
     
-    def get_time(self, solar_hours):
+    def get_time(self, solar_hours, date):
+        """Returns the corresponding datetime.datetime.
+        
+        Parameters
+        ----------
+        solar_hours: dict{str: datetime.time}
+            A dict containing hours of sunrise, sunset, dawn and dusk.
+        datetime.datetime
+            The day to use for the returned datetime.
+        
+        Returns
+        -------
+        datetime.datetime
+        """
         if self.t[0] == "normal":
-            return self.t[1]
+            return datetime.datetime.combine(date, self.t[1])
         solar_hour = solar_hours[self.t[0]]
         if solar_hour is None:
             raise SolarHoursNotSetError()
         if self.t[1] == '+':
-            return (
-                datetime.datetime.combine(
-                    datetime.date(1, 1, 1), solar_hour
-                ) +
-                self.t[2]
-            ).time()
+            return datetime.datetime.combine(
+                date,
+                (
+                    datetime.datetime.combine(
+                        datetime.date(1, 1, 1), solar_hour
+                    ) + self.t[2]
+                ).time()
+            )
         else:
-            return (
-                datetime.datetime.combine(
-                    datetime.date(1, 1, 1), solar_hour
-                ) -
-                self.t[2]
-            ).time()
+            return datetime.datetime.combine(
+                date,
+                (
+                    datetime.datetime.combine(
+                        datetime.date(1, 1, 1), solar_hour
+                    ) -
+                    self.t[2]
+                ).time()
+            )
     
     def __repr__(self):
         return "<Time ({!r})>".format(str(self))

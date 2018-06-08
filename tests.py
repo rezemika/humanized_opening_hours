@@ -11,8 +11,7 @@ from humanized_opening_hours.temporal_objects import easter_date
 from humanized_opening_hours.exceptions import (
     HOHError,
     ParseError,
-    SolarHoursNotSetError,
-    SpanOverMidnight
+    SolarHoursNotSetError
 )
 
 # flake8: noqa: F841
@@ -58,10 +57,11 @@ class TestGlobal(unittest.TestCase):
         dt = datetime.datetime(2016, 2, 1, 12, 10)
         self.assertFalse(oh.is_open(dt))
         # Next change.  # TODO : Check this.
-        #self.assertEqual(
-        #    oh.next_change(dt),
-        #    datetime.datetime(2016, 2, 1, 13, 0)
-        #)
+        dt = datetime.datetime(2018, 6, 4, 12, 10)
+        self.assertEqual(
+            oh.next_change(dt),
+            datetime.datetime(2018, 6, 4, 13, 0)
+        )
     
     def test_3(self):
         field = "24/7"
@@ -74,9 +74,13 @@ class TestGlobal(unittest.TestCase):
         dt = datetime.datetime(2016, 2, 1, 12, 10)
         self.assertTrue(oh.is_open(dt))
         # Periods
+        now = datetime.datetime.now()
         self.assertEqual(
-            oh.get_current_rule(datetime.date.today()).time_selectors[0].beginning.get_time(self.SOLAR_HOURS),
-            datetime.time.min
+            (
+                oh.get_current_rule(now.date())
+                .time_selectors[0].beginning.get_time(self.SOLAR_HOURS, now)
+            ),
+            datetime.datetime.combine(now.date(), datetime.time.min)
         )
         # Rendering.
         self.assertEqual(
@@ -106,19 +110,23 @@ class TestGlobal(unittest.TestCase):
             1
         )
         self.assertEqual(
-            oh.get_current_rule(dt).time_selectors[0].beginning.get_time(self.SOLAR_HOURS),
-            datetime.time.min
-        )
-        dt = datetime.datetime(2018, 1, 7, 10, 0)
-        self.assertEqual(
-            oh.next_change(dt),
-            datetime.datetime(2018, 1, 8, 0, 0)
+            (
+                oh.get_current_rule(dt.date())
+                .time_selectors[0].beginning.get_time(self.SOLAR_HOURS, dt)
+            ),
+            datetime.datetime.combine(dt.date(), datetime.time.min)
         )
         # Next change
         dt = datetime.datetime(2018, 1, 7, 10, 0)
         self.assertEqual(
             oh.next_change(dt),
             datetime.datetime(2018, 1, 8, 0, 0)
+        )
+        
+        dt = datetime.datetime(2018, 1, 8, 10, 0)
+        self.assertEqual(
+            oh.next_change(dt),
+            datetime.datetime.combine(dt.date(), datetime.time.max)
         )
         # Rendering.
         self.assertEqual(
@@ -201,13 +209,9 @@ class TestPatterns(unittest.TestCase):
         field = "Mo,Wx 09:00-12:00,13:00-19:00"
         with self.assertRaises(ParseError) as context:
             oh = OHParser(field)
+        
         field = "Pl-Mo 09:00-12:00,13:00-19:00"
         with self.assertRaises(ParseError) as context:
-            oh = OHParser(field)
-    
-    def test_invalid_patterns(self):
-        field = "Mo-Fr 20:00-02:00"
-        with self.assertRaises(SpanOverMidnight) as context:
             oh = OHParser(field)
         
         field = "Su[1] 10:00-20:00"

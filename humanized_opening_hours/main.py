@@ -10,10 +10,7 @@ from humanized_opening_hours.temporal_objects import WEEKDAYS, MONTHS
 from humanized_opening_hours.field_parser import (
     PARSER, LOCALES, MainTransformer, DescriptionTransformer
 )
-from humanized_opening_hours.exceptions import (
-    ParseError,
-    NextChangeError
-)
+from humanized_opening_hours.exceptions import ParseError
 
 
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -364,55 +361,48 @@ class OHParser:
         """
         if not dt:
             dt = datetime.datetime.now()
-        current_rule = self.get_current_rule(dt.date())
-        days = 1
-        if (
-            current_rule is None or
-            current_rule.get_status_at(dt, self.solar_hours) is False
-        ):
-            current_rule = None
-            i = 0
-            while current_rule is None:
-                i += 1
-                if i == 365:
-                    raise NextChangeError("Can't get the next opening period.")
-                if days == 1:
-                    new_dt = dt + datetime.timedelta(days)
-                else:
-                    new_dt = datetime.datetime.combine(
-                        (dt + datetime.timedelta(days)).date(),
-                        datetime.time.min
-                    )
-                current_rule = self.get_current_rule(new_dt.date())
-                if (
-                    (current_rule is None or self.is_open(dt) is False) and
-                    days != 1
-                ):
-                    current_rule = None
-                    days += 1
-                elif days == 1:
-                    days = 2
+        days_offset, next_timespan = self._current_or_next_timespan(dt)
         
-        if current_rule.always_open:  # TODO : Find a better solution.
-            raise NextChangeError("This facility is always open.")
+        new_time = dt.time() if days_offset == 0 else datetime.time.min
+        new_dt = datetime.datetime.combine(
+            dt.date() + datetime.timedelta(days_offset),
+            new_time
+        )
         
-        if days == 1:
-            for timespan in current_rule.time_selectors:
-                if timespan.is_open(dt.time(), self.solar_hours):
-                    return datetime.datetime.combine(
-                        dt.date(),
-                        timespan.end.get_time(self.solar_hours)
-                    )
-            # Should not come here.
-        else:  # TODO : Check for "off".
-            return datetime.datetime.combine(
-                new_dt.date(),
-                current_rule.time_selectors[0].beginning.get_time(
-                    self.solar_hours
-                )
-            )
+        beginning_time, end_time = next_timespan.get_times(
+            new_dt, self.solar_hours
+        )
+        if dt < beginning_time:
+            return beginning_time
+        return end_time
     
-    def get_day_periods(self, dt=None):  # "dt" must be "datetime.date".
+    def _current_or_next_timespan(self, dt=None, _look_further=True):
+        if not dt:
+            dt = datetime.datetime.now()
+        current_rule = None
+        i = 0
+        while current_rule is None:
+            current_rule = self.get_current_rule(
+                dt.date()+datetime.timedelta(i)
+            )
+            if current_rule is None:
+                i += 1
+        new_time = dt.time() if i == 0 else datetime.time.min
+        new_dt = datetime.datetime.combine(
+            dt.date() + datetime.timedelta(i),
+            new_time
+        )
+        
+        for timespan in current_rule.time_selectors:
+            beginning_time, end_time = timespan.get_times(
+                new_dt.date(), self.solar_hours
+            )
+            if new_dt < end_time:
+                return (i, timespan)
+        
+        return self._current_or_next_timespan(new_dt)
+    
+    def get_day_periods(self, dt=None):
         """Returns the opening periods of the given day.
         
         Parameters

@@ -195,7 +195,7 @@ class MainTransformer(lark.Transformer):
         if (h, m) == (24, 0):
             dt = datetime.time.max
         else:
-            dt = datetime.time(h, m)
+            dt = datetime.time(h % 24, m)  # Converts "26:00" to "02:00".
         return ("normal", dt)
     
     def variable_time(self, args):

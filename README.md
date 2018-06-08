@@ -82,7 +82,6 @@ You can get a sanitized version of the field given to the constructor with the *
 ```
 
 If you try to parse a field which is invalid or contains a pattern which is not supported, an `humanized_opening_hours.exceptions.ParseError` (inheriting from `humanized_opening_hours.exceptions.HOHError`) will be raised.
-If the field contains a period which spans over midnight (like `Mo-Fr 20:00-02:00`), a `humanized_opening_hours.exceptions.SpanOverMidnight` exception (also inheriting from `HOHError`) will be raised, because this is not supported yet.
 
 ## Solar hours
 
@@ -205,6 +204,7 @@ Mo-Fr 10:00-20:00
 Sa,Su 10:00-20:00
 Su,PH off  # or "closed"
 10:00-20:00
+20:00-02:00
 sunrise-sunset  # or "dawn" / "dusk"
 (sunrise+01:00)-20:00
 Jan 10:00-20:00
@@ -230,7 +230,6 @@ week 1-10/2 Sa-Su 09:00-12:00
 The following formats are NOT supported yet and their parsing will raise a ParseError.
 
 ```
-20:00-02:00  # Span over midnight.
 years
 Su[1] 10:00-20:00
 easter +1 day 10:00-20:00
