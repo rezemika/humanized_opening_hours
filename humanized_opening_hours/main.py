@@ -315,7 +315,7 @@ class OHParser:
         """
         if not dt:
             dt = datetime.datetime.now()
-        for rule in self.rules:
+        for rule in self.rules:  # TODO : Use "get_current_rule()" ?
             if rule.range_selectors.is_included(
                 dt.date(), self.SH_dates, self.PH_dates
             ):
@@ -376,7 +376,7 @@ class OHParser:
             return beginning_time
         return end_time
     
-    def _current_or_next_timespan(self, dt=None, _look_further=True):
+    def _current_or_next_timespan(self, dt=None):
         if not dt:
             dt = datetime.datetime.now()
         current_rule = None

@@ -30,6 +30,7 @@ range_selectors : [monthday_selector] [week_selector] [":"] [" "] [weekday_selec
 
 weekday_selector : (weekday_sequence | holiday ("," holiday)*) -> weekday_or_holiday_sequence_selector
                  | holiday ("," holiday)* "," weekday_sequence -> holiday_and_weekday_sequence_selector
+                 | weekday_sequence "," holiday ("," holiday)* -> holiday_and_weekday_sequence_selector  // Not valid but frequent pattern.
                  | holiday ("," holiday)* " " weekday_sequence -> holiday_in_weekday_sequence_selector
 
 weekday_sequence : weekday_range ("," weekday_range)*

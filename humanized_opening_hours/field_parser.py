@@ -169,7 +169,7 @@ class MainTransformer(lark.Transformer):
         args = args[1:]
         return WeekSelector(args[0])
     
-    def week(self, args):
+    def week(self, args):  # TODO : Handle "Su-Mo"
         if len(args) == 1:
             return set([args[0]])
         elif len(args) == 2:

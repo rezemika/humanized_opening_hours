@@ -231,6 +231,7 @@ class WeekSelector:
 
 class MonthDayRange:
     def __init__(self, args):
+        # TODO : Handle "Nov-Jan".
         self.kind = args[0]
         self.args = args[1:]
     
