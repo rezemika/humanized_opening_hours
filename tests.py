@@ -457,6 +457,17 @@ class TestFunctions(unittest.TestCase):
             easter_date(2020),
             datetime.date(2020, 4, 12)
         )
+    
+    def test_cycle_slice(self):
+        l = "ABCDEFGHIJ"
+        self.assertEqual(
+            field_parser.cycle_slice(l, 0, 3),
+            "ABCD"
+        )
+        self.assertEqual(
+            field_parser.cycle_slice(l, 7, 2),
+            "HIJABC"
+        )
 
 
 if __name__ == '__main__':

@@ -1,7 +1,6 @@
 import datetime
 import os
 import gettext
-import itertools
 
 import lark
 
@@ -49,15 +48,9 @@ def cycle_slice(l, start_index, end_index):
     list
         The objects between the start and the end index (inclusive).
     """
-    items = []
-    for i, d in enumerate(itertools.cycle(l)):
-        if i == start_index:
-            items.append(d)
-        elif items:
-            items.append(d)
-            if l.index(d) == end_index:
-                break
-    return items
+    if start_index <= end_index:
+        return l[start_index:end_index+1]
+    return l[start_index:] + l[:end_index+1]
 
 
 class MainTransformer(lark.Transformer):
