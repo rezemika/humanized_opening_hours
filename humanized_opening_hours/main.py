@@ -201,12 +201,7 @@ class OHParser:
             # "mo" => "Mo"
             for word in special_words:
                 part = re.sub("(?i){}(?!\w+)".format(word), word, part)
-            # Adds colons and removes 'h' when necessary.
-            # "0630" => "06:30"
-            for moment in re.findall("[0-9]{4}", part):
-                if "year" in part:
-                    break
-                part = part.replace(moment, moment[:2] + ':' + moment[2:])
+            # Removes 'h' when necessary.
             for moment in re.findall("([0-9][0-9]h)[^0-9]", part):
                 part = part.replace(moment, moment[:2] + ':00')
             for moment in re.findall("[0-9][0-9]h[0-9]", part):
