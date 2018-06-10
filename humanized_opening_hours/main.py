@@ -8,7 +8,7 @@ import babel.dates
 
 from humanized_opening_hours.temporal_objects import WEEKDAYS, MONTHS
 from humanized_opening_hours.field_parser import (
-    PARSER, LOCALES, MainTransformer, DescriptionTransformer
+    PARSER, LOCALES, DescriptionTransformer, get_tree_and_rules
 )
 from humanized_opening_hours.exceptions import ParseError
 
@@ -17,7 +17,7 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 class OHParser:
-    def __init__(self, field, locale="en"):
+    def __init__(self, field, locale="en", optimize=True):
         """A parser for the OSM opening_hours fields.
         
         >>> oh = hoh.OHParser("Mo-Fr 10:00-19:00")
@@ -28,6 +28,10 @@ class OHParser:
             The opening_hours field.
         locale : str, optional
             The locale to use. "en" default.
+        optimize : bool, optional
+            If True (default), the parsing will be skipped if the field is
+            very frequent (ex: "24/7") and HOH will use a pre-generated tree.
+            Set it to False to prevent this behavior.
         
         Attributes
         ----------
@@ -62,8 +66,9 @@ class OHParser:
         self.sanitized_field = self.sanitize(self.original_field)
         
         try:
-            self._tree = PARSER.parse(self.sanitized_field)
-            self.rules = MainTransformer().transform(self._tree)
+            self._tree, self.rules = get_tree_and_rules(
+                self.sanitized_field, optimize
+            )
         except lark.lexer.UnexpectedInput as e:
             raise ParseError(
                 "The field could not be parsed, it may be invalid. "
@@ -239,6 +244,8 @@ class OHParser:
             A list of sentences (beginning with a capital letter and ending
             with a point). Ex: ['From Monday to Friday: 10:00 - 20:00.']
         """
+        if not self._tree:
+            self._tree = PARSER.parse(self.sanitized_field)
         transformer = DescriptionTransformer()
         transformer._locale = self.babel_locale
         transformer._human_names = self.get_human_names()

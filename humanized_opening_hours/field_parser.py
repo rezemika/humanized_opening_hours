@@ -13,6 +13,7 @@ from humanized_opening_hours.temporal_objects import (
     YearSelector, MonthDayRange, SpecialDate,
     TimeSpan, Time
 )
+from humanized_opening_hours.frequent_fields import FREQUENT_FIELDS
 
 
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -531,6 +532,17 @@ def get_parser():
     with open(os.path.join(base_dir, "field.ebnf"), 'r') as f:
         grammar = f.read()
     return lark.Lark(grammar, start="time_domain", parser="earley")
+
+
+def get_tree_and_rules(field, optimize=True):
+    # If the field is in FREQUENT_FIELDS, returns directly its tree.
+    tree = None
+    if optimize:
+        tree = FREQUENT_FIELDS.get(field)
+    if not tree:
+        tree = PARSER.parse(field)
+    rules = MainTransformer().transform(tree)
+    return (tree, rules)
 
 
 PARSER = get_parser()
