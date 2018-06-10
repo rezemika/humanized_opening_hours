@@ -9,7 +9,8 @@ from humanized_opening_hours.temporal_objects import (
     Rule, RangeSelector, AlwaysOpenSelector,
     MonthDaySelector, WeekdayHolidaySelector,
     WeekdayInHolidaySelector, WeekSelector,
-    MonthDayRange, SpecialDate, TimeSpan, Time
+    YearSelector, MonthDayRange, SpecialDate,
+    TimeSpan, Time
 )
 
 
@@ -158,11 +159,8 @@ class MainTransformer(lark.Transformer):
         else:
             return set(range(args[0], args[1]+1, int(args[2].value)))
     
-    def year_selector(self, args):
-        return (
-            "year_selector",
-            set([item for sublist in args for item in sublist])
-        )
+    def year_selector(self, args):  # TODO : Make it work.
+        return YearSelector(set([item for sublist in args for item in sublist]))
     
     # Week
     def week_selector(self, args):

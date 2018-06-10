@@ -10,6 +10,8 @@ ALWAYS_OPEN.2 : "24/7"
 WEEK.2 : "week "
 
 TWO_DIGITS.1 : /[0-9][0-9]+/
+YEAR.3 : /([12][0-9]{3})+/
+
 PLUS_OR_MINUS : "+" | "-"
 
 time_domain : rule_sequence ("; " rule_sequence)*
@@ -25,8 +27,8 @@ selector_sequence : ALWAYS_OPEN -> always_open
                   | range_selectors [" " time_selector]
                   | time_selector
 
-range_selectors : [monthday_selector] [week_selector] [":"] [" "] [weekday_selector]
-//range_selectors : [year_selector] [monthday_selector] [week_selector] [":"] [" "] [weekday_selector]
+%ignore " "
+range_selectors : [year_selector] [monthday_selector] [week_selector] [":"] [weekday_selector]
 
 weekday_selector : (weekday_sequence | holiday ("," holiday)*) -> weekday_or_holiday_sequence_selector
                  | holiday ("," holiday)* "," weekday_sequence -> holiday_and_weekday_sequence_selector
@@ -54,7 +56,7 @@ year_selector : year_range ("," year_range)*
 year_range : year
            | year "-" year
            | year "-" year "/" INT
-year : /([12][0-9]{3})+/
+year : YEAR
 
 monthday_selector : monthday_range ("," monthday_range)*
 monthday_range : [year] MONTH ["-" MONTH] -> monthday_range_year_month

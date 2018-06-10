@@ -69,6 +69,9 @@ class Rule:
         )
 
 
+# Selectors
+
+
 class RangeSelector:
     def __init__(self, selectors):
         self.selectors = selectors
@@ -227,6 +230,23 @@ class WeekSelector:
     
     def __str__(self):
         return '<WeekSelector ' + str(self.week_numbers) + '>'
+
+
+class YearSelector:
+    def __init__(self, selectors):
+        self.selectors = selectors
+    
+    def is_included(self, dt: datetime.datetime, SH_dates, PH_dates):
+        return dt.year in self.selectors
+    
+    def __repr__(self):
+        return str(self)
+    
+    def __str__(self):
+        return '<YearSelector ' + str(self.selectors) + '>'
+
+
+# Ranges
 
 
 class MonthDayRange:
