@@ -1,6 +1,7 @@
 import datetime
 import os
 import gettext
+import itertools
 
 import lark
 
@@ -26,6 +27,36 @@ LOCALES = {
 }
 
 ON_WEEKDAY = True  # TODO : Relevant?
+
+
+def cycle_slice(l, start_index, end_index):
+    """Allows to do a cyclical slicing on any iterable.
+    It's like a regular slicing, but it allows the start index
+    to be greater than the end index.
+    
+    Parameters
+    ----------
+    iterable
+        The object on which to iterate.
+    int
+        The start index.
+    int
+        The end index (can be lower than the start index).
+    
+    Returns
+    -------
+    list
+        The objects between the start and the end index (inclusive).
+    """
+    items = []
+    for i, d in enumerate(itertools.cycle(l)):
+        if i == start_index:
+            items.append(d)
+        elif items:
+            items.append(d)
+            if l.index(d) == end_index:
+                break
+    return items
 
 
 class MainTransformer(lark.Transformer):
@@ -144,8 +175,7 @@ class MainTransformer(lark.Transformer):
             return [args[0].value]
         first_day = WEEKDAYS.index(args[0])
         last_day = WEEKDAYS.index(args[1])
-        day_indexes = range(first_day, last_day+1)
-        return set([WEEKDAYS[i] for i in day_indexes])
+        return set(cycle_slice(WEEKDAYS, first_day, last_day))
     
     # Year
     def year(self, args):
@@ -159,7 +189,7 @@ class MainTransformer(lark.Transformer):
         else:
             return set(range(args[0], args[1]+1, int(args[2].value)))
     
-    def year_selector(self, args):  # TODO : Make it work.
+    def year_selector(self, args):
         return YearSelector(set([item for sublist in args for item in sublist]))
     
     # Week
@@ -167,7 +197,7 @@ class MainTransformer(lark.Transformer):
         args = args[1:]
         return WeekSelector(args[0])
     
-    def week(self, args):  # TODO : Handle "Su-Mo"
+    def week(self, args):
         if len(args) == 1:
             return set([args[0]])
         elif len(args) == 2:

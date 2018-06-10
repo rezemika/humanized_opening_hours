@@ -145,6 +145,9 @@ class TestPatterns(unittest.TestCase):
         field = "Mo-Sa 09:00-19:00"
         oh = OHParser(field)
         
+        field = "Fr-Mo 09:00-19:00"
+        oh = OHParser(field)
+        
         field = "Mo,Th 09:00-sunset"
         oh = OHParser(field)
         
