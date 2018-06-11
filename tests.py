@@ -11,7 +11,7 @@ from humanized_opening_hours.temporal_objects import easter_date
 from humanized_opening_hours.exceptions import (
     HOHError,
     ParseError,
-    SolarHoursNotSetError
+    SolarHoursError
 )
 
 # flake8: noqa: F841

@@ -10,7 +10,7 @@ class ParseError(HOHError):
     pass
 
 
-class SolarHoursNotSetError(HOHError):
+class SolarHoursError(HOHError):
     """
     Raised when trying to get a time from a solar hour
     without having defined them.

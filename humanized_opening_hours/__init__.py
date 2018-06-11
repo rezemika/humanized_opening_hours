@@ -32,7 +32,7 @@ from humanized_opening_hours.field_parser import LOCALES as _LOCALES
 from humanized_opening_hours.exceptions import (
     HOHError,
     ParseError,
-    SolarHoursNotSetError
+    SolarHoursError
 )
 
 DESCRIPTION_LOCALES = list(_LOCALES.keys())

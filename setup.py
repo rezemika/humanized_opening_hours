@@ -13,7 +13,7 @@ setup(
     author_email="reze.mika@gmail.com",
     description="A parser for the opening_hours fields from OpenStreetMap.",
     long_description=open(BASE_DIR + "/README.md", 'r').read(),
-    install_requires=["pytz", "lark-parser", "babel"],
+    install_requires=["pytz", "lark-parser", "babel", "astral"],
     include_package_data=True,
     url='http://github.com/rezemika/humanized_opening_hours',
     classifiers=[

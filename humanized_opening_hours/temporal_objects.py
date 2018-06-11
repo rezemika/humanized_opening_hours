@@ -1,7 +1,7 @@
 import datetime
 import calendar
 
-from humanized_opening_hours.exceptions import SolarHoursNotSetError
+from humanized_opening_hours.exceptions import SolarHoursError
 
 
 WEEKDAYS = (
@@ -454,7 +454,7 @@ class Time:
             return datetime.datetime.combine(date, self.t[1])
         solar_hour = solar_hours[self.t[0]]
         if solar_hour is None:
-            raise SolarHoursNotSetError()
+            raise SolarHoursError()
         if self.t[1] == '+':
             return datetime.datetime.combine(
                 date,

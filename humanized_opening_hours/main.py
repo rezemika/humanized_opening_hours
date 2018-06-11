@@ -5,6 +5,7 @@ import warnings
 
 import lark
 import babel.dates
+import astral
 
 from humanized_opening_hours.temporal_objects import WEEKDAYS, MONTHS
 from humanized_opening_hours.field_parser import (
@@ -23,8 +24,82 @@ def set_dt(dt):
     return dt if dt is not None else datetime.datetime.now()
 
 
+class SolarHoursManager:
+    def __init__(self, location):
+        """Stores solar hours by dates.
+        
+        Parameters
+        ----------
+        astral.Location or tuple, optional
+            Allows you to provide a location, allowing an automatic
+            getting of solar hours. Must be an 'astral.Location' object
+            or a tuple like '(latitude, longitude, timezone_name, elevation)'.
+            None default, meaning it relies only on manual settings.
+        
+        Attributes
+        ----------
+        location : astral.Location, optional
+            The location for which to get solar hours.
+        solar_hours : dict{str: datetime.time}
+            A dict containing hours of sunrise, sunset, dawn and dusk.
+        
+        To get solar hours, see '__getitem__()'.
+        To manually set them, see '__setitem__()'.
+        """
+        if isinstance(location, astral.Location):
+            self.location = location
+        elif location:
+            self.location = astral.Location(
+                ["Location", "Region", *location]
+            )
+        else:
+            self.location = None
+        self.solar_hours = {}
+    
+    def __setitem__(self, dt: datetime.date, hours: dict):
+        """Sets solar hours for a given day.
+        
+        Usage:
+        >>> solar_hours_manager[datetime.date] = dict
+        """
+        self.solar_hours[dt] = hours
+    
+    def __getitem__(self, dt: datetime.date) -> dict:
+        """Returns solar hours for a given day.
+        
+        Usage:
+        >>> solar_hours = solar_hours_manager[datetime.date]
+        """
+        sh = self.solar_hours.get(dt)
+        if sh:
+            return sh
+        solar_hours = {
+            "sunrise": None, "sunset": None,
+            "dawn": None, "dusk": None
+        }
+        if not self.location:
+            return solar_hours
+        
+        for event in solar_hours:
+            try:
+                solar_hours[event] = (
+                    getattr(self.location, event)(dt)
+                    .time().replace(tzinfo=None)
+                )
+            except astral.AstralError:
+                solar_hours[event] = None
+        self.solar_hours[dt] = solar_hours
+        return solar_hours
+    
+    def __repr__(self):
+        return str(self)
+    
+    def __str__(self):
+        return "<SolarHours for {!r}>".format(self.location)
+
+
 class OHParser:
-    def __init__(self, field, locale="en", optimize=True):
+    def __init__(self, field, locale="en", location=None, optimize=True):
         """A parser for the OSM opening_hours fields.
         
         >>> oh = hoh.OHParser("Mo-Fr 10:00-19:00")
@@ -35,6 +110,10 @@ class OHParser:
             The opening_hours field.
         locale : str, optional
             The locale to use. "en" default.
+        location : astral.Location or tuple, optional
+            Allows you to provide a location, allowing an automatic
+            getting of solar hours. Must be an 'astral.Location' object
+            or a tuple like '(latitude, longitude, timezone_name, elevation)'.
         optimize : bool, optional
             If True (default), the parsing will be skipped if the field is
             very frequent (ex: "24/7") and HOH will use a pre-generated tree.
@@ -55,10 +134,8 @@ class OHParser:
         SH_dates : list[datetime.date]
             A list of the days considered as school holidays.
             Empty default, you have to fill it yourself.
-        solar_hours : dict{str: datetime.time}
-            A dict containing hours of sunrise, sunset, dawn and dusk.
-            Empty default, you have to fill it yourself with
-            **not** localized datetime.time objects.
+        solar_hours_manager : SolarHoursManager
+            An object storing and calculating solar hours for the desired dates.
         
         Raises
         ------
@@ -118,58 +195,7 @@ class OHParser:
             "dawn": "dawn" in self.sanitized_field,
             "dusk": "dusk" in self.sanitized_field
         }
-        self.solar_hours = {
-            "sunrise": None, "sunset": None,
-            "dawn": None, "dusk": None
-        }
-    
-    @staticmethod
-    def get_solar_hours(lat, lon, dt=None, tz="UTC"):
-        """Returns a dict containing hours of sunrise, sunset, dawn and dusk.
-        
-        Requires the 'astral' module. Sets values to None (like default)
-        in case of error.
-        
-        Parameters
-        ----------
-        float
-            The latitude of the location.
-        float
-            The longitude of the location.
-        datetime.date, optional
-            The date for which to get solar hours.
-            None default, meaning use the present day.
-        str, optional
-            The timezone name of the location. "UTC" default.
-        
-        Returns
-        -------
-        solar_hours : dict{str: datetime.time}
-            A dict containing hours of sunrise, sunset, dawn and dusk
-            (or None in case of error).
-        
-        Raises
-        ------
-        ImportError
-            If the 'astral' module is not available.
-        """
-        if not dt:
-            dt = datetime.date.now()
-        import astral
-        loc = astral.Location(["Location", "Region", lat, lon, tz, 0])
-        solar_hours = {
-            "sunrise": None, "sunset": None,
-            "dawn": None, "dusk": None
-        }
-        for event in solar_hours:
-            try:
-                solar_hours[event] = (
-                    getattr(loc, event)(dt)
-                    .time().replace(tzinfo=None)
-                )
-            except astral.AstralError:
-                solar_hours[event] = None
-        return solar_hours
+        self.solar_hours_manager = SolarHoursManager(location)
     
     @staticmethod
     def sanitize(field):
@@ -326,7 +352,9 @@ class OHParser:
             if rule.range_selectors.is_included(
                 dt.date(), self.SH_dates, self.PH_dates
             ):
-                return rule.get_status_at(dt, self.solar_hours)
+                return rule.get_status_at(
+                    dt, self.solar_hours_manager[dt.date()]
+                )
         return False
     
     def get_current_rule(self, dt=None):
@@ -343,7 +371,7 @@ class OHParser:
         humanized_opening_hours.Rule or None
             The rule matching the given datetime, if available.
         """
-        if not dt:
+        if dt is None:
             dt = datetime.date.today()
         for rule in self.rules:
             if rule.range_selectors.is_included(
@@ -376,7 +404,7 @@ class OHParser:
         )
         
         beginning_time, end_time = next_timespan.get_times(
-            new_dt, self.solar_hours
+            new_dt, self.solar_hours_manager[new_dt.date()]
         )
         if dt < beginning_time:
             return beginning_time
@@ -400,7 +428,7 @@ class OHParser:
         
         for timespan in current_rule.time_selectors:
             beginning_time, end_time = timespan.get_times(
-                new_dt.date(), self.solar_hours
+                new_dt.date(), self.solar_hours_manager[new_dt.date()]
             )
             if new_dt < end_time:
                 return (i, timespan)
@@ -421,8 +449,6 @@ class OHParser:
         list[humanized_opening_hours.TimeSpan]
             The timespans of the given day.
         """
-        if not dt:
-            dt = datetime.date.today()
         current_rule = self.get_current_rule(dt)
         if current_rule is None:
             return []

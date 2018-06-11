@@ -88,27 +88,27 @@ If you try to parse a field which is invalid or contains a pattern which is not 
 If the field contains solar hours, here is how to deal with them.
 
 First of all, you can easily know if you need to set them by checking the `OHParser.needs_solar_hours_setting` variable.
-If one of its values is `True`, you need to set them in the `solar_hours` dict with `datetime.time` objects.
+If one of its values is `True`, it appears in the field and you should give to HOH a mean to retrive its time.
 
-For example, if you know that the sunrise is at 08:00 and the sunset at 20:00, you can do this:
-
-```python
-oh.solar_hours["sunrise"] = datetime.time(8, 0)
-oh.solar_hours["sunset"] = datetime.time(20, 0)
-```
-
-Alternatively, if you have the coordinates and the timezone of the facility and you have the `astral` module, you can use the `get_solar_hours()` staticmethod.
+You have to ways to do this.
+The first is to give to the `OHParser` the location of the facility, to allow it to calculate solar hours.
+The second is to use the `SolarHoursManager` object, *via* the `OHParser.solar_hours_manager` attribute.
 
 ```python
-# To get the solar hours at Stonehenge on 1st January 2018...
-lat, lon = 51.18, -1.83
-dt = datetime.date(2018, 1, 1)
-oh.solar_hours = hoh.OHParser.get_solar_hours(lat, lon, dt, "UTC")
+# First method. You can use either an 'astral.Location' object or a tuple.
+location = astral.Location(["Greenwich", "England", 51.168, 0.0, "Europe/London", 0, 24])
+location = (51.168, 0.0, "Europe/London", 0, 24)
+oh = hoh.OHParser(field, location=location)
+
+# Second method.
+solar_hours = {
+    "sunrise": datetime.time(8, 0), "sunset": datetime.time(20, 0),
+    "dawn": datetime.time(7, 30), "dusk": datetime.time(20, 30)
+}
+oh.solar_hours_manager[datetime.date.today()] = solar_hours
 ```
 
-**If you try to do something with a field requiring setting without setting it, you will get a `SolarHoursNotSetError`.**
-
-Attention, except if the facility is on the equator, this setting will be valid only for a short period.
+Attention, except if the facility is on the equator, this setting will be valid only for a short period (except if you provide coordinates, because they will be automatically updated).
 
 ## Have nice schedules
 
@@ -249,9 +249,8 @@ This module requires the following modules, which can be installed with `pip3`.
 lark-parser
 pytz
 babel
+astral
 ```
-
-If you want to use the `get_solar_hours()` method, you will also need the `astral` module.
 
 # Licence
 
