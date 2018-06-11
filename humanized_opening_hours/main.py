@@ -142,9 +142,6 @@ class OHParser:
         humanized_opening_hours.ParseError
             When something goes wrong during the parsing
             (e.g. the field is invalid or contains an unsupported pattern).
-        humanized_opening_hours.SpanOverMidnight
-            When a field has a period which spans over midnight
-            (for example: "Mo-Fr 20:00-02:00"), which is not yet supported.
         """
         self.original_field = field
         self.sanitized_field = self.sanitize(self.original_field)

@@ -2,14 +2,14 @@
 
 Provides an OHParser object with the most useful methods
 (`is_open()`, `next_change()`, etc). Allows you to set
-public and school holidays. Provides a `render()` method
-to get human-readable strings describing the opening hours.
+public and school holidays. Provides a `description()` method
+to get a human-readable describing of the opening hours.
 
 Automatically sanitizes the fields to prevent some common mistakes.
 
 To get started, simply do:
 >>> import humanized_opening_hours as hoh
->>> oh = hoh.OHParser("Th-Sa 10:00-19:00")
+>>> oh = hoh.OHParser("Mo-Sa 10:00-19:00")
 """
 # flake8: noqa
 
