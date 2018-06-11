@@ -116,8 +116,8 @@ class OHParser:
             or a tuple like '(latitude, longitude, timezone_name, elevation)'.
         optimize : bool, optional
             If True (default), the parsing will be skipped if the field is
-            very frequent (ex: "24/7") and HOH will use a pre-generated tree.
-            Set it to False to prevent this behavior.
+            very frequent (ex: "24/7")  or simple and HOH will use a simpler
+            and faster parser than Lark. Set to False to prevent this behavior.
         
         Attributes
         ----------

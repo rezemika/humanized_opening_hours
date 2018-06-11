@@ -12,7 +12,9 @@ from humanized_opening_hours.temporal_objects import (
     YearSelector, MonthDayRange, SpecialDate,
     TimeSpan, Time
 )
-from humanized_opening_hours.frequent_fields import FREQUENT_FIELDS
+from humanized_opening_hours.frequent_fields import (
+    FREQUENT_FIELDS, parse_simple_field
+)
 
 
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -532,6 +534,8 @@ def get_tree_and_rules(field, optimize=True):
     tree = None
     if optimize:
         tree = FREQUENT_FIELDS.get(field)
+        if not tree:
+            tree = parse_simple_field(field)
     if not tree:
         tree = PARSER.parse(field)
     rules = MainTransformer().transform(tree)
