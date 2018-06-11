@@ -16,6 +16,13 @@ from humanized_opening_hours.exceptions import ParseError
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
+def set_dt(dt):
+    """
+    Sets 'dt' argument to 'datetime.datetime.now' if it's set to None.
+    """
+    return dt if dt is not None else datetime.datetime.now()
+
+
 class OHParser:
     def __init__(self, field, locale="en", optimize=True):
         """A parser for the OSM opening_hours fields.
@@ -272,8 +279,7 @@ class OHParser:
         str : The descriptive string (not capitalized at the beginning).
             For example: "in 15 minutes" (en) or "dans 2 jours" (fr).
         """
-        if not dt:
-            dt = datetime.datetime.now()
+        dt = set_dt(dt)
         next_change = self.next_change(dt=dt)
         delta = next_change - dt
         # TODO : Check granularity.
@@ -315,8 +321,7 @@ class OHParser:
         bool
             True if it's open, False else.
         """
-        if not dt:
-            dt = datetime.datetime.now()
+        dt = set_dt(dt)
         for rule in self.rules:  # TODO : Use "get_current_rule()" ?
             if rule.range_selectors.is_included(
                 dt.date(), self.SH_dates, self.PH_dates
@@ -361,8 +366,7 @@ class OHParser:
         datetime.datetime
             The datetime of the next change.
         """
-        if not dt:
-            dt = datetime.datetime.now()
+        dt = set_dt(dt)
         days_offset, next_timespan = self._current_or_next_timespan(dt)
         
         new_time = dt.time() if days_offset == 0 else datetime.time.min
@@ -379,8 +383,7 @@ class OHParser:
         return end_time
     
     def _current_or_next_timespan(self, dt=None):
-        if not dt:
-            dt = datetime.datetime.now()
+        dt = set_dt(dt)
         current_rule = None
         i = 0
         while current_rule is None:
