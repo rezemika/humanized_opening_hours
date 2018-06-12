@@ -73,11 +73,11 @@ datetime.datetime(2018, 1, 8, 0, 0)
 
 -----
 
-You can get a sanitized version of the field given to the constructor with the *sanitize* staticmethod or the **sanitized_field** attribute.
+You can get a sanitized version of the field given to the constructor with the *sanitize* function or the **sanitized_field** attribute.
 
 ```python
 >>> field = "mo-su 0930-2000;jan off"
->>> print(hoh.OHParser.sanitize(field))
+>>> print(hoh.sanitize(field))
 "Mo-Su 09:30-20:00; Jan off"
 ```
 

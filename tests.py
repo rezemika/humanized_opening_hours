@@ -6,7 +6,7 @@ from lark import Tree
 from lark.lexer import Token
 
 from humanized_opening_hours import field_parser
-from humanized_opening_hours.main import OHParser
+from humanized_opening_hours.main import OHParser, sanitize
 from humanized_opening_hours.temporal_objects import easter_date
 from humanized_opening_hours.exceptions import (
     HOHError,
@@ -227,39 +227,60 @@ class TestSanitize(unittest.TestCase):
     
     def test_valid_1(self):
         field = "Mo-Sa 09:00-19:00"
-        sanitized_field = OHParser.sanitize(field)
+        sanitized_field = sanitize(field)
         self.assertEqual(sanitized_field, field)
     
     def test_valid_2(self):
         field = "Mo,Th 09:00-12:00,13:00-19:00"
-        sanitized_field = OHParser.sanitize(field)
+        sanitized_field = sanitize(field)
         self.assertEqual(sanitized_field, field)
     
+    def test_valid_3(self):
+        field = "2010-2020 Jan-Feb Mo-Fr 09:30-(sunrise+01:00)"
+        sanitized_field = sanitize(field)
+        self.assertEqual(sanitized_field, field)
+    
+    def test_valid_4(self):
+        field = "week 1-12/2 08:00-19:00"
+        sanitized_field = "week 1-12/2 08:00-19:00"
+        self.assertEqual(sanitize(field), sanitized_field)
+    
     def test_invalid_1(self):
-        field = "Mo-sa 09:00-19:00"
+        field = "mo-sa 09:00-19:00"
         sanitized_field = "Mo-Sa 09:00-19:00"
-        self.assertEqual(OHParser.sanitize(field), sanitized_field)
+        self.assertEqual(sanitize(field), sanitized_field)
     
     def test_invalid_2(self):
-        field = "Mo,th 9:00-12:00,13:00-19:00"
+        field = "Mo,th 9:00-12:00, 13:00-19:00"
         sanitized_field = "Mo,Th 09:00-12:00,13:00-19:00"
-        self.assertEqual(OHParser.sanitize(field), sanitized_field)
+        self.assertEqual(sanitize(field), sanitized_field)
     
     def test_invalid_3(self):
-        field = "Mo 09:00 - 12:00 , 13:00 - 19:00;"
+        field = "Mo 09:00 - 12:00 , 13:00 - 19:00;    "
         sanitized_field = "Mo 09:00-12:00,13:00-19:00"
-        self.assertEqual(OHParser.sanitize(field), sanitized_field)
+        self.assertEqual(sanitize(field), sanitized_field)
     
     def test_invalid_4(self):
-        field = "Mo 10:00-12:00 14:00-19:00; Tu-Sa 10:00-19:00"
+        field = "Mo 10h00-12h00 14:00-19:00; Tu-Sa 10:00-19:00"
         sanitized_field = "Mo 10:00-12:00,14:00-19:00; Tu-Sa 10:00-19:00"
-        self.assertEqual(OHParser.sanitize(field), sanitized_field)
+        self.assertEqual(sanitize(field), sanitized_field)
+    
+    def test_invalid_5(self):
+        field = "mo-fr,su 10h - 20h"
+        sanitized_field = "Mo-Fr,Su 10:00-20:00"
+        self.assertEqual(sanitize(field), sanitized_field)
+    
+    def test_invalid_6(self):
+        field = "jan-feb SUNRISE-SUNSET"
+        sanitized_field = "Jan-Feb sunrise-sunset"
+        self.assertEqual(sanitize(field), sanitized_field)
     
     def test_holidays(self):
         field = "Mo-Sa,SH 09:00-19:00"
-        self.assertEqual(OHParser.sanitize(field), field)
+        self.assertEqual(sanitize(field), field)
+        
         field = "Mo-Sa 09:00-19:00; PH off"
-        self.assertEqual(OHParser.sanitize(field), field)
+        self.assertEqual(sanitize(field), field)
 
 
 class TestSolarHours(unittest.TestCase):

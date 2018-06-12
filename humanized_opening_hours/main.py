@@ -24,6 +24,81 @@ def set_dt(dt):
     return dt if dt is not None else datetime.datetime.now()
 
 
+RE_NUMERICAL_TIME_HH_H_MM = re.compile(r"([0-2][0-9])h([0-5][0-9])")
+RE_NUMERICAL_TIME_HH_H = re.compile(r"([0-2][0-9])h")
+RE_NUMERICAL_TIME_H_H = re.compile(r"(?:[^0-9]|^)([0-9])h")
+TIME_REGEX = (
+    r"[0-2][0-9]:[0-5][0-9]|"
+    r"\((?:sunrise|sunset|dawn|dusk)(?:\+|-)[0-2][0-9]:[0-5][0-9]\)|"
+    r"(?:sunrise|sunset|dawn|dusk)"
+)
+RE_TIMESPAN = re.compile(
+    r"({time_regex}) ?- ?({time_regex})".format(time_regex=TIME_REGEX)
+)
+RE_MULTIPLE_TIMESPANS = re.compile(
+    r"({time_regex}-{time_regex}) ?,? ?({time_regex}-{time_regex})".format(
+        time_regex=TIME_REGEX
+    )
+)
+RE_TIME_H_MM = re.compile(r"([^0-9]|^)([0-9]):([0-2][0-9])")
+SPECIAL_WORDS = WEEKDAYS + MONTHS + (
+    "sunrise", "sunset", "dawn", "dusk", "PH", "SH",
+    "open", "off", "closed", "easter", "week"
+)
+RE_SPECIAL_WORDS = [
+    (word, re.compile(word, re.IGNORECASE)) for word in SPECIAL_WORDS
+]
+
+
+def sanitize(field):
+    """Returns a "more valid" version of the given field.
+    /!\ It does not sanitize parts with comments.
+    
+    Parameters
+    ----------
+    str
+        The field to sanitize.
+    
+    Returns
+    -------
+    str
+        The sanitized field.
+    """
+    splited_field = [
+        part.strip() for part in field.strip(' \n\t;').split(';')
+    ]
+    parts = []
+    for part in splited_field:
+        # Skips part if it contains a comment.
+        if '"' in part:
+            parts.append(part)
+            continue
+        # Replaces 'h' by ':' in times.
+        part = RE_NUMERICAL_TIME_HH_H_MM.sub("\\1:\\2", part)
+        part = RE_NUMERICAL_TIME_HH_H.sub("\\1:00", part)
+        part = RE_NUMERICAL_TIME_H_H.sub("0\\1:00", part)
+        # Removes spaces between times.
+        # "10:00 - 20:00" -> "10:00-20:00"
+        part = RE_TIMESPAN.sub("\\1-\\2", part)
+        # Removes spaces between timespans and adds coma if necessary.
+        # "10:00-12:00 , 13:00-20:00" -> "10:00-12:00,13:00-20:00"
+        # "10:00-12:00 13:00-20:00" -> "10:00-12:00,13:00-20:00"
+        part = RE_MULTIPLE_TIMESPANS.sub("\\1,\\2", part)
+        # Replaces "00:00" by "24:00" when necessary.
+        part = part.replace("-00:00", "-24:00")
+        # Adds zeros when necessary.
+        # "7:30" -> "07:30"
+        part = RE_TIME_H_MM.sub(r"\g<1>0\g<2>:\g<3>", part)
+        # Corrects the case errors.
+        # "mo" -> "Mo"
+        for word in RE_SPECIAL_WORDS:
+            #print(word)
+            part = word[1].sub(word[0], part)
+        #
+        parts.append(part)
+    return '; '.join(parts)
+
+
 class SolarHoursManager:
     def __init__(self, location):
         """Stores solar hours by dates.
@@ -124,7 +199,7 @@ class OHParser:
         original_field : str
             The raw field given to the constructor.
         sanitized_field : str
-            The field once sanitized by the "sanitize()" method.
+            The field once sanitized by the "sanitize()" function.
         needs_solar_hours_setting : dict{str: bool}
             A dict indicating if solar hours setting is required
             for each solar hour (sunrise, sunset, dawn and dusk).
@@ -144,7 +219,7 @@ class OHParser:
             (e.g. the field is invalid or contains an unsupported pattern).
         """
         self.original_field = field
-        self.sanitized_field = self.sanitize(self.original_field)
+        self.sanitized_field = sanitize(self.original_field)
         
         try:
             self._tree, self.rules = get_tree_and_rules(
@@ -174,7 +249,7 @@ class OHParser:
             )
         
         self.babel_locale = babel.Locale.parse(locale)
-        if locale not in LOCALES.keys():  # TODO : Warning.
+        if locale not in LOCALES.keys():
             warnings.warn(
                 (
                     "The locale {!r} is not supported "
@@ -193,77 +268,6 @@ class OHParser:
             "dusk": "dusk" in self.sanitized_field
         }
         self.solar_hours_manager = SolarHoursManager(location)
-    
-    @staticmethod
-    def sanitize(field):
-        """Returns a "more valid" version of the given field.
-        
-        Parameters
-        ----------
-        str
-            The field to sanitize.
-        
-        Returns
-        -------
-        str
-            The sanitized field.
-        """
-        special_words = WEEKDAYS + MONTHS + (
-            "sunrise", "sunset",
-            "dawn", "dusk",
-            "PH", "SH",
-            "open", "off", "closed",
-            "easter"
-        )
-        splited_field = [
-            part.strip() for part in field.strip(' \n\t;').split(';')
-        ]
-        parts = []
-        for part in splited_field:
-            # Adds or removes spaces when necessary.
-            # "Mo-Su 10:00-19:00;Sa off" => "Mo-Su 10:00-19:00; Sa off"
-            part = re.sub("\s*(;)\s*", "\1 ", part)
-            # " , " => ","
-            part = re.sub(" ?, ?", ",", part)
-            # "10:00 - 20:00" -> "10:00-20:00"
-            part = re.sub(
-                "([0-2][0-9]:[0-5][0-9]) ? - ?([0-2][0-9]:[0-5][0-9])",
-                r"\1-\2", part
-            )
-            # Replaces "00:00" by "24:00" when necessary.
-            part = part.replace("-00:00", "-24:00")
-            # Corrects the case errors.
-            # "mo" => "Mo"
-            for word in special_words:
-                part = re.sub("(?i){}(?!\w+)".format(word), word, part)
-            # Removes 'h' when necessary.
-            for moment in re.findall("([0-9][0-9]h)[^0-9]", part):
-                part = part.replace(moment, moment[:2] + ':00')
-            for moment in re.findall("[0-9][0-9]h[0-9]", part):
-                part = part.replace(moment, moment[:2] + ':' + moment[-1])
-            # Adds zeros when necessary.
-            # "7:30" => "07:30"
-            part = re.sub("([^0-9]|^)([0-9]:[0-9])", r"\g<1>0\g<2>", part)
-            # Adds semicolons when necessary.
-            part = re.sub("([0-9]) ?, ?([A-Za-z][a-z][^a-z])", r"\1; \2", part)
-            # Adds comas when necessary.
-            # "10:00-12:00 14:00-19:00" -> "10:00-12:00,14:00-19:00"
-            MOMENT_REGEX = (
-                r"\((?:sunrise|sunset|dawn|dusk)(?:\+|-)"
-                r"[0-2][0-9]:[0-5][0-9]\)|"
-                r"[0-2][0-9]:[0-5][0-9]|"
-                r"(?:sunrise|sunset|dawn|dusk)"
-            )
-            part = re.sub(
-                "({m}) ?- ?({m}) *({m}) ?- ?({m})".format(m=MOMENT_REGEX),
-                r"\1-\2,\3-\4",
-                part
-            )
-            # Replaces "24" by "24/7".
-            if part in ("24", "24 hours", "24 Hours", "24h"):
-                part = "24/7"
-            parts.append(part)
-        return '; '.join(parts)
     
     def description(self):
         """Returns a list of strings (sentences) describing all opening hours.
