@@ -11,7 +11,7 @@ from humanized_opening_hours.temporal_objects import WEEKDAYS, MONTHS
 from humanized_opening_hours.field_parser import (
     PARSER, LOCALES, DescriptionTransformer, get_tree_and_rules
 )
-from humanized_opening_hours.exceptions import ParseError
+from humanized_opening_hours.exceptions import ParseError, CommentOnlyField
 
 
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -92,7 +92,6 @@ def sanitize(field):
         # Corrects the case errors.
         # "mo" -> "Mo"
         for word in RE_SPECIAL_WORDS:
-            #print(word)
             part = word[1].sub(word[0], part)
         #
         parts.append(part)
@@ -220,6 +219,18 @@ class OHParser:
         """
         self.original_field = field
         self.sanitized_field = sanitize(self.original_field)
+        
+        if (  # Ex: "on appointment"
+            self.sanitized_field.count('"') == 2 and
+            self.sanitized_field.startswith('"') and
+            self.sanitized_field.endswith('"')
+        ):
+            raise CommentOnlyField(
+                "The field {!r} contains only a comment.".format(
+                    self.sanitized_field
+                ),
+                field.strip('"')
+            )
         
         try:
             self._tree, self.rules = get_tree_and_rules(

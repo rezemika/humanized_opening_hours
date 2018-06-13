@@ -81,7 +81,12 @@ You can get a sanitized version of the field given to the constructor with the *
 "Mo-Su 09:30-20:00; Jan off"
 ```
 
+-----
+
 If you try to parse a field which is invalid or contains a pattern which is not supported, an `humanized_opening_hours.exceptions.ParseError` (inheriting from `humanized_opening_hours.exceptions.HOHError`) will be raised.
+
+If a field contains only a comment (like `"on appointment"`), a `CommentOnlyField` exception (inheriting from `ParseError`) will be raised.
+It contains a `comment` attribute, allowing you to display it instead of the opening hours.
 
 ## Solar hours
 

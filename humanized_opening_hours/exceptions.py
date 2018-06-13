@@ -16,3 +16,13 @@ class SolarHoursError(HOHError):
     without having defined them.
     """
     pass
+
+
+class CommentOnlyField(ParseError):
+    """
+    Raised when a field contains only a comment.
+    The comment is accessible via the 'comment' attribute.
+    """
+    def __init__(self, message, comment):
+        super().__init__(message)
+        self.comment = comment
