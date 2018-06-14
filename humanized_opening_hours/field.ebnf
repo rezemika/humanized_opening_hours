@@ -37,7 +37,7 @@ day_periods : period ("," period)*
             | "closed" -> period_closed
 
 // This regex catches one or two digit numbers not followed by a colon ":", to avoid confusion with "DIGITAL_MOMENT".
-date_exceptional_day : MONTH " " /([0-3][0-9])(?!:)|((?<![0-9])[0-9])(?!:)+/ -> exceptional_day
+date_exceptional_day : MONTH " " /([0-3][0-9])(?!:[0-9])|((?<![0-9])[0-9])(?!:[0-9])+/ -> exceptional_day
 
 field_part : concerned_period day_periods
            | easter " " day_periods
