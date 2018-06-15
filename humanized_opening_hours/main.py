@@ -9,8 +9,9 @@ import astral
 
 from humanized_opening_hours.temporal_objects import WEEKDAYS, MONTHS
 from humanized_opening_hours.field_parser import (
-    PARSER, LOCALES, DescriptionTransformer, get_tree_and_rules
+    PARSER, get_tree_and_rules
 )
+from humanized_opening_hours.rendering import DescriptionTransformer, LOCALES
 from humanized_opening_hours.exceptions import ParseError, CommentOnlyField
 
 
@@ -22,6 +23,10 @@ def set_dt(dt):
     Sets 'dt' argument to 'datetime.datetime.now' if it's set to None.
     """
     return dt if dt is not None else datetime.datetime.now()
+
+
+# TODO : File dedicated to rendering. Function dedicated to render a TimeSpan.
+# TODO : Method to get Day namedtuple with "datetime.date", "list[opening_periods]", "list[rendered_opening_periods]", "weekday_name" and "schema_opening_periods".
 
 
 RE_NUMERICAL_TIME_HH_H_MM = re.compile(r"([0-2][0-9])h([0-5][0-9])")
@@ -218,7 +223,7 @@ class OHParser:
             (e.g. the field is invalid or contains an unsupported pattern).
         """
         self.original_field = field
-        self.sanitized_field = sanitize(self.original_field)
+        self.sanitized_field = sanitize(self.original_field)  # TODO : Rename to 'field' ?
         
         if (  # Ex: "on appointment"
             self.sanitized_field.count('"') == 2 and
@@ -330,7 +335,7 @@ class OHParser:
             add_direction=word
         )
     
-    def get_human_names(self):
+    def get_human_names(self):  # TODO : Rename ?
         """Gets months and days names in the locale given to the constructor.
         
         Returns
@@ -394,7 +399,7 @@ class OHParser:
                 return rule
         return None
     
-    def next_change(self, dt=None):
+    def next_change(self, dt=None):  # TODO : Allow recursion.
         """Gets the next opening status change.
         
         Parameters
@@ -424,7 +429,7 @@ class OHParser:
             return beginning_time
         return end_time
     
-    def _current_or_next_timespan(self, dt=None):
+    def _current_or_next_timespan(self, dt=None):  # TODO : Put it inside 'next_change()'.
         dt = set_dt(dt)
         current_rule = None
         i = 0
@@ -449,7 +454,7 @@ class OHParser:
         
         return self._current_or_next_timespan(new_dt)
     
-    def get_day_periods(self, dt=None):
+    def get_day_periods(self, dt=None):  # TODO : Remove.
         """Returns the opening periods of the given day.
         
         Parameters
