@@ -14,6 +14,8 @@ YEAR.3 : /([12][0-9]{3})+/
 
 PLUS_OR_MINUS : "+" | "-"
 
+//
+
 time_domain : rule_sequence ("; " rule_sequence)*
 
 rule_sequence : selector_sequence [rule_modifier]
@@ -22,28 +24,33 @@ rule_sequence : selector_sequence [rule_modifier]
 rule_modifier : OPEN -> rule_modifier_open
               | CLOSED -> rule_modifier_closed
 
-
 selector_sequence : ALWAYS_OPEN -> always_open
                   | range_selectors [" " time_selector]
                   | time_selector
 
+//
+
 %ignore " "
 range_selectors : [year_selector] [monthday_selector] [week_selector] [":"] [weekday_selector]
+
+//
 
 weekday_selector : (weekday_sequence | holiday ("," holiday)*) -> weekday_or_holiday_sequence_selector
                  | holiday ("," holiday)* "," weekday_sequence -> holiday_and_weekday_sequence_selector
                  | weekday_sequence "," holiday ("," holiday)* -> holiday_and_weekday_sequence_selector  // Not valid but frequent pattern.
                  | holiday ("," holiday)* " " weekday_sequence -> holiday_in_weekday_sequence_selector
-
 weekday_sequence : weekday_range ("," weekday_range)*
 weekday_range : WDAY
               | WDAY "-" WDAY
-
 holiday : PUBLIC_HOLIDAY
         | SCHOOL_HOLIDAY
 
+//
+
 %import common.INT
 //day_offset : " " PLUS_OR_MINUS INT " day" ["s"]
+
+//
 
 time_selector : timespan ("," timespan)*
 timespan : time "-" time
@@ -52,21 +59,26 @@ hour_minutes : TWO_DIGITS ":" TWO_DIGITS
 variable_time : EVENT
               | "(" EVENT PLUS_OR_MINUS hour_minutes ")"
 
+//
+
 year_selector : year_range ("," year_range)*
 year_range : year
            | year "-" year
            | year "-" year "/" INT
 year : YEAR
 
+//
+
+// TODO : Prevent case like "Jan 1-5-Feb 1-5" (monthday_date - monthday_date)
 monthday_selector : monthday_range ("," monthday_range)*
-monthday_range : [year] MONTH ["-" MONTH] -> monthday_range_year_month
-               | date_from -> monthday_range_date_from  //TODO : "+" version
-               | date_from "-" date_to -> monthday_range_date_from_to
-date_from : [year " "] MONTH " " INT
-          | [year " "] variable_date //[day_offset]  //TODO
-date_to : date_from
-        | INT
-variable_date : EASTER
+monthday_range : monthday_date  // "Dec 25"
+               | monthday_date "-" monthday_date  // "Jan 1-Feb 1"
+monthday_date : [year " "] MONTH " " INT -> monthday_date_monthday
+              | [year " "] MONTH " " INT "-" INT -> monthday_date_day_to_day
+              | [year " "] MONTH -> monthday_date_month
+              | [year " "] EASTER -> monthday_date_easter
+
+//
 
 week_selector : WEEK week ("," week)*  // TODO
 week : weeknum

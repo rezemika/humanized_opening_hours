@@ -389,19 +389,19 @@ class TestFieldDescription(unittest.TestCase):
         field = "Dec 25 09:00-12:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["25 December: from 09:00 to 12:00."]
+            ["December 25: from 09:00 to 12:00."]
         )
         
         field = "Dec 25,Jan 1 09:00-12:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["25 December and 1 January: from 09:00 to 12:00."]
+            ["December 25 and January 1: from 09:00 to 12:00."]
         )
         
         field = "Dec 24-26 09:00-12:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["From 24 December to the 26: from 09:00 to 12:00."]
+            ["From December 24 to December 26: from 09:00 to 12:00."]
         )
         
         field = "Dec Mo 10:00-20:00"
@@ -425,7 +425,7 @@ class TestFieldDescription(unittest.TestCase):
         field = "easter 10:00-20:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["Easter: from 10:00 to 20:00."]
+            ["On easter: from 10:00 to 20:00."]
         )
         
         field = "PH,SH 10:00-20:00"

@@ -9,7 +9,7 @@ from humanized_opening_hours.temporal_objects import (
     Rule, RangeSelector, AlwaysOpenSelector,
     MonthDaySelector, WeekdayHolidaySelector,
     WeekdayInHolidaySelector, WeekSelector,
-    YearSelector, MonthDayRange, SpecialDate,
+    YearSelector, MonthDayRange, MonthDayDate,
     TimeSpan, Time
 )
 from humanized_opening_hours.frequent_fields import (
@@ -77,51 +77,34 @@ class MainTransformer(lark.Transformer):
     def monthday_selector(self, args):
         return MonthDaySelector(args)
     
-    def monthday_range_year_month(self, args):
-        if len(args) == 1:  # "MONTH"
-            month_from = MONTHS.index(args[0].value)+1
-            return MonthDayRange(("month-", month_from))
-        elif isinstance(args[0], int):  # "year MONTH ["-" MONTH]"
-            if len(args) == 3:  # "year MONTH "-" MONTH"
-                year = args[0]
-                month_from = MONTHS.index(args[1].value)+1
-                month_to = MONTHS.index(args[2].value)+1
-                return MonthDayRange(
-                    ("year_month-month", year, month_from, month_to)
-                )
-            else:  # "year MONTH"
-                year = args[0]
-                month_from = MONTHS.index(args[1].value)+1
-                return MonthDayRange(("year_month-", year, month_from))
-        else:  # "MONTH "-" MONTH"
-            month_from = MONTHS.index(args[0].value)+1
-            month_to = MONTHS.index(args[1].value)+1
-            return MonthDayRange(("month-month", month_from, month_to))
+    def monthday_range(self, args):
+        # Prevent case like "Jan 1-5-Feb 1-5" (monthday_date - monthday_date).
+        return MonthDayRange(args)
     
-    def monthday_range_date_from(self, args):  # date_from
-        return MonthDayRange(("SpecialDate-", args[0]))
+    def monthday_date_monthday(self, args):
+        year = args.pop(0) if len(args) == 3 else None
+        month = MONTHS.index(args[0].value) + 1
+        monthday = int(args[1].value)
+        return MonthDayDate("monthday", year=year, month=month, monthday=monthday)
     
-    def monthday_range_date_from_to(self, args):  # "date_from "-" date_to"
-        date_from, date_to = args
-        if isinstance(date_to, int):
-            return MonthDayRange(("SpecialDate-INT", date_from, date_to))
-        else:
-            return MonthDayRange(
-                ("SpecialDate-SpecialDate", date_from, date_to)
-            )
+    def monthday_date_day_to_day(self, args):
+        year = args.pop(0) if len(args) == 4 else None
+        month = MONTHS.index(args[0].value) + 1
+        monthday_from = int(args[1].value)
+        monthday_to = int(args[2].value)
+        return MonthDayDate("monthday-day", year=year, month=month, monthday=monthday_from, monthday_to=monthday_to)
     
-    def date_from(self, args):
-        return SpecialDate(args)
+    def monthday_date_month(self, args):
+        year = args[0] if len(args) == 3 else None
+        month = MONTHS.index(args[0]) + 1
+        return MonthDayDate("month", year=year, month=month)
     
-    def date_to(self, args):
-        if isinstance(args[0], SpecialDate):
-            return args[0]
-        return int(args[0].value)
-    
-    def variable_date(self, args):
-        return "easter"
+    def monthday_date_easter(self, args):
+        year = args[0] if len(args) == 3 else None
+        return MonthDayDate("easter", year=year)
     
     def day_offset(self, args):  # TODO : Make usable.
+        # TODO : Review.
         # [Token(DAY_OFFSET, ' +2 days')]
         offset_sign, days = args[0].value.strip("days ")
         offset_sign = 1 if offset_sign == '+' else -1
@@ -314,71 +297,65 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
                 return ('TS_ONLY', args[0])
         return args[0][1] + _(': ') + args[1]
     
-    # Dates
-    def date_from(self, args):
-        if len(args) == 1:  # "easter"
-            return args[0]
-        elif len(args) == 2:
-            month = MONTHS.index(args[0].value)+1
-            monthday = int(args[1].value)
-            dt = datetime.date(2000, month, monthday)
-            return dt.strftime(_("%-d %B"))
-        elif len(args) == 3:
-            year = args[0]
-            month = MONTHS.index(args[1].value)+1
-            monthday = int(args[2].value)
-            dt = datetime.date(int(year), month, monthday)
-            return dt.strftime(_("%Y %-d %B"))  # TODO
-    
-    def date_to(self, args):
-        if isinstance(args[0], lark.lexer.Token):  # int
-            return int(args[0].value)
-        else:
-            return args[0]
-    
-    def variable_date(self, args):
-        return _("easter")
-    
     # Monthday range
     def monthday_selector(self, args):
         return self._join_list(args)
     
-    def monthday_range_year_month(self, args):
-        if len(args) == 1:  # "MONTH"
-            return self._get_month(MONTHS.index(args[0].value))
-        elif isinstance(args[0], int):  # "year MONTH ["-" MONTH]"
-            if len(args) == 3:  # "year MONTH "-" MONTH"
-                year = args[0]
-                month_from = self._get_month(MONTHS.index(args[1].value))
-                month_to = self._get_month(MONTHS.index(args[2].value))
-                return _("{year}, from {month1} to {month2}").format(
-                    year=year, month1=month_from, month2=month_to
-                )
-            else:  # "year MONTH"
-                year = args[0]
-                month = self._get_month(MONTHS.index(args[1].value))
-                return _("{year} in {month}").format(
-                    year=year, month=month
-                )
-        else:  # "MONTH "-" MONTH"
-            month_from = self._get_month(MONTHS.index(args[0].value))
-            month_to = self._get_month(MONTHS.index(args[1].value))
-            return _("from {month1} to {month2}").format(
-                month1=month_from, month2=month_to
+    def monthday_range(self, args):
+        if len(args) == 1:  # "Dec 25"
+            return args[0]
+        else:  # "Jan 1-Feb 1"
+            return _("from {monthday1} to {monthday2}").format(
+                monthday1=args[0],
+                monthday2=args[1]
+            )
+    # Dates
+    def monthday_date_monthday(self, args):
+        year = args.pop(0) if len(args) == 3 else None
+        month = MONTHS.index(args[0].value)+1
+        monthday = int(args[1].value)
+        if year:
+            dt = datetime.date(year, month, monthday)
+            return dt.strftime(_("%B %-d %Y"))
+        else:
+            dt = datetime.date(2000, month, monthday)
+            return dt.strftime(_("%B %-d"))
+    
+    def monthday_date_day_to_day(self, args):
+        year = args.pop(0) if len(args) == 4 else None
+        month = MONTHS.index(args[0].value)+1
+        monthday_from = int(args[1].value)
+        monthday_to = int(args[2].value)
+        dt_from = datetime.date(2000, month, monthday_from)
+        dt_to = datetime.date(2000, month, monthday_to)
+        if year:
+            return _("in {year}, from {monthday1} to {monthday2}").format(
+                year=year,
+                monthday1=dt_from.strftime(_("%B %-d")),
+                monthday2=dt_to.strftime(_("%B %-d"))
+            )
+        else:
+            return _("from {monthday1} to {monthday2}").format(
+                monthday1=dt_from.strftime(_("%B %-d")),
+                monthday2=dt_to.strftime(_("%B %-d"))
             )
     
-    def monthday_range_date_from(self, args):
-        return args[0]
-    
-    def monthday_range_date_from_to(self, args):
-        date_from, date_to = args
-        if isinstance(date_to, int):
-            return _("from {date1_from} to the {date1_to}").format(
-                date1_from=date_from, date1_to=date_to
+    def monthday_date_month(self, args):
+        year = args.pop(0) if len(args) == 3 else None
+        month = self._get_month(MONTHS.index(args[0].value))
+        if year:
+            return _("in {year}, in {month}").format(
+                year=year, month=month
             )
-        return _("from {date1} to {date2}").format(
-            date1=date_from, date2=date_to
-        )
+        else:
+            return month
+    
+    def monthday_date_easter(self, args):
+        year = args.pop(0) if len(args) == 3 else None
+        if year:
+            return _("in {year}, on easter").format(year=year)
+        else:
+            return _("on easter")
     
     # Week
     def week_selector(self, args):

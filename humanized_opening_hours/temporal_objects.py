@@ -250,10 +250,27 @@ class YearSelector:
 
 
 class MonthDayRange:
-    def __init__(self, args):
-        # TODO : Handle "Nov-Jan".
-        self.kind = args[0]
-        self.args = args[1:]
+    def __init__(self, monthday_dates):
+        # Prevent case like "Jan 1-5-Feb 1-5" (monthday_date - monthday_date).
+        self.date_from = monthday_dates[0]
+        self.date_to = monthday_dates[1] if len(monthday_dates) == 2 else None
+    
+    def is_included(self, dt: datetime.date, SH_dates, PH_dates):
+        if not self.date_to:
+            return dt in self.date_from.get_dates(dt)
+        else:
+            dt_from = sorted(self.date_from.get_dates(dt))[0]
+            dt_to = sorted(self.date_to.get_dates(dt))[-1]
+            return dt_from <= dt <= dt_to
+
+
+class MonthDayDate:
+    def __init__(self, kind, year=None, month=None, monthday=None, monthday_to=None):
+        self.kind = kind  # "monthday", "monthday-day", "month" or "easter"
+        self.year = year
+        self.month = month  # int between 1 and 12
+        self.monthday = monthday
+        self.monthday_to = monthday_to
     
     def safe_monthrange(self, year, month):
         start, end = calendar.monthrange(year, month)
@@ -261,99 +278,46 @@ class MonthDayRange:
             start = 1
         return (start, end)
     
-    def is_included(self, dt: datetime.date, SH_dates, PH_dates):
-        if self.kind == "SpecialDate-SpecialDate":
-            return self.args[0].get_date(dt) <= dt <= self.args[1].get_date(dt)
-        if self.kind == "SpecialDate-":
-            return self.args[0].get_date(dt) == dt
-        if self.kind == "year_month-month":
-            month_from_range = self.safe_monthrange(self.args[0], self.args[1])
-            month_to_range = self.safe_monthrange(self.args[0], self.args[2])
-            dt_from = datetime.date(
-                self.args[0], self.args[1], month_from_range[0]
-            )
-            dt_to = datetime.date(
-                self.args[0], self.args[2], month_to_range[1]
-            )
-        if self.kind == "month-month":
-            month_from_range = self.safe_monthrange(dt.year, self.args[0])
-            month_to_range = self.safe_monthrange(dt.year, self.args[1])
-            dt_from = datetime.date(dt.year, self.args[0], month_from_range[0])
-            dt_to = datetime.date(dt.year, self.args[1], month_from_range[1])
-        if self.kind == "month-":
-            month_range = self.safe_monthrange(dt.year, self.args[0])
-            dt_from = datetime.date(dt.year, self.args[0], month_range[0])
-            dt_to = datetime.date(dt.year, self.args[0], month_range[1])
-        if self.kind == "year_month-":
-            month_range = self.safe_monthrange(self.args[0], self.args[1])
-            dt_from = datetime.date(self.args[0], self.args[1], month_range[0])
-            dt_to = datetime.date(self.args[0], self.args[1], month_range[1])
-        if self.kind == "SpecialDate-INT":
-            dt_from = self.args[0].get_date(dt)
-            dt_to = (
-                dt_from + datetime.timedelta(days=self.args[1])
-            )
-        return dt_from <= dt <= dt_to
-    
-    def __repr__(self):
-        return str(self)
-    
-    def __str__(self):
-        return '<MonthDayRange ' + self.kind + '>'
-
-
-class SpecialDate:  # TODO : Clean.
-    def __init__(self, args):
-        if len(args) == 1:  # [easter]
-            self.kind = "easter"
-            self.year = None
-            self.date = None
-            self.offset = None
-        if len(args) == 2:  # [year, easter] OR [month, monthday]
-            if args[1] == "yeareaster":
-                self.kind = "easter"
-                self.year = args[0]
-                self.date = None
-                self.offset = None
-            elif isinstance(args[1], tuple):  # Easter with date offset.
-                # args[1] == ("offset_sign", "days)
-                self.kind = "easter-offset"
-                self.year = None
-                self.date = easter_date
-                self.offset = args[1]
-            else:
-                self.kind = "monthday"
-                self.year = None
-                self.date = (MONTHS.index(args[0])+1, int(args[1].value))
-                self.offset = None
-        if len(args) == 3:  # [year, month, monthday]
-            self.kind = "exactdate"
-            self.year = args[0]
-            self.date = (MONTHS.index(args[1])+1, int(args[2].value))
-            self.offset = None
-    
-    def get_date(self, dt: datetime.date):
+    def get_dates(self, dt: datetime.date):
+        # Returns a set of days covered by the object.
         if self.kind == "easter":
-            return easter_date(dt.year)
-        elif self.kind == "easter-offset":
-            base_dt = easter_date(dt.year)
-            offset = datetime.timedelta(
-                seconds=datetime.timedelta(self.offset[1]).total_seconds() *
-                self.offset[0]
+            return set([easter_date(dt.year)])
+        elif self.kind == "month":
+            first_monthday = datetime.date(
+                self.year or dt.year,
+                self.month,
+                self.safe_monthrange(dt.year, dt.month)[0]
             )
-            return base_dt + offset
-        elif self.kind == "yeareaster":
-            return easter_date(self.year)
-        elif self.kind == "monthday":
-            return datetime.date(dt.year, self.date[0], self.date[1])
-        else:
-            return datetime.date(self.year, self.date[0], self.date[1])
-    
-    def __repr__(self):
-        return str(self)
-    
-    def __str__(self):
-        return '<SpecialDate {!r}>'.format(self.kind)
+            last_monthday = datetime.date(
+                self.year or dt.year,
+                self.month,
+                self.safe_monthrange(dt.year, dt.month)[1]
+            )
+            dates = []
+            for i in range((last_monthday - first_monthday).days + 1):
+                dates.append(first_monthday+datetime.timedelta(i))
+            return set(dates)
+        elif self.kind == "monthday-day":
+            first_day = datetime.date(
+                self.year or dt.year,
+                self.month,
+                self.monthday
+            )
+            last_day = datetime.date(
+                self.year or dt.year,
+                self.month,
+                self.monthday_to
+            )
+            dates = []
+            for i in range((last_day - first_day).days + 1):
+                dates.append(first_day+datetime.timedelta(i))
+            return set(dates)
+        else:  # self.kind == "monthday"
+            return set([datetime.date(
+                self.monthday,
+                self.month,
+                self.year or dt.year
+            )])
 
 
 class TimeSpan:
