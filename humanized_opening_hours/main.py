@@ -314,7 +314,8 @@ class OHParser:
         
         Returns
         -------
-        str : The descriptive string (not capitalized at the beginning).
+        str
+            The descriptive string (not capitalized at the beginning).
             For example: "in 15 minutes" (en) or "dans 2 jours" (fr).
         """
         dt = set_dt(dt)
@@ -334,8 +335,9 @@ class OHParser:
         
         Returns
         -------
-        dict[lists] : A dict with the keys "days" and "months"
-            containing lists of respectively 7 and 12 strings.
+        dict{str: list[str]}
+            A dict with the keys "days" and "months" containing lists
+            of respectively 7 and 12 strings.
         """
         days = []
         months = []
