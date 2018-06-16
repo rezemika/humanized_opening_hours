@@ -55,7 +55,7 @@ True
 
 To know at which time the facility status (open / closed) will change.
 Returns a datetime.datetime object.
-Can take a datetime.datetime moment to check for another time.
+It can take a datetime.datetime moment to get next change from another time.
 If we are on December 24 before 21:00 / 09:00PM...
 
 ```python
@@ -146,6 +146,7 @@ Example:
 -----
 
 `time_before_next_change()` returns a humanized delay before the next change in opening status.
+Like `next_change()`, it can take a datetime.datetime moment to get next change from another time.
 
 ```python
 >>> oh.time_before_next_change()
@@ -163,6 +164,21 @@ Example:
 >>> print(' '.join(oh.description()))
 "Monday to Friday: 10:00 to 19:00. Saturday: 10:00 to 12:00. 25 December: closed."
 ```
+
+-----
+
+`get_day_periods()` returns a `DayPeriods` object, which is in fact a `collections.namedtuple`, which contains opening periods for a day.
+It can take a `datetime.date` argument to get the day you want.
+
+The returned namedtuple contains the following attributes.
+
+- weekday_name (str) : the name of the day (ex: "Monday");
+- date (datetime.date) : the date of the day;
+- periods : (list[tuple(datetime.datetime, datetime.datetime)]) : the opening periods of the day, of the shape (beginning, end);
+- rendered_periods (list[str]) : a list of strings describing the opening periods of the day;
+- joined_rendered_periods (str) : the same list, but joined to string by comas and a terminal word (ex: "09:00 - 12:00 and 13:00 - 19:00").
+
+Attention, the `datetime.datetime` objects in `periods` may be in another day, if it contains a period which spans over midnight (like `Mo-Fr 20:00-02:00`).
 
 ## Objects
 
