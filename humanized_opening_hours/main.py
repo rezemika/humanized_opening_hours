@@ -433,8 +433,32 @@ class OHParser:
         datetime.datetime
             The datetime of the next change.
         """
+        def _current_or_next_timespan(dt):
+            current_rule = None
+            i = 0
+            while current_rule is None:
+                current_rule = self.get_current_rule(
+                    dt.date()+datetime.timedelta(i)
+                )
+                if current_rule is None:
+                    i += 1
+            new_time = dt.time() if i == 0 else datetime.time.min
+            new_dt = datetime.datetime.combine(
+                dt.date() + datetime.timedelta(i),
+                new_time
+            )
+            
+            for timespan in current_rule.time_selectors:
+                beginning_time, end_time = timespan.get_times(
+                    new_dt.date(), self.solar_hours_manager[new_dt.date()]
+                )
+                if new_dt < end_time:
+                    return (i, timespan)
+            
+            return _current_or_next_timespan(new_dt)
+        
         dt = set_dt(dt)
-        days_offset, next_timespan = self._current_or_next_timespan(dt)
+        days_offset, next_timespan = _current_or_next_timespan(dt)
         
         new_time = dt.time() if days_offset == 0 else datetime.time.min
         new_dt = datetime.datetime.combine(
@@ -448,32 +472,6 @@ class OHParser:
         if dt < beginning_time:
             return beginning_time
         return end_time
-    
-    # TODO : Put it inside 'next_change()'.
-    def _current_or_next_timespan(self, dt=None):
-        dt = set_dt(dt)
-        current_rule = None
-        i = 0
-        while current_rule is None:
-            current_rule = self.get_current_rule(
-                dt.date()+datetime.timedelta(i)
-            )
-            if current_rule is None:
-                i += 1
-        new_time = dt.time() if i == 0 else datetime.time.min
-        new_dt = datetime.datetime.combine(
-            dt.date() + datetime.timedelta(i),
-            new_time
-        )
-        
-        for timespan in current_rule.time_selectors:
-            beginning_time, end_time = timespan.get_times(
-                new_dt.date(), self.solar_hours_manager[new_dt.date()]
-            )
-            if new_dt < end_time:
-                return (i, timespan)
-        
-        return self._current_or_next_timespan(new_dt)
     
     def get_day_periods(self, dt=None):
         """Returns the opening periods of the given day.
