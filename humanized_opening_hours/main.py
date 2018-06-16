@@ -305,6 +305,84 @@ class OHParser:
         }
         self.solar_hours_manager = SolarHoursManager(location)
     
+    def is_open(self, dt=None):
+        """Is it open?
+        
+        Parameters
+        ----------
+        dt : datetime.datetime, optional
+            The moment for which to check the opening. None default,
+            meaning use the present time.
+        
+        Returns
+        -------
+        bool
+            True if it's open, False else.
+        """
+        dt = set_dt(dt)
+        for rule in self.rules:  # TODO : Use "get_current_rule()" ?
+            if rule.range_selectors.is_included(
+                dt.date(), self.SH_dates, self.PH_dates
+            ):
+                return rule.get_status_at(
+                    dt, self.solar_hours_manager[dt.date()]
+                )
+        return False
+    
+    def next_change(self, dt=None):  # TODO : Allow recursion.
+        """Gets the next opening status change.
+        
+        Parameters
+        ----------
+        dt : datetime.datetime, optional
+            The moment for which to check the opening. None default,
+            meaning use the present time.
+        
+        Returns
+        -------
+        datetime.datetime
+            The datetime of the next change.
+        """
+        def _current_or_next_timespan(dt):
+            current_rule = None
+            i = 0
+            while current_rule is None:
+                current_rule = self.get_current_rule(
+                    dt.date()+datetime.timedelta(i)
+                )
+                if current_rule is None:
+                    i += 1
+            new_time = dt.time() if i == 0 else datetime.time.min
+            new_dt = datetime.datetime.combine(
+                dt.date() + datetime.timedelta(i),
+                new_time
+            )
+            
+            for timespan in current_rule.time_selectors:
+                beginning_time, end_time = timespan.get_times(
+                    new_dt.date(), self.solar_hours_manager[new_dt.date()]
+                )
+                if new_dt < end_time:
+                    return (i, timespan)
+            
+            return _current_or_next_timespan(new_dt)
+        
+        dt = set_dt(dt)
+        days_offset, next_timespan = _current_or_next_timespan(dt)
+        
+        new_time = dt.time() if days_offset == 0 else datetime.time.min
+        new_dt = datetime.datetime.combine(
+            dt.date() + datetime.timedelta(days_offset),
+            new_time
+        )
+        
+        beginning_time, end_time = next_timespan.get_times(
+            new_dt, self.solar_hours_manager[new_dt.date()]
+        )
+        if dt < beginning_time:
+            return beginning_time
+        return end_time
+    
     def description(self):
         """Returns a list of strings (sentences) describing all opening hours.
         
@@ -372,30 +450,6 @@ class OHParser:
             months.append(self.babel_locale.months['format']['wide'][i+1])
         return {"days": days, "months": months}
     
-    def is_open(self, dt=None):
-        """Is it open?
-        
-        Parameters
-        ----------
-        dt : datetime.datetime, optional
-            The moment for which to check the opening. None default,
-            meaning use the present time.
-        
-        Returns
-        -------
-        bool
-            True if it's open, False else.
-        """
-        dt = set_dt(dt)
-        for rule in self.rules:  # TODO : Use "get_current_rule()" ?
-            if rule.range_selectors.is_included(
-                dt.date(), self.SH_dates, self.PH_dates
-            ):
-                return rule.get_status_at(
-                    dt, self.solar_hours_manager[dt.date()]
-                )
-        return False
-    
     def get_current_rule(self, dt=None):
         """Returns the rule corresponding to the given day.
         
@@ -418,60 +472,6 @@ class OHParser:
             ):
                 return rule
         return None
-    
-    def next_change(self, dt=None):  # TODO : Allow recursion.
-        """Gets the next opening status change.
-        
-        Parameters
-        ----------
-        dt : datetime.datetime, optional
-            The moment for which to check the opening. None default,
-            meaning use the present time.
-        
-        Returns
-        -------
-        datetime.datetime
-            The datetime of the next change.
-        """
-        def _current_or_next_timespan(dt):
-            current_rule = None
-            i = 0
-            while current_rule is None:
-                current_rule = self.get_current_rule(
-                    dt.date()+datetime.timedelta(i)
-                )
-                if current_rule is None:
-                    i += 1
-            new_time = dt.time() if i == 0 else datetime.time.min
-            new_dt = datetime.datetime.combine(
-                dt.date() + datetime.timedelta(i),
-                new_time
-            )
-            
-            for timespan in current_rule.time_selectors:
-                beginning_time, end_time = timespan.get_times(
-                    new_dt.date(), self.solar_hours_manager[new_dt.date()]
-                )
-                if new_dt < end_time:
-                    return (i, timespan)
-            
-            return _current_or_next_timespan(new_dt)
-        
-        dt = set_dt(dt)
-        days_offset, next_timespan = _current_or_next_timespan(dt)
-        
-        new_time = dt.time() if days_offset == 0 else datetime.time.min
-        new_dt = datetime.datetime.combine(
-            dt.date() + datetime.timedelta(days_offset),
-            new_time
-        )
-        
-        beginning_time, end_time = next_timespan.get_times(
-            new_dt, self.solar_hours_manager[new_dt.date()]
-        )
-        if dt < beginning_time:
-            return beginning_time
-        return end_time
     
     def get_day_periods(self, dt=None):
         """Returns the opening periods of the given day.
