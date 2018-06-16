@@ -38,12 +38,8 @@ def render_time(time, babel_locale):
             "dusk": _("dusk")
         }.get(time.t[0])
     if time.t[1] == '+':
-        event_delta = (
-            datetime.datetime.combine(datetime.date(1, 1, 1), solar_hour) +
-            self.t[2]
-        ).time()
         delta_str = babel.dates.format_time(
-            event_delta, locale=babel_locale, format="short"
+            time.t[2], locale=babel_locale, format="short"
         )
         return {
             "sunrise": _("{time} after sunrise"),
@@ -52,12 +48,8 @@ def render_time(time, babel_locale):
             "dusk": _("{time} after dusk")
         }.get(time.t[0]).format(time=delta_str)
     else:
-        event_delta = (
-            datetime.datetime.combine(datetime.date(1, 1, 1), solar_hour) -
-            self.t[2]
-        ).time()
         delta_str = babel.dates.format_time(
-            event_delta, locale=babel_locale, format="short"
+            time.t[2], locale=babel_locale, format="short"
         )
         return {
             "sunrise": _("{time} before sunrise"),

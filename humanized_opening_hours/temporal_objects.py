@@ -265,7 +265,9 @@ class MonthDayRange:
 
 
 class MonthDayDate:
-    def __init__(self, kind, year=None, month=None, monthday=None, monthday_to=None):
+    def __init__(
+        self, kind, year=None, month=None, monthday=None, monthday_to=None
+    ):
         self.kind = kind  # "monthday", "monthday-day", "month" or "easter"
         self.year = year
         self.month = month  # int between 1 and 12

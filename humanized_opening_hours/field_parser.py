@@ -73,14 +73,19 @@ class MainTransformer(lark.Transformer):
         year = args.pop(0) if len(args) == 3 else None
         month = MONTHS.index(args[0].value) + 1
         monthday = int(args[1].value)
-        return MonthDayDate("monthday", year=year, month=month, monthday=monthday)
+        return MonthDayDate(
+            "monthday", year=year, month=month, monthday=monthday
+        )
     
     def monthday_date_day_to_day(self, args):
         year = args.pop(0) if len(args) == 4 else None
         month = MONTHS.index(args[0].value) + 1
         monthday_from = int(args[1].value)
         monthday_to = int(args[2].value)
-        return MonthDayDate("monthday-day", year=year, month=month, monthday=monthday_from, monthday_to=monthday_to)
+        return MonthDayDate(
+            "monthday-day", year=year, month=month,
+            monthday=monthday_from, monthday_to=monthday_to
+        )
     
     def monthday_date_month(self, args):
         year = args[0] if len(args) == 3 else None

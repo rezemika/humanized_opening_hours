@@ -48,10 +48,6 @@ def set_dt(dt):
     return dt if dt is not None else datetime.datetime.now()
 
 
-# TODO : File dedicated to rendering. Function dedicated to render a TimeSpan.
-# TODO : Method to get Day namedtuple with "datetime.date", "list[opening_periods]", "list[rendered_opening_periods]", "weekday_name" and "schema_opening_periods".
-
-
 RE_NUMERICAL_TIME_HH_H_MM = re.compile(r"([0-2][0-9])h([0-5][0-9])")
 RE_NUMERICAL_TIME_HH_H = re.compile(r"([0-2][0-9])h")
 RE_NUMERICAL_TIME_H_H = re.compile(r"(?:[^0-9]|^)([0-9])h")
@@ -246,7 +242,8 @@ class OHParser:
             (e.g. the field is invalid or contains an unsupported pattern).
         """
         self.original_field = field
-        self.sanitized_field = sanitize(self.original_field)  # TODO : Rename to 'field' ?
+        # TODO : Rename to 'field' ?
+        self.sanitized_field = sanitize(self.original_field)
         
         if (  # Ex: "on appointment"
             self.sanitized_field.count('"') == 2 and
@@ -452,7 +449,8 @@ class OHParser:
             return beginning_time
         return end_time
     
-    def _current_or_next_timespan(self, dt=None):  # TODO : Put it inside 'next_change()'.
+    # TODO : Put it inside 'next_change()'.
+    def _current_or_next_timespan(self, dt=None):
         dt = set_dt(dt)
         current_rule = None
         i = 0
