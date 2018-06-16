@@ -363,11 +363,12 @@ class TimeSpan:
             A tuple containing the beginning and the end of the TimeSpan.
         """
         beginning_time = self.beginning.get_time(solar_hours, date)
-        end_time = self.end.get_time(solar_hours, date)
-        if not self.spans_over_midnight():
-            return (beginning_time, end_time)
+        if self.spans_over_midnight():
+            delta = datetime.timedelta(1)
         else:
-            return (beginning_time, end_time+datetime.timedelta(1))
+            delta = datetime.timedelta()
+        end_time = self.end.get_time(solar_hours, date+delta)
+        return (beginning_time, end_time)
     
     def is_open(self, dt, solar_hours):
         """Returns the beginning and the end of the TimeSpan.
