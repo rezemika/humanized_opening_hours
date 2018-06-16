@@ -6,7 +6,7 @@ from lark import Tree
 from lark.lexer import Token
 
 from humanized_opening_hours import field_parser
-from humanized_opening_hours.main import OHParser, sanitize
+from humanized_opening_hours.main import OHParser, sanitize, DayPeriods
 from humanized_opening_hours.temporal_objects import easter_date
 from humanized_opening_hours.exceptions import (
     HOHError,
@@ -37,13 +37,17 @@ class TestGlobal(unittest.TestCase):
         dt = datetime.datetime(2017, 1, 2, 15, 30)
         # Is it open?
         self.assertTrue(oh.is_open(dt))
-        # Rendering.
+        # Day periods.
         self.assertEqual(
-            oh.render().plaintext_week_description(),
-            "Monday: 09:00 - 19:00\nTuesday: 09:00 - 19:00\n"
-            "Wednesday: 09:00 - 19:00\nThursday: 09:00 - 19:00\n"
-            "Friday: 09:00 - 19:00\nSaturday: 09:00 - 19:00\n"
-            "Sunday: closed"
+            oh.get_day_periods(datetime.date(2018, 1, 1)),
+            DayPeriods(
+                "Monday", datetime.date(2018, 1, 1),
+                [(
+                    datetime.datetime(2018, 1, 1, 9, 0),
+                    datetime.datetime(2018, 1, 1, 19, 0)
+                )],
+                ["9:00 AM - 7:00 PM"], "9:00 AM - 7:00 PM"
+            )
         )
     
     def test_2(self):
@@ -61,6 +65,25 @@ class TestGlobal(unittest.TestCase):
         self.assertEqual(
             oh.next_change(dt),
             datetime.datetime(2018, 6, 4, 13, 0)
+        )
+        # Day periods.
+        self.assertEqual(
+            oh.get_day_periods(datetime.date(2018, 1, 1)),
+            DayPeriods(
+                "Monday", datetime.date(2018, 1, 1),
+                [
+                    (
+                        datetime.datetime(2018, 1, 1, 9, 0),
+                        datetime.datetime(2018, 1, 1, 12, 0)
+                    ),
+                    (
+                        datetime.datetime(2018, 1, 1, 13, 0),
+                        datetime.datetime(2018, 1, 1, 19, 0)
+                    )
+                ],
+                ["9:00 AM - 12:00 PM", "1:00 PM - 7:00 PM"],
+                "9:00 AM - 12:00 PM and 1:00 PM - 7:00 PM"
+            )
         )
     
     def test_3(self):

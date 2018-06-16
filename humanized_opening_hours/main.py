@@ -2,6 +2,7 @@ import os
 import re
 import datetime
 import warnings
+from collections import namedtuple
 
 import lark
 import babel.dates
@@ -11,11 +12,33 @@ from humanized_opening_hours.temporal_objects import WEEKDAYS, MONTHS
 from humanized_opening_hours.field_parser import (
     PARSER, get_tree_and_rules
 )
-from humanized_opening_hours.rendering import DescriptionTransformer, LOCALES
+from humanized_opening_hours.rendering import (
+    DescriptionTransformer, LOCALES, render_timespan,
+    join_list, translate_open_closed
+)
 from humanized_opening_hours.exceptions import ParseError, CommentOnlyField
 
 
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+
+DayPeriods = namedtuple(
+    "DayPeriods", [
+        "weekday_name", "date", "periods",
+        "rendered_periods", "joined_rendered_periods"
+    ]
+)
+DayPeriods.__doc__ += """\n
+weekday_name : str
+    The name of the day (ex: "Monday").
+date : datetime.date
+    The date of the day.
+periods : list[tuple(datetime.datetime, datetime.datetime)]
+    The opening periods of the day, of the shape (beginning, end).
+rendered_periods : list[str]
+    A list of strings describing the opening periods of the day.
+joined_rendered_periods : str
+    The same list, but joined to string by comas and a terminal word.
+    Ex: "09:00 - 12:00 and 13:00 - 19:00"."""
 
 
 def set_dt(dt):
@@ -454,7 +477,7 @@ class OHParser:
         
         return self._current_or_next_timespan(new_dt)
     
-    def get_day_periods(self, dt=None):  # TODO : Remove.
+    def get_day_periods(self, dt=None):
         """Returns the opening periods of the given day.
         
         Parameters
@@ -465,13 +488,48 @@ class OHParser:
         
         Returns
         -------
-        list[humanized_opening_hours.TimeSpan]
-            The timespans of the given day.
+        DayPeriods (collections.namedtuple)
+            A namedtuple representing the requested day.
+            
+            Attributes :
+            - weekday_name : str
+                The named of the day (ex: "Monday").
+            - date : datetime.date
+                The date of the day.
+            - periods : list[tuple(datetime.datetime, datetime.datetime)]
+                The opening periods of the day, of the shape (beginning, end).
+            - rendered_periods : list[str]
+                A list of strings describing the opening periods of the day.
+            - joined_rendered_periods : str
+                The same list, but joined to string by comas
+                and a terminal word. Ex: "09:00 - 12:00 and 13:00 - 19:00".
         """
+        if not dt:
+            dt = datetime.date.today()
         current_rule = self.get_current_rule(dt)
         if current_rule is None:
             return []
-        return current_rule.time_selectors
+        timespans = current_rule.time_selectors
+        weekday_name = self.get_human_names()["days"][dt.weekday()]
+        periods = []
+        for timespan in timespans:
+            periods.append(
+                timespan.get_times(dt, self.solar_hours_manager[dt])
+            )
+        if periods:
+            rendered_periods = [
+                render_timespan(ts, self.babel_locale) for ts in timespans
+            ]
+            # TODO : Check for locale.
+            joined_rendered_periods = join_list(rendered_periods)
+        else:
+            closed_word = translate_open_closed(self.babel_locale)[1]
+            rendered_periods = [closed_word]
+            joined_rendered_periods = closed_word
+        return DayPeriods(
+            weekday_name, dt, periods,
+            rendered_periods, joined_rendered_periods
+        )
     
     def __repr__(self):
         return str(self)

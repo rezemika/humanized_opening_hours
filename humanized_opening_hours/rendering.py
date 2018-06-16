@@ -3,6 +3,7 @@ import gettext
 import os
 
 import lark
+import babel
 
 from humanized_opening_hours.temporal_objects import WEEKDAYS, MONTHS
 
@@ -21,30 +22,90 @@ LOCALES = {
 ON_WEEKDAY = True  # TODO : Relevant?
 
 
+# TODO : Handle "datetime.time.max" (returns "23:59" instead of "24:00").
+def render_time(time, babel_locale):
+    """Returns a string from a Time object."""
+    LOCALES.get(babel_locale.language).install()
+    if time.t[0] == "normal":
+        return babel.dates.format_time(
+            time.t[1], locale=babel_locale, format="short"
+        )
+    if time.t[2].total_seconds() == 0:
+        return {
+            "sunrise": _("sunrise"),
+            "sunset": _("sunset"),
+            "dawn": _("dawn"),
+            "dusk": _("dusk")
+        }.get(time.t[0])
+    if time.t[1] == '+':
+        event_delta = (
+            datetime.datetime.combine(datetime.date(1, 1, 1), solar_hour) +
+            self.t[2]
+        ).time()
+        delta_str = babel.dates.format_time(
+            event_delta, locale=babel_locale, format="short"
+        )
+        return {
+            "sunrise": _("{time} after sunrise"),
+            "sunset": _("{time} after sunset"),
+            "dawn": _("{time} after dawn"),
+            "dusk": _("{time} after dusk")
+        }.get(time.t[0]).format(time=delta_str)
+    else:
+        event_delta = (
+            datetime.datetime.combine(datetime.date(1, 1, 1), solar_hour) -
+            self.t[2]
+        ).time()
+        delta_str = babel.dates.format_time(
+            event_delta, locale=babel_locale, format="short"
+        )
+        return {
+            "sunrise": _("{time} before sunrise"),
+            "sunset": _("{time} before sunset"),
+            "dawn": _("{time} before dawn"),
+            "dusk": _("{time} before dusk")
+        }.get(time.t[0]).format(time=delta_str)
+
+
+def render_timespan(timespan, babel_locale):
+    """Returns a string from a TimeSpan object."""
+    LOCALES.get(babel_locale.language).install()
+    return _("{time1} - {time2}").format(
+        time1=render_time(timespan.beginning, babel_locale),
+        time2=render_time(timespan.end, babel_locale)
+    )
+
+
+def join_list(l: list) -> str:
+    if not l:
+        return ''
+    values = [str(value) for value in l]
+    if len(values) == 1:
+        return values[0]
+    return ', '.join(values[:-1]) + _(" and ") + values[-1]
+
+
+def translate_open_closed(babel_locale):
+    LOCALES.get(babel_locale.language).install()
+    return (_("open"), _("closed"))
+
+
 class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
+    # Meta
     def _install_locale(self):
         LOCALES.get(self._locale.language).install()
     
-    # Meta
     def _get_wday(self, wday_index: int) -> str:
         return self._human_names["days"][wday_index]
     
     def _get_month(self, month_index: int) -> str:
         return self._human_names["months"][month_index]
     
-    def _join_list(self, l: list) -> str:
-        if not l:
-            return ''
-        values = [str(value) for value in l]
-        if len(values) == 1:
-            return values[0]
-        return ', '.join(values[:-1]) + _(" and ") + values[-1]
-    
     # Main
     def time_domain(self, args):
         return args
     
-    def rule_sequence(self, args):
+    def rule_sequence(self, args):  # TODO : Handle "Mo-Fr" (raises IndexError).
         if len(args) == 1 and not isinstance(args[0], tuple):
             return args[0][0].upper() + args[0][1:] + '.'
         else:
@@ -96,7 +157,7 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
     
     # Monthday range
     def monthday_selector(self, args):
-        return self._join_list(args)
+        return join_list(args)
     
     def monthday_range(self, args):
         if len(args) == 1:  # "Dec 25"
@@ -106,6 +167,7 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
                 monthday1=args[0],
                 monthday2=args[1]
             )
+    
     # Dates
     def monthday_date_monthday(self, args):
         year = args.pop(0) if len(args) == 3 else None
@@ -156,7 +218,7 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
     
     # Week
     def week_selector(self, args):
-        return self._join_list(args[1:])
+        return join_list(args[1:])
     
     def week(self, args):
         if len(args) == 1:
@@ -192,7 +254,7 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
             )
     
     def year_selector(self, args):
-        return self._join_list(args)
+        return join_list(args)
     
     # Weekdays
     def weekday_range(self, args):
@@ -209,7 +271,7 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
         # TODO : Fix this hack.
         if len(args) != 1:
             weekdays = [t[1] for t in args]
-            return (_("on {wd}"), self._join_list(weekdays))
+            return (_("on {wd}"), join_list(weekdays))
         return args
     
     def weekday_or_holiday_sequence_selector(self, args):
@@ -257,7 +319,7 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
         return _("from {} to {}").format(args[0], args[1])
     
     def time_selector(self, args):
-        return self._join_list(args)
+        return join_list(args)
     
     def variable_time(self, args):
         # ("event", "offset_sign", "hour_minutes")
@@ -287,7 +349,7 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
     
     # Rule modifiers
     def rule_modifier_open(self, args):
-        return "open"  # TODO: Remove?
+        return translate_open_closed(self._locale)[0]  # TODO: Remove?
     
     def rule_modifier_closed(self, args):
-        return "closed"
+        return translate_open_closed(self._locale)[1]
