@@ -320,13 +320,13 @@ class OHParser:
             True if it's open, False else.
         """
         dt = set_dt(dt)
-        for rule in self.rules:  # TODO : Use "get_current_rule()" ?
-            if rule.range_selectors.is_included(
-                dt.date(), self.SH_dates, self.PH_dates
-            ):
-                return rule.get_status_at(
-                    dt, self.solar_hours_manager[dt.date()]
-                )
+        timespans = self._get_day_timespans(dt)
+        for timespan in timespans:
+            beginning, end = timespan[1].get_times(
+                timespan[0], self.solar_hours_manager[timespan[0]]
+            )
+            if beginning < dt < end:
+                return True
         return False
     
     def next_change(self, dt=None):  # TODO : Allow recursion.
@@ -358,12 +358,13 @@ class OHParser:
                 new_time
             )
             
-            for timespan in current_rule.time_selectors:
-                beginning_time, end_time = timespan.get_times(
-                    new_dt.date(), self.solar_hours_manager[new_dt.date()]
+            timespans = self._get_day_timespans(new_dt)
+            for timespan in timespans:
+                beginning, end_time = timespan[1].get_times(
+                    timespan[0], self.solar_hours_manager[timespan[0]]
                 )
                 if new_dt < end_time:
-                    return (i, timespan)
+                    return (i, timespan[1])
             
             return _current_or_next_timespan(new_dt)
         
@@ -473,7 +474,47 @@ class OHParser:
                 return rule
         return None
     
-    def get_day_periods(self, dt=None):
+    def _get_day_timespans(self, dt=None, _check_yesterday=True):
+        """
+            Returns a list of tuples like (datetime.date, TimeSpan)
+            from the given date.
+        """
+        # '_check_yesterday=True' allows to get TimeSpan from yesterday which
+        # span over midnight.
+        if not dt:
+            dt = datetime.date.today()
+        current_rule = self.get_current_rule(dt)
+        
+        # List of tuples (datetime.date, TimeSpan).
+        # The datetimes are used to get times (if the TimeSpan is yesterday).
+        timespans = []
+        if current_rule:
+            for current_rule_timespan in current_rule.time_selectors:
+                timespans.append((dt, current_rule_timespan))
+        
+        # If '_check_yesterday' is True, check in yesterday timespans if
+        # one spans over midnight (and so, is in the current day), and adds it
+        # to the current day timespans.
+        if _check_yesterday:
+            yesterday_date = dt-datetime.timedelta(1)
+            yesterday_rule = self.get_current_rule(
+                yesterday_date
+            )
+            if yesterday_rule:
+                yesterday_timespans = []
+                for yesterday_timespan in yesterday_rule.time_selectors:
+                    yesterday_timespan_times = yesterday_timespan.get_times(
+                        yesterday_date,
+                        self.solar_hours_manager[yesterday_date]
+                    )
+                    if yesterday_timespan_times[1].date() == dt:
+                        yesterday_timespans.append(
+                            (yesterday_date, yesterday_timespan)
+                        )
+                timespans = yesterday_timespans + timespans
+        return timespans
+    
+    def get_day_periods(self, dt=None, _check_yesterday=True):
         """Returns the opening periods of the given day.
         
         Parameters
@@ -502,19 +543,21 @@ class OHParser:
         """
         if not dt:
             dt = datetime.date.today()
-        current_rule = self.get_current_rule(dt)
-        if current_rule is None:
-            return []
-        timespans = current_rule.time_selectors
+        timespans = self._get_day_timespans(
+            dt, _check_yesterday=_check_yesterday
+        )
+        
         weekday_name = self.get_human_names()["days"][dt.weekday()]
         periods = []
         for timespan in timespans:
             periods.append(
-                timespan.get_times(dt, self.solar_hours_manager[dt])
+                timespan[1].get_times(
+                    timespan[0], self.solar_hours_manager[timespan[0]]
+                )
             )
         if periods:
             rendered_periods = [
-                render_timespan(ts, self.babel_locale) for ts in timespans
+                render_timespan(ts[1], self.babel_locale) for ts in timespans
             ]
             # TODO : Check for locale.
             joined_rendered_periods = join_list(rendered_periods)
