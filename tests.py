@@ -1,7 +1,6 @@
 import unittest
 import datetime
 
-import pytz
 from lark import Tree
 from lark.lexer import Token
 
