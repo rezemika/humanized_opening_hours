@@ -63,12 +63,18 @@ If we are on December 24 before 21:00 / 09:00PM...
 datetime.datetime(2017, 12, 24, 21, 0)
 ```
 
-For consecutive days fully open ("Mo-Fr 00:00-24:00"), it will return the first hour of the next day instead of the true next change. This should be fixed in a later version.
+For fields with consecutive days fully open, `next_change()` will try to get the true next change by recursion.
+You can change this behavior with the `max_recursion` argument, which is set to `31` default, meaning `next_change()` will try a maximum of 31 recursions (*i.e.* 31 days, or a month) to get the true next change.
+If this limit is reached, a `NextChangeRecursionError` will be raised.
+You can deny recursion by setting the `max_recursion` argument to `0`.
+
+The `NextChangeRecursionError` has a `last_change` attribute, containing the last change got just before raising of the exception.
+You can get it with a `except NextChangeRecursionError as e:` block.
 
 ```python
 >>> oh = hoh.OHParser("Mo-Fr 00:00-24:00")
->>> oh.next_change()
-datetime.datetime(2018, 1, 8, 0, 0)
+>>> oh.next_change(dt=datetime.datetime(2018, 1, 8, 0, 0))
+datetime.datetime(2018, 1, 11, 23, 59, 59, 999999)
 ```
 
 -----

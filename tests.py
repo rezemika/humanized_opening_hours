@@ -11,7 +11,8 @@ from humanized_opening_hours.temporal_objects import easter_date
 from humanized_opening_hours.exceptions import (
     HOHError,
     ParseError,
-    SolarHoursError
+    SolarHoursError,
+    NextChangeRecursionError
 )
 
 # flake8: noqa: F841
@@ -105,14 +106,8 @@ class TestGlobal(unittest.TestCase):
             ),
             datetime.datetime.combine(now.date(), datetime.time.min)
         )
-        # Rendering.
-        self.assertEqual(
-            oh.render().plaintext_week_description(),
-            "Monday: 00:00 - 00:00\nTuesday: 00:00 - 00:00\n"
-            "Wednesday: 00:00 - 00:00\nThursday: 00:00 - 00:00\n"
-            "Friday: 00:00 - 00:00\nSaturday: 00:00 - 00:00\n"
-            "Sunday: 00:00 - 00:00"
-        )
+        with self.assertRaises(NextChangeRecursionError) as context:
+            _ = oh.next_change()
     
     def test_4(self):
         field = "Mo-Fr 00:00-24:00"
@@ -149,7 +144,15 @@ class TestGlobal(unittest.TestCase):
         dt = datetime.datetime(2018, 1, 8, 10, 0)
         self.assertEqual(
             oh.next_change(dt),
-            datetime.datetime.combine(dt.date(), datetime.time.max)
+            datetime.datetime.combine(
+                datetime.date(2018, 1, 12), datetime.time.max
+            )
+        )
+        self.assertEqual(
+            oh.next_change(dt, max_recursion=0),
+            datetime.datetime.combine(
+                datetime.date(2018, 1, 8), datetime.time.max
+            )
         )
         # Rendering.
         self.assertEqual(

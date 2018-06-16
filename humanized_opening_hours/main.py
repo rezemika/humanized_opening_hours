@@ -16,7 +16,9 @@ from humanized_opening_hours.rendering import (
     DescriptionTransformer, LOCALES, render_timespan,
     join_list, translate_open_closed
 )
-from humanized_opening_hours.exceptions import ParseError, CommentOnlyField
+from humanized_opening_hours.exceptions import (
+    ParseError, CommentOnlyField, NextChangeRecursionError
+)
 
 
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -329,7 +331,7 @@ class OHParser:
                 return True
         return False
     
-    def next_change(self, dt=None):  # TODO : Allow recursion.
+    def next_change(self, dt=None, max_recursion=31, _recursion_level=0):
         """Gets the next opening status change.
         
         Parameters
@@ -337,12 +339,18 @@ class OHParser:
         dt : datetime.datetime, optional
             The moment for which to check the opening. None default,
             meaning use the present time.
+        max_recursion : int, optional
+            The maximum recursion, to check if the next change is in
+            another day. If it's reached, a NextChangeRecursionError
+            will be raised. Set it to zero to return the first next
+            change without trying recursion.
         
         Returns
         -------
         datetime.datetime
             The datetime of the next change.
         """
+        # Returns None if in recursion and don't start with datetime.time.min.
         def _current_or_next_timespan(dt):
             current_rule = None
             i = 0
@@ -351,6 +359,8 @@ class OHParser:
                     dt.date()+datetime.timedelta(i)
                 )
                 if current_rule is None:
+                    if _recursion_level != 0:
+                        return (None, None)
                     i += 1
             new_time = dt.time() if i == 0 else datetime.time.min
             new_dt = datetime.datetime.combine(
@@ -370,6 +380,8 @@ class OHParser:
         
         dt = set_dt(dt)
         days_offset, next_timespan = _current_or_next_timespan(dt)
+        if (days_offset, next_timespan) == (None, None):
+            return None
         
         new_time = dt.time() if days_offset == 0 else datetime.time.min
         new_dt = datetime.datetime.combine(
@@ -380,8 +392,33 @@ class OHParser:
         beginning_time, end_time = next_timespan.get_times(
             new_dt, self.solar_hours_manager[new_dt.date()]
         )
+        
+        if _recursion_level > 1 and beginning_time.time() != datetime.time.min:
+            return None
+        
         if dt < beginning_time:
             return beginning_time
+        
+        if _recursion_level == max_recursion != 0:
+            raise NextChangeRecursionError(
+                "Done {} recursions but couldn't get "
+                "the true next change.".format(_recursion_level),
+                end_time
+            )
+        if (
+            end_time.time() == datetime.time.max and
+            max_recursion != 0
+        ):
+            next_next_change = self.next_change(
+                datetime.datetime.combine(
+                    new_dt.date()+datetime.timedelta(1), datetime.time.min
+                ),
+                max_recursion=max_recursion,
+                _recursion_level=_recursion_level+1
+            )
+            if next_next_change is not None:
+                return next_next_change
+        
         return end_time
     
     def description(self):
