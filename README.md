@@ -16,7 +16,7 @@ datetime.datetime(2017, 12, 24, 12, 0)
 >>> print('\n'.join(oh.description()))
 """
 From Monday to Friday: from 06:00 to 21:00.
-On Saturday: from 08:00 to 12:00.
+On Saturday and Sunday: from 08:00 to 12:00.
 """
 ```
 
@@ -82,7 +82,7 @@ datetime.datetime(2018, 1, 11, 23, 59, 59, 999999)
 You can get a sanitized version of the field given to the constructor with the *sanitize* function or the **sanitized_field** attribute.
 
 ```python
->>> field = "mo-su 0930-2000;jan off"
+>>> field = "mo-su 09:30-20h;jan off"
 >>> print(hoh.sanitize(field))
 "Mo-Su 09:30-20:00; Jan off"
 ```
