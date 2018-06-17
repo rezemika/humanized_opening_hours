@@ -41,6 +41,12 @@ However, to be able to use the `description()` method, it must be in `hoh.DESCRI
 >>> oh = hoh.OHParser(field)
 ```
 
+If you have a GeoJSON, you can a dedicated classmethod: `from_geojson()`.
+It takes the GeoJSON, and optionally the following arguments:
+
+- `timezone_getter` (callable): A function to call, which takes two arguments (latitude and longitude, as floats), and returns a timezone name or None, allowing to get solar hours for the facility;
+- `locale` (str): the locale to use ("en" default).
+
 ## Basic methods
 
 To know if the facility is open at the present time. Returns a boolean.
@@ -203,11 +209,11 @@ It can take a `datetime.date` argument to get the day you want.
 
 The returned namedtuple contains the following attributes.
 
-- weekday_name (str) : the name of the day (ex: "Monday");
-- date (datetime.date) : the date of the day;
-- periods : (list[tuple(datetime.datetime, datetime.datetime)]) : the opening periods of the day, of the shape (beginning, end);
-- rendered_periods (list[str]) : a list of strings describing the opening periods of the day;
-- joined_rendered_periods (str) : the same list, but joined to string by comas and a terminal word (ex: "09:00 - 12:00 and 13:00 - 19:00").
+- `weekday_name` (str) : the name of the day (ex: "Monday");
+- `date` (datetime.date) : the date of the day;
+- `periods` : (list[tuple(datetime.datetime, datetime.datetime)]) : the opening periods of the day, of the shape (beginning, end);
+- `rendered_periods` (list[str]) : a list of strings describing the opening periods of the day;
+- `joined_rendered_periods` (str) : the same list, but joined to string by comas and a terminal word (ex: "09:00 - 12:00 and 13:00 - 19:00").
 
 Attention, the `datetime.datetime` objects in `periods` may be in another day, if it contains a period which spans over midnight (like `Mo-Fr 20:00-02:00`).
 

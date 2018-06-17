@@ -4,6 +4,7 @@ import datetime
 import calendar
 import warnings
 from collections import namedtuple
+import statistics
 
 import lark
 import babel.dates
@@ -342,6 +343,54 @@ class OHParser:
             "dusk": "dusk" in self.sanitized_field
         }
         self.solar_hours_manager = SolarHoursManager(location)
+    
+    @classmethod
+    def from_geojson(
+        cls, geojson, timezone_getter=None, locale="en"
+    ):
+        """A classmethod which creates an OHParser instance from a GeoJSON.
+        
+        Parameters
+        ----------
+        geojson : dict
+            The GeoJSON to use, which must contain 'geometry' and 'properties'
+            keys (which must contain an 'opening_hours' key).
+        timezone_getter : callable, optional
+            A function to call, which takes two arguments (latitude and
+            longitude, as floats), and returns a timezone name or None,
+            allowing to get solar hours for the facility.
+        locale : str, optional
+            The locale to use. "en" default.
+        
+        Returns
+        -------
+        OHParser instance
+        
+        Raises
+        ------
+        KeyError
+            If the given GeoJSON doesn't contain 'geometry' and 'properties'
+            keys and an 'opening_hours' key in 'properties'.
+        """
+        def centroid(coordinates):
+            # Returns the mean of a list of coordinates like [(lat, lon)].
+            # Source: https://stackoverflow.com/a/23021198
+            x, y = zip(*coordinates)
+            return (statistics.mean(x), statistics.mean(y))
+        
+        if geojson["geometry"]["type"] != "Point":
+            coordinates = centroid(geojson["geometry"]["coordinates"][::-1])
+        else:
+            coordinates = tuple(geojson["geometry"]["coordinates"][::-1])
+        
+        location = None
+        if timezone_getter:
+            timezone = timezone_getter(*coordinates)
+            if timezone:
+                location = (*coordinates, timezone, 0)
+        
+        field = geojson["properties"]["opening_hours"]
+        return cls(field, locale=locale, location=location)
     
     def is_open(self, dt=None):
         """Is it open?
