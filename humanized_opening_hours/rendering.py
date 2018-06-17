@@ -22,6 +22,7 @@ LOCALES = {
 ON_WEEKDAY = True  # TODO : Relevant?
 
 
+# TODO : Put these functions into a unique class?
 # TODO : Handle "datetime.time.max" (returns "23:59" instead of "24:00").
 def render_time(time, babel_locale):
     """Returns a string from a Time object."""
@@ -80,6 +81,11 @@ def join_list(l: list) -> str:
 def translate_open_closed(babel_locale):
     LOCALES.get(babel_locale.language).install()
     return (_("open"), _("closed"))
+
+
+def translate_colon(babel_locale):
+    LOCALES.get(babel_locale.language).install()
+    return _("{left}: {right}")
 
 
 class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".

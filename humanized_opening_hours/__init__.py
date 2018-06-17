@@ -26,7 +26,7 @@ gettext.install("HOH",
     )
 )
 
-from humanized_opening_hours.main import OHParser, sanitize
+from humanized_opening_hours.main import OHParser, sanitize, days_of_week
 from humanized_opening_hours.temporal_objects import easter_date
 from humanized_opening_hours.rendering import LOCALES as _LOCALES
 from humanized_opening_hours import exceptions

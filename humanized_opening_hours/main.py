@@ -1,6 +1,7 @@
 import os
 import re
 import datetime
+import calendar
 import warnings
 from collections import namedtuple
 
@@ -14,7 +15,7 @@ from humanized_opening_hours.field_parser import (
 )
 from humanized_opening_hours.rendering import (
     DescriptionTransformer, LOCALES, render_timespan,
-    join_list, translate_open_closed
+    join_list, translate_open_closed, translate_colon
 )
 from humanized_opening_hours.exceptions import (
     ParseError, CommentOnlyField, NextChangeRecursionError
@@ -124,6 +125,40 @@ def sanitize(field):
     return '; '.join(parts)
 
 
+# TODO : Find a better solution.
+def days_of_week(year=None, weeknumber=None, first_weekday=0):
+    """Returns a list of the days in the requested week.
+    
+    Parameters
+    ----------
+    year : int, optional
+        The year of the week.
+        The current year default.
+    weeknumber : int, optional
+        The index of the week in the year (1-53).
+        The current week default.
+    first_weekday : int, optional
+        The first day of the week, 0 means "Monday".
+        0 default.
+    
+    Returns
+    -------
+    list[datetime.date]
+        The days of the requested week.
+    """
+    if not year or not weeknumber:
+        dt = datetime.date.today()
+        year, weeknumber, _ = dt.isocalendar()
+    cal = calendar.Calendar(firstweekday=first_weekday)
+    i = -5  # For an unidentified reason, this doesn't work with 0.
+    for month_index in range(1, 13):
+        month = cal.monthdatescalendar(2018, month_index)
+        for week_days in month:
+            i += 1
+            if i == weeknumber:
+                return week_days
+
+
 class SolarHoursManager:
     def __init__(self, location):
         """Stores solar hours by dates.
@@ -198,6 +233,7 @@ class SolarHoursManager:
         return "<SolarHours for {!r}>".format(self.location)
 
 
+# TODO : "from_geojson" classmethod.
 class OHParser:
     def __init__(self, field, locale="en", location=None, optimize=True):
         """A parser for the OSM opening_hours fields.
@@ -550,6 +586,40 @@ class OHParser:
                         )
                 timespans = yesterday_timespans + timespans
         return timespans
+    
+    def plaintext_week_description(
+        self, year=None, weeknumber=None, first_weekday=0
+    ):
+        """Returns the opening periods of the given day.
+        
+        Parameters
+        ----------
+        year : int, optional
+            The year of the week.
+            The current year default.
+        weeknumber : int, optional
+            The index of the week in the year (1-53).
+            The current week default.
+        first_weekday : int, optional
+            The first day of the week, 0 means "Monday".
+            0 default.
+        
+        Returns
+        -------
+        str
+            The plaintext schedules of the week. Contains 7 lines.
+        """
+        week = days_of_week(year, weeknumber, first_weekday)
+        output = []
+        for day in week:
+            day_periods = self.get_day_periods(dt=day)
+            output.append(
+                (day_periods.weekday_name, day_periods.joined_rendered_periods)
+            )
+        colon_str = translate_colon(self.babel_locale)
+        return '\n'.join(
+            [colon_str.format(left=day[0], right=day[1]) for day in output]
+        )
     
     def get_day_periods(self, dt=None, _check_yesterday=True):
         """Returns the opening periods of the given day.

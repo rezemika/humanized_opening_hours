@@ -152,7 +152,7 @@ Example:
 -----
 
 `time_before_next_change()` returns a humanized delay before the next change in opening status.
-Like `next_change()`, it can take a datetime.datetime moment to get next change from another time.
+Like `next_change()`, it can take a `datetime.datetime` moment to get next change from another time.
 
 ```python
 >>> oh.time_before_next_change()
@@ -170,6 +170,31 @@ Like `next_change()`, it can take a datetime.datetime moment to get next change 
 >>> print(' '.join(oh.description()))
 "Monday to Friday: 10:00 to 19:00. Saturday: 10:00 to 12:00. 25 December: closed."
 ```
+
+-----
+
+`plaintext_week_description()` returns a plaintext description of the opening periods of a week.
+This method takes a `year` and a `weeknumber` (both `int`).
+You can also specify the first day of the week with the `first_weekday` parameter (as `int`).
+Its default value is `0`, meaning "Monday".
+
+It can also take no parameter, so the described week will be the current one.
+
+```python
+>>> print(ohr.plaintext_week_description(year=2018, weeknumber=1, first_weekday=0))
+"""
+Monday: 08:00 - 19:00
+Tuesday: 08:00 - 19:00
+Wednesday: 08:00 - 19:00
+Thursday: 08:00 - 19:00
+Friday: 08:00 - 19:00
+Saturday: 08:00 - 12:00
+Sunday: closed
+"""
+```
+
+This method uses the `days_of_week()` function to get the datetimes of the days of the requested week.
+It is accessible directly through the HOH namespace, and takes the same parameters.
 
 -----
 
@@ -252,12 +277,14 @@ Jan-Feb,Aug Mo-Fr,Su 10:00-20:00
 week 1 Mo 09:00-12:00
 week 1-10 Su 09:00-12:00
 week 1-10/2 Sa-Su 09:00-12:00
+2018 Mo-Fr 10:00-20:00
+2018-2022 Mo-Fr 10:00-20:00
+2018-2022/2 Mo-Fr 10:00-20:00
 ```
 
 The following formats are NOT supported yet and their parsing will raise a ParseError.
 
 ```
-years
 Su[1] 10:00-20:00
 easter +1 day 10:00-20:00
 easter +2 days 10:00-20:00
