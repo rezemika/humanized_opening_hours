@@ -109,7 +109,7 @@ If one of its values is `True`, it appears in the field and you should give to H
 
 You have to ways to do this.
 The first is to give to the `OHParser` the location of the facility, to allow it to calculate solar hours.
-The second is to use the `SolarHoursManager` object, *via* the `OHParser.solar_hours_manager` attribute.
+The second is to use the `SolarHours` object (which inherits from `dict`), *via* the `OHParser.solar_hours` attribute.
 
 ```python
 # First method. You can use either an 'astral.Location' object or a tuple.
@@ -122,7 +122,7 @@ solar_hours = {
     "sunrise": datetime.time(8, 0), "sunset": datetime.time(20, 0),
     "dawn": datetime.time(7, 30), "dusk": datetime.time(20, 30)
 }
-oh.solar_hours_manager[datetime.date.today()] = solar_hours
+oh.solar_hours[datetime.date.today()] = solar_hours
 ```
 
 Attention, except if the facility is on the equator, this setting will be valid only for a short period (except if you provide coordinates, because they will be automatically updated).

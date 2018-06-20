@@ -160,13 +160,18 @@ def days_of_week(year=None, weeknumber=None, first_weekday=0):
                 return week_days
 
 
-class SolarHoursManager:
-    def __init__(self, location):
-        """Stores solar hours by dates.
+class SolarHours(dict):
+    _SH_DICT = {
+        "sunrise": None, "sunset": None,
+        "dawn": None, "dusk": None
+    }
+    
+    def __init__(self, *args, location=None):
+        """An object inheriting from dict, storing solar hours for a location.
         
         Parameters
         ----------
-        astral.Location or tuple, optional
+        location : astral.Location or tuple, optional
             Allows you to provide a location, allowing an automatic
             getting of solar hours. Must be an 'astral.Location' object
             or a tuple like '(latitude, longitude, timezone_name, elevation)'.
@@ -174,67 +179,42 @@ class SolarHoursManager:
         
         Attributes
         ----------
-        location : astral.Location, optional
+        location : astral.Location or None
             The location for which to get solar hours.
-        solar_hours : dict{str: datetime.time}
-            A dict containing hours of sunrise, sunset, dawn and dusk.
         
-        To get solar hours, see '__getitem__()'.
-        To manually set them, see '__setitem__()'.
+        To manually set solar hours for the present day, do the following:
+            `solar_hours[datetime.date.today()] = {...}
         """
         if isinstance(location, astral.Location):
             self.location = location
-        elif location:
+        elif isinstance(location, tuple):
             self.location = astral.Location(
                 ["Location", "Region", *location]
             )
+        elif isinstance(location, str):  # TODO : Keep/document?
+            self.location = astral.Astral()[location]
         else:
             self.location = None
-        self.solar_hours = {}
-    
-    def __setitem__(self, dt: datetime.date, hours: dict):
-        """Sets solar hours for a given day.
-        
-        Usage:
-        >>> solar_hours_manager[datetime.date] = dict
-        """
-        self.solar_hours[dt] = hours
+        super().__init__(*args)
     
     def __getitem__(self, dt: datetime.date) -> dict:
-        """Returns solar hours for a given day.
-        
-        Usage:
-        >>> solar_hours = solar_hours_manager[datetime.date]
-        """
-        sh = self.solar_hours.get(dt)
-        if sh:
+        sh = self.get(dt)
+        if sh is not None:
             return sh
-        solar_hours = {
-            "sunrise": None, "sunset": None,
-            "dawn": None, "dusk": None
-        }
         if not self.location:
-            return solar_hours
+            return self._SH_DICT
         
-        for event in solar_hours:
-            try:
-                solar_hours[event] = (
-                    getattr(self.location, event)(dt)
-                    .time().replace(tzinfo=None)
-                )
-            except astral.AstralError:
-                solar_hours[event] = None
-        self.solar_hours[dt] = solar_hours
-        return solar_hours
-    
-    def __repr__(self):
-        return str(self)
-    
-    def __str__(self):
-        return "<SolarHours for {!r}>".format(self.location)
+        try:
+            # Removes localization and date part
+            # from datetimes returned by Astral.
+            return dict([
+                (k, v.replace(tzinfo=None).time()) for (k, v) in
+                self.location.sun().items()
+            ])
+        except astral.AstralError:
+            return self._SH_DICT
 
 
-# TODO : "from_geojson" classmethod.
 class OHParser:
     def __init__(self, field, locale="en", location=None, optimize=True):
         """A parser for the OSM opening_hours fields.
@@ -271,7 +251,7 @@ class OHParser:
         SH_dates : list[datetime.date]
             A list of the days considered as school holidays.
             Empty default, you have to fill it yourself.
-        solar_hours_manager : SolarHoursManager
+        solar_hours : SolarHoursManager
             An object storing and calculating solar hours for the desired dates.
         
         Raises
@@ -342,7 +322,7 @@ class OHParser:
             "dawn": "dawn" in self.sanitized_field,
             "dusk": "dusk" in self.sanitized_field
         }
-        self.solar_hours_manager = SolarHoursManager(location)
+        self.solar_hours = SolarHours(location=location)
     
     @classmethod
     def from_geojson(
@@ -410,7 +390,7 @@ class OHParser:
         timespans = self._get_day_timespans(dt)
         for timespan in timespans:
             beginning, end = timespan[1].get_times(
-                timespan[0], self.solar_hours_manager[timespan[0]]
+                timespan[0], self.solar_hours[timespan[0]]
             )
             if beginning < dt < end:
                 return True
@@ -456,7 +436,7 @@ class OHParser:
             timespans = self._get_day_timespans(new_dt)
             for timespan in timespans:
                 beginning, end_time = timespan[1].get_times(
-                    timespan[0], self.solar_hours_manager[timespan[0]]
+                    timespan[0], self.solar_hours[timespan[0]]
                 )
                 if new_dt < end_time:
                     return (i, timespan[1])
@@ -475,7 +455,7 @@ class OHParser:
         )
         
         beginning_time, end_time = next_timespan.get_times(
-            new_dt, self.solar_hours_manager[new_dt.date()]
+            new_dt, self.solar_hours[new_dt.date()]
         )
         
         if _recursion_level > 1 and beginning_time.time() != datetime.time.min:
@@ -627,7 +607,7 @@ class OHParser:
                 for yesterday_timespan in yesterday_rule.time_selectors:
                     yesterday_timespan_times = yesterday_timespan.get_times(
                         yesterday_date,
-                        self.solar_hours_manager[yesterday_date]
+                        self.solar_hours[yesterday_date]
                     )
                     if yesterday_timespan_times[1].date() == dt:
                         yesterday_timespans.append(
@@ -708,7 +688,7 @@ class OHParser:
         for timespan in timespans:
             periods.append(
                 timespan[1].get_times(
-                    timespan[0], self.solar_hours_manager[timespan[0]]
+                    timespan[0], self.solar_hours[timespan[0]]
                 )
             )
         if periods:
