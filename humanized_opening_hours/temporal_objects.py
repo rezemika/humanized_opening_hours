@@ -72,10 +72,24 @@ class Rule:
 # Selectors
 
 
-class RangeSelector:
+class BaseSelector:
     def __init__(self, selectors):
         self.selectors = selectors
     
+    def is_included(self, dt, SH_dates, PH_dates):
+        pass
+    
+    def __repr__(self):
+        return str(self)
+    
+    def __str__(self):
+        return "<{name} {selectors}>".format(
+            name=self.__class__.__name__,
+            selectors=str(self.selectors)
+        )
+
+
+class RangeSelector(BaseSelector):
     def is_included(self, dt, SH_dates, PH_dates):
         for selector in self.selectors:
             if selector.is_included(dt, SH_dates, PH_dates):
@@ -83,15 +97,9 @@ class RangeSelector:
             else:
                 return False
         return True
-    
-    def __repr__(self):
-        return str(self)
-    
-    def __str__(self):
-        return '<RangeSelector ' + str(self.selectors) + '>'
 
 
-class AlwaysOpenSelector:
+class AlwaysOpenSelector(BaseSelector):
     def __init__(self):
         self.selectors = [
             TimeSpan(
@@ -102,52 +110,17 @@ class AlwaysOpenSelector:
     
     def is_included(self, dt, SH_dates, PH_dates):
         return True
-    
-    def __repr__(self):
-        return str(self)
-    
-    def __str__(self):
-        return '<AlwaysOpenSelector ' + str(self.selectors) + '>'
 
 
-class MonthDaySelector:
-    def __init__(self, selectors):
-        self.selectors = selectors
-    
+class MonthDaySelector(BaseSelector):
     def is_included(self, dt, SH_dates, PH_dates):
         for selector in self.selectors:
             if selector.is_included(dt, SH_dates, PH_dates):
                 return True
         return False
-    
-    def __repr__(self):
-        return str(self)
-    
-    def __str__(self):
-        return '<MonthDaySelector ' + str(self.selectors) + '>'
 
 
-class WeekdaySelector:
-    def __init__(self, selectors):
-        self.selectors = selectors
-    
-    def is_included(self, dt: datetime.datetime, SH_dates, PH_dates):
-        if dt in SH_dates:
-            return "SH" in self.selectors
-        elif dt in PH_dates:
-            return "PH" in self.selectors
-        else:
-            wd = WEEKDAYS[dt.weekday()]
-            return wd in self.selectors
-    
-    def __repr__(self):
-        return str(self)
-    
-    def __str__(self):
-        return '<WeekdaySelector ' + str(self.selectors) + '>'
-
-
-class WeekdayHolidaySelector:
+class WeekdayHolidaySelector(BaseSelector):
     def __init__(self, selectors, SH, PH):
         self.selectors = selectors
         self.SH = SH  # Boolean
@@ -162,9 +135,6 @@ class WeekdayHolidaySelector:
             wd = WEEKDAYS[dt.weekday()]
             return wd in self.selectors
     
-    def __repr__(self):
-        return str(self)
-    
     def __str__(self):
         return "<WeekdayHolidaySelector {} (SH: {}; PH: {})>".format(
             str(self.selectors),
@@ -174,26 +144,17 @@ class WeekdayHolidaySelector:
 
 
 '''
-class HolidaySelector:
-    def __init__(self, selectors):
-        self.selectors = selectors
-    
+class HolidaySelector(BaseSelector):
     def is_included(self, dt: datetime.datetime, SH_dates, PH_dates):
         if dt in SH_dates:
             return self.SH or WEEKDAYS[dt.weekday()] in self.selectors
         elif dt in PH_dates:
             return self.PH or WEEKDAYS[dt.weekday()] in self.selectors
         return False
-    
-    def __repr__(self):
-        return str(self)
-    
-    def __str__(self):
-        return "<HolidaySelector {}>".format(str(self.selectors))
 '''
 
 
-class WeekdayInHolidaySelector:
+class WeekdayInHolidaySelector(BaseSelector):
     def __init__(self, weekdays, holidays):
         self.weekdays = weekdays
         self.holidays = holidays
@@ -208,16 +169,13 @@ class WeekdayInHolidaySelector:
             return True
         return False
     
-    def __repr__(self):
-        return str(self)
-    
     def __str__(self):
         return "<WeekdayInHolidaySelector {} in {}>".format(
             str(self.weekdays), str(self.holidays)
         )
 
 
-class WeekSelector:
+class WeekSelector(BaseSelector):
     def __init__(self, week_numbers):
         self.week_numbers = week_numbers
     
@@ -225,30 +183,19 @@ class WeekSelector:
         week_number = dt.isocalendar()[1]
         return week_number in self.week_numbers
     
-    def __repr__(self):
-        return str(self)
-    
     def __str__(self):
         return '<WeekSelector ' + str(self.week_numbers) + '>'
 
 
-class YearSelector:
-    def __init__(self, selectors):
-        self.selectors = selectors
-    
+class YearSelector(BaseSelector):
     def is_included(self, dt: datetime.datetime, SH_dates, PH_dates):
         return dt.year in self.selectors
-    
-    def __repr__(self):
-        return str(self)
-    
-    def __str__(self):
-        return '<YearSelector ' + str(self.selectors) + '>'
 
 
 # Ranges
 
 
+# TODO : '__str__' and '__repr__' methods.
 class MonthDayRange:
     def __init__(self, monthday_dates):
         # Prevent case like "Jan 1-5-Feb 1-5" (monthday_date - monthday_date).
@@ -264,6 +211,7 @@ class MonthDayRange:
             return dt_from <= dt <= dt_to
 
 
+# TODO : '__str__' and '__repr__' methods.
 class MonthDayDate:
     def __init__(
         self, kind, year=None, month=None, monthday=None, monthday_to=None
@@ -446,5 +394,5 @@ class Time:
         return "<Time ({!r})>".format(str(self))
     
     def __str__(self):
-        # TODO : Use 'get_time()"?
+        # TODO : Use 'rendering.render_time()"?
         return str(self.t)
