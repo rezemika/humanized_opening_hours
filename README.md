@@ -32,7 +32,7 @@ Also, it is available on PyPi.
 # How to use it
 
 The only mandatory argument to give to the constructor is the field, which must be a string.
-It can also take a `locale` argument, which can be any valid locale name.
+It can also take a `locale` argument, which can be any valid locale name. You can change it later by changing the `locale` attribute (which is, in fact, a `property`).
 However, to be able to use the `description()` method, it must be in `hoh.DESCRIPTION_LOCALES` (a warning will be printed otherwise).
 
 ```python
@@ -85,7 +85,7 @@ datetime.datetime(2018, 1, 11, 23, 59, 59, 999999)
 
 -----
 
-You can get a sanitized version of the field given to the constructor with the *sanitize* function or the **sanitized_field** attribute.
+You can get a sanitized version of the field given to the constructor with the `sanitize()` function or the `field` attribute.
 
 ```python
 >>> field = "mo-su 09:30-20h;jan off"

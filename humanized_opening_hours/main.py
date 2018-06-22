@@ -183,7 +183,8 @@ class SolarHours(dict):
             The location for which to get solar hours.
         
         To manually set solar hours for the present day, do the following:
-            `solar_hours[datetime.date.today()] = {...}
+        
+        >>> solar_hours[datetime.date.today()] = {...}
         """
         if isinstance(location, astral.Location):
             self.location = location
@@ -240,8 +241,12 @@ class OHParser:
         ----------
         original_field : str
             The raw field given to the constructor.
-        sanitized_field : str
+        field : str
             The field once sanitized by the "sanitize()" function.
+        locale : babel.Locale
+            The locale used for translations. As it is a property,
+            you can change it by assigning a new string (the name of the locale)
+            to it, it will be converted into a `babel.Locale` object.
         needs_solar_hours_setting : dict{str: bool}
             A dict indicating if solar hours setting is required
             for each solar hour (sunrise, sunset, dawn and dusk).
@@ -251,8 +256,14 @@ class OHParser:
         SH_dates : list[datetime.date]
             A list of the days considered as school holidays.
             Empty default, you have to fill it yourself.
-        solar_hours : SolarHoursManager
+        solar_hours : SolarHours
             An object storing and calculating solar hours for the desired dates.
+        
+        Warns
+        -----
+        UserWarning
+            When the given locale is not supported by the 'description()'
+            method (the others will work fine).
         
         Raises
         ------
@@ -261,24 +272,23 @@ class OHParser:
             (e.g. the field is invalid or contains an unsupported pattern).
         """
         self.original_field = field
-        # TODO : Rename to 'field' ?
-        self.sanitized_field = sanitize(self.original_field)
+        self.field = sanitize(self.original_field)
         
         if (  # Ex: "on appointment"
-            self.sanitized_field.count('"') == 2 and
-            self.sanitized_field.startswith('"') and
-            self.sanitized_field.endswith('"')
+            self.field.count('"') == 2 and
+            self.field.startswith('"') and
+            self.field.endswith('"')
         ):
             raise CommentOnlyField(
                 "The field {!r} contains only a comment.".format(
-                    self.sanitized_field
+                    self.field
                 ),
                 field.strip('"')
             )
         
         try:
             self._tree, self.rules = get_tree_and_rules(
-                self.sanitized_field, optimize
+                self.field, optimize
             )
         except lark.lexer.UnexpectedInput as e:
             raise ParseError(
@@ -303,24 +313,15 @@ class OHParser:
                 "The field could not be parsed, it may be invalid."
             )
         
-        self.babel_locale = babel.Locale.parse(locale)
-        if locale not in LOCALES.keys():
-            warnings.warn(
-                (
-                    "The locale {!r} is not supported "
-                    "by the 'description()' method, "
-                    "using it will raise an exception."
-                ).format(locale),
-                UserWarning
-            )
+        self.locale = locale
         
         self.PH_dates = []
         self.SH_dates = []
         self.needs_solar_hours_setting = {
-            "sunrise": "sunrise" in self.sanitized_field,
-            "sunset": "sunset" in self.sanitized_field,
-            "dawn": "dawn" in self.sanitized_field,
-            "dusk": "dusk" in self.sanitized_field
+            "sunrise": "sunrise" in self.field,
+            "sunset": "sunset" in self.field,
+            "dawn": "dawn" in self.field,
+            "dusk": "dusk" in self.field
         }
         self.solar_hours = SolarHours(location=location)
     
@@ -371,6 +372,36 @@ class OHParser:
         
         field = geojson["properties"]["opening_hours"]
         return cls(field, locale=locale, location=location)
+    
+    @property
+    def locale(self):
+        return self._locale
+    
+    @locale.setter
+    def locale(self, locale):
+        """Sets the locale to use for translations.
+        
+        Parameters
+        ----------
+        str
+            The name of the locale to use.
+        
+        Warns
+        -----
+        UserWarning
+            When the given locale is not supported by the 'description()'
+            method (the others will work fine).
+        """
+        self._locale = babel.Locale.parse(locale)
+        if locale not in LOCALES.keys():
+            warnings.warn(
+                (
+                    "The locale {!r} is not supported "
+                    "by the 'description()' method, "
+                    "using it will raise an exception."
+                ).format(locale),
+                UserWarning
+            )
     
     def is_open(self, dt=None):
         """Is it open?
@@ -496,9 +527,9 @@ class OHParser:
             with a point). Ex: ['From Monday to Friday: 10:00 - 20:00.']
         """
         if not self._tree:
-            self._tree = PARSER.parse(self.sanitized_field)
+            self._tree = PARSER.parse(self.field)
         transformer = DescriptionTransformer()
-        transformer._locale = self.babel_locale
+        transformer._locale = self.locale
         transformer._human_names = self.get_human_names()
         transformer._install_locale()
         return transformer.transform(self._tree)
@@ -532,7 +563,7 @@ class OHParser:
             delta,
             granularity="minute",
             threshold=2,
-            locale=self.babel_locale,
+            locale=self.locale,
             add_direction=word
         )
     
@@ -548,9 +579,9 @@ class OHParser:
         days = []
         months = []
         for i in range(7):
-            days.append(self.babel_locale.days["format"]["wide"][i])
+            days.append(self.locale.days["format"]["wide"][i])
         for i in range(12):
-            months.append(self.babel_locale.months['format']['wide'][i+1])
+            months.append(self.locale.months['format']['wide'][i+1])
         return {"days": days, "months": months}
     
     def get_current_rule(self, dt=None):
@@ -645,7 +676,7 @@ class OHParser:
             output.append(
                 (day_periods.weekday_name, day_periods.joined_rendered_periods)
             )
-        colon_str = translate_colon(self.babel_locale)
+        colon_str = translate_colon(self.locale)
         return '\n'.join(
             [colon_str.format(left=day[0], right=day[1]) for day in output]
         )
@@ -693,12 +724,12 @@ class OHParser:
             )
         if periods:
             rendered_periods = [
-                render_timespan(ts[1], self.babel_locale) for ts in timespans
+                render_timespan(ts[1], self.locale) for ts in timespans
             ]
             # TODO : Check for locale.
             joined_rendered_periods = join_list(rendered_periods)
         else:
-            closed_word = translate_open_closed(self.babel_locale)[1]
+            closed_word = translate_open_closed(self.locale)[1]
             rendered_periods = [closed_word]
             joined_rendered_periods = closed_word
         return DayPeriods(
@@ -710,4 +741,4 @@ class OHParser:
         return str(self)
     
     def __str__(self):
-        return "<OHParser field: '{}'>".format(self.sanitized_field)
+        return "<OHParser field: '{}'>".format(self.field)

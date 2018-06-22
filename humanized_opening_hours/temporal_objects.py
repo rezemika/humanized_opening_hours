@@ -295,8 +295,10 @@ class TimeSpan:
     def get_times(self, date, solar_hours):
         """Returns the beginning and the end of the TimeSpan.
         
-        /!\ If the TimeSpan spans over midnight, the second datetime of the
-        returned tuple will be one day later than the first.
+        Note
+        ----
+            If the TimeSpan spans over midnight, the second datetime of the
+            returned tuple will be one day later than the first.
         
         Parameters
         ----------
@@ -319,7 +321,7 @@ class TimeSpan:
         return (beginning_time, end_time)
     
     def is_open(self, dt, solar_hours):
-        """Returns the beginning and the end of the TimeSpan.
+        """Returns whether it's open at the given datetime.
         
         Parameters
         ----------
