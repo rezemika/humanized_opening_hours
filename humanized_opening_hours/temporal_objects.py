@@ -366,6 +366,7 @@ class Time:
         Returns
         -------
         datetime.datetime
+            The datetime of the Time.
         """
         if self.t[0] == "normal":
             return datetime.datetime.combine(date, self.t[1])

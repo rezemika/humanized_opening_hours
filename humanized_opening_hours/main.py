@@ -32,6 +32,8 @@ DayPeriods = namedtuple(
     ]
 )
 DayPeriods.__doc__ += """\n
+Attributes
+----------
 weekday_name : str
     The name of the day (ex: "Monday").
 date : datetime.date
