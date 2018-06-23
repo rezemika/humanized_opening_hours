@@ -49,6 +49,14 @@ class TestGlobal(unittest.TestCase):
                 ["9:00 AM - 7:00 PM"], "9:00 AM - 7:00 PM"
             )
         )
+        # Rendering
+        self.assertEqual(
+            oh.plaintext_week_description(),
+            "Monday: 9:00 AM - 7:00 PM\nTuesday: 9:00 AM - 7:00 PM\n"
+            "Wednesday: 9:00 AM - 7:00 PM\nThursday: 9:00 AM - 7:00 PM\n"
+            "Friday: 9:00 AM - 7:00 PM\nSaturday: 9:00 AM - 7:00 PM\n"
+            "Sunday: closed"
+        )
     
     def test_2(self):
         field = "Mo,Th 09:00-12:00,13:00-19:00"
@@ -84,6 +92,14 @@ class TestGlobal(unittest.TestCase):
                 ["9:00 AM - 12:00 PM", "1:00 PM - 7:00 PM"],
                 "9:00 AM - 12:00 PM and 1:00 PM - 7:00 PM"
             )
+        )
+        # Rendering
+        self.assertEqual(
+            oh.plaintext_week_description(),
+            "Monday: 9:00 AM - 12:00 PM and 1:00 PM - 7:00 PM\n"
+            "Tuesday: closed\nWednesday: closed\n"
+            "Thursday: 9:00 AM - 12:00 PM and 1:00 PM - 7:00 PM\n"
+            "Friday: closed\nSaturday: closed\nSunday: closed"
         )
     
     def test_3(self):
@@ -152,13 +168,6 @@ class TestGlobal(unittest.TestCase):
             datetime.datetime.combine(
                 datetime.date(2018, 1, 8), datetime.time.max
             )
-        )
-        # Rendering.
-        self.assertEqual(
-            oh.render().plaintext_week_description(),
-            "Monday: 00:00 - 00:00\nTuesday: 00:00 - 00:00\n"
-            "Wednesday: 00:00 - 00:00\nThursday: 00:00 - 00:00\n"
-            "Friday: 00:00 - 00:00\nSaturday: closed\nSunday: closed"
         )
 
 
