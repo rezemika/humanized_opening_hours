@@ -674,7 +674,7 @@ class OHParser:
         week = days_of_week(year, weeknumber, first_weekday)
         output = []
         for day in week:
-            day_periods = self.get_day_periods(dt=day)
+            day_periods = self.get_day_periods(dt=day, _check_yesterday=False)
             output.append(
                 (day_periods.weekday_name, day_periods.joined_rendered_periods)
             )
