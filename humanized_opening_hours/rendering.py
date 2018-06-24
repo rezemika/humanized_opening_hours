@@ -62,10 +62,9 @@ def render_time(time, babel_locale):
 
 def render_timespan(timespan, babel_locale):
     """Returns a string from a TimeSpan object."""
-    LOCALES.get(babel_locale.language).install()
-    return _("{time1} - {time2}").format(
-        time1=render_time(timespan.beginning, babel_locale),
-        time2=render_time(timespan.end, babel_locale)
+    return babel_locale.interval_formats[None].format(
+        render_time(timespan.beginning, babel_locale),
+        render_time(timespan.end, babel_locale)
     )
 
 

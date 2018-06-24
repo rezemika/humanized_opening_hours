@@ -673,6 +673,8 @@ class OHParser:
         """
         week = days_of_week(year, weeknumber, first_weekday)
         output = []
+        # TODO: For the first day, add the last timespan of yesterday
+        # if spanning over midnight.
         for day in week:
             day_periods = self.get_day_periods(dt=day, _check_yesterday=False)
             output.append(
