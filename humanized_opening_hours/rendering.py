@@ -287,10 +287,11 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
     def holiday_and_weekday_sequence_selector(self, args):
         return babel.lists.format_list(
             [
-                args[0], args[1][0][0].format(
+                args[1][0][0].format(
                     wd1=args[1][0][1],
                     wd2=args[1][0][2]
-                )
+                ),
+                args[0]
             ], locale=self._locale
         )
     
@@ -299,6 +300,7 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
             wd = args[1][0][0].format(wd=args[1][0][1])
         else:
             wd = args[1][0][0].format(wd1=args[1][0][1], wd2=args[1][0][2])
+        # Translators: Example: "Public holidays, on Monday".
         return _("{holiday}, {wd}").format(holiday=args[0], wd=wd)
     
     def holiday(self, args):
@@ -317,8 +319,8 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
         dt = datetime.datetime.combine(
             datetime.date.today(),
             dt
-        )
-        return dt.strftime("%H:%M")
+        ).time()
+        return babel.dates.format_time(dt, locale=self._locale, format="short")
     
     def time(self, args):
         return args[0]
