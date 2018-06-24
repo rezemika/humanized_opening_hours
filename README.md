@@ -187,14 +187,14 @@ Its default value is `0`, meaning "Monday".
 It can also take no parameter, so the described week will be the current one.
 
 ```python
->>> print(ohr.plaintext_week_description(year=2018, weeknumber=1, first_weekday=0))
+>>> print(oh.plaintext_week_description(year=2018, weeknumber=1, first_weekday=0))
 """
-Monday: 08:00 - 19:00
-Tuesday: 08:00 - 19:00
-Wednesday: 08:00 - 19:00
-Thursday: 08:00 - 19:00
-Friday: 08:00 - 19:00
-Saturday: 08:00 - 12:00
+Monday: 8:00 AM – 7:00 PM
+Tuesday: 8:00 AM – 7:00 PM
+Wednesday: 8:00 AM – 7:00 PM
+Thursday: 8:00 AM – 7:00 PM
+Friday: 8:00 AM – 7:00 PM
+Saturday: 8:00 AM – 12:00 PM
 Sunday: closed
 """
 ```

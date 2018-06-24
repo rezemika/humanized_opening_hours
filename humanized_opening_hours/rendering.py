@@ -11,23 +11,30 @@ from humanized_opening_hours.temporal_objects import WEEKDAYS, MONTHS
 
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
-LOCALES = {
-    "en": gettext.translation(
-        "HOH", os.path.join(BASE_DIR, "locales"), languages=["en"]
-    ),
-    "fr": gettext.translation(
-        "HOH", os.path.join(BASE_DIR, "locales"), languages=["fr"]
-    )
-}
+AVAILABLE_LOCALES = ["en", "fr"]
+
+gettext.install("hoh", "locales")
 
 ON_WEEKDAY = True  # TODO : Relevant?
+
+
+def set_locale(babel_locale):
+    try:
+        lang = gettext.translation(
+            'hoh',
+            localedir=os.path.join(BASE_DIR, "locales"),
+            languages=[babel_locale.language]
+        )
+    except FileNotFoundError:
+        lang = gettext.NullTranslations()
+    lang.install()
 
 
 # TODO : Put these functions into a unique class?
 # TODO : Handle "datetime.time.max" (returns "23:59" instead of "24:00").
 def render_time(time, babel_locale):
     """Returns a string from a Time object."""
-    LOCALES.get(babel_locale.language).install()
+    set_locale(babel_locale)
     if time.t[0] == "normal":
         return babel.dates.format_time(
             time.t[1], locale=babel_locale, format="short"
@@ -74,23 +81,23 @@ def join_list(l: list, babel_locale) -> str:
     if not l:
         return ''
     values = [str(value) for value in l]
-    return babel.lists.format_list(l, locale=babel_locale)
+    return babel.lists.format_list(values, locale=babel_locale)
 
 
 def translate_open_closed(babel_locale):
-    LOCALES.get(babel_locale.language).install()
+    set_locale(babel_locale)
     return (_("open"), _("closed"))
 
 
 def translate_colon(babel_locale):
-    LOCALES.get(babel_locale.language).install()
-    return _("{left}: {right}")
+    set_locale(babel_locale)
+    return _("{}: {}")
 
 
 class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
     # Meta
     def _install_locale(self):
-        LOCALES.get(self._locale.language).install()
+        set_locale(self._locale)
     
     def _get_wday(self, wday_index: int) -> str:
         return self._human_names["days"][wday_index]
@@ -116,10 +123,9 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
             else:
                 range_selectors = args[0][0].upper()+args[0][1:]
                 time_selector = args[0][1:]
-            return _("{range_selectors}: {time_selector}.").format(
-                range_selectors=range_selectors,
-                time_selector=time_selector
-            )
+            return _("{}: {}").format(
+                range_selectors, time_selector
+            ) + '.'
     
     def always_open(self, args):
         return _("open 24 hours a day and 7 days a week")
@@ -151,7 +157,7 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
                 return ('NO_TS', args[0][1])
             else:
                 return ('TS_ONLY', args[0])
-        return args[0][1] + _(': ') + args[1]
+        return _("{}: {}").format(args[0][1], args[1])
     
     # Monthday range
     def monthday_selector(self, args):
@@ -279,6 +285,7 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
             return _("Public and school holidays")
     
     def holiday_and_weekday_sequence_selector(self, args):
+        # TODO: Use babel.lists
         if type(args[0]) == str:
             return args[0] + _(" and ") + args[1]
         else:
@@ -314,6 +321,7 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
         return args[0]
     
     def timespan(self, args):
+        # TODO: Use 'render_timespan'?
         return _("from {} to {}").format(args[0], args[1])
     
     def time_selector(self, args):

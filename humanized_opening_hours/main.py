@@ -15,7 +15,7 @@ from humanized_opening_hours.field_parser import (
     PARSER, get_tree_and_rules
 )
 from humanized_opening_hours.rendering import (
-    DescriptionTransformer, LOCALES, render_timespan,
+    DescriptionTransformer, AVAILABLE_LOCALES, render_timespan,
     join_list, translate_open_closed, translate_colon
 )
 from humanized_opening_hours.exceptions import (
@@ -395,12 +395,11 @@ class OHParser:
             method (the others will work fine).
         """
         self._locale = babel.Locale.parse(locale)
-        if locale not in LOCALES.keys():
+        if locale not in AVAILABLE_LOCALES and locale != "en":
             warnings.warn(
                 (
-                    "The locale {!r} is not supported "
-                    "by the 'description()' method, "
-                    "using it will raise an exception."
+                    "The locale {!r} is not supported by the 'description()' "
+                    "method, using it will return inconsistent sentences."
                 ).format(locale),
                 UserWarning
             )
@@ -684,7 +683,7 @@ class OHParser:
             )
         colon_str = translate_colon(self.locale)
         return '\n'.join(
-            [colon_str.format(left=day[0], right=day[1]) for day in output]
+            [colon_str.format(day[0], day[1]) for day in output]
         )
     
     def get_day_periods(self, dt=None, _check_yesterday=True):
@@ -733,7 +732,7 @@ class OHParser:
                 render_timespan(ts[1], self.locale) for ts in timespans
             ]
             # TODO : Check for locale.
-            joined_rendered_periods = join_list(rendered_periods)
+            joined_rendered_periods = join_list(rendered_periods, self.locale)
         else:
             closed_word = translate_open_closed(self.locale)[1]
             rendered_periods = [closed_word]

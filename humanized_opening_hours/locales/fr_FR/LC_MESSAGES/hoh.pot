@@ -1,0 +1,189 @@
+# Translations template for PROJECT.
+# Copyright (C) 2018 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2018.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2018-06-24 16:36+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.5.3\n"
+
+#: humanized_opening_hours/rendering.py:36
+#: humanized_opening_hours/rendering.py:331
+msgid "sunrise"
+msgstr "lever du soleil"
+
+#: humanized_opening_hours/rendering.py:37
+#: humanized_opening_hours/rendering.py:332
+msgid "sunset"
+msgstr "coucher du soleil"
+
+#: humanized_opening_hours/rendering.py:38
+#: humanized_opening_hours/rendering.py:333
+msgid "dawn"
+msgstr "aurore"
+
+#: humanized_opening_hours/rendering.py:39
+#: humanized_opening_hours/rendering.py:334
+msgid "dusk"
+msgstr "crépuscule"
+
+#: humanized_opening_hours/rendering.py:46
+#: humanized_opening_hours/rendering.py:339
+msgid "{time} after sunrise"
+msgstr "{time} après le lever du soleil"
+
+#: humanized_opening_hours/rendering.py:47
+#: humanized_opening_hours/rendering.py:340
+msgid "{time} after sunset"
+msgstr "{time} après le coucher du soleil"
+
+#: humanized_opening_hours/rendering.py:48
+#: humanized_opening_hours/rendering.py:341
+msgid "{time} after dawn"
+msgstr "{time} après l'aurore"
+
+#: humanized_opening_hours/rendering.py:49
+#: humanized_opening_hours/rendering.py:342
+msgid "{time} after dusk"
+msgstr "{time} après le crépuscule"
+
+#: humanized_opening_hours/rendering.py:56
+#: humanized_opening_hours/rendering.py:346
+msgid "{time} before sunrise"
+msgstr "{time} avant le lever du soleil"
+
+#: humanized_opening_hours/rendering.py:57
+#: humanized_opening_hours/rendering.py:347
+msgid "{time} before sunset"
+msgstr "{time} avant le coucher du soleil"
+
+#: humanized_opening_hours/rendering.py:58
+#: humanized_opening_hours/rendering.py:348
+msgid "{time} before dawn"
+msgstr "{time} avant l'aurore"
+
+#: humanized_opening_hours/rendering.py:59
+#: humanized_opening_hours/rendering.py:349
+msgid "{time} before dusk"
+msgstr "{time} avant le crépuscule"
+
+#: humanized_opening_hours/rendering.py:83
+msgid "open"
+msgstr "ouvert"
+
+#: humanized_opening_hours/rendering.py:83
+msgid "closed"
+msgstr "fermé"
+
+#: humanized_opening_hours/rendering.py:90
+#: humanized_opening_hours/rendering.py:124
+#: humanized_opening_hours/rendering.py:158
+msgid "{}: {}"
+msgstr "{} : {}"
+
+#: humanized_opening_hours/rendering.py:119
+msgid "Every days"
+msgstr "Tous les jours"
+
+#: humanized_opening_hours/rendering.py:129
+msgid "open 24 hours a day and 7 days a week"
+msgstr "ouvert 24 heures sur 24 et 7 jours sur 7"
+
+#: humanized_opening_hours/rendering.py:168
+#: humanized_opening_hours/rendering.py:199
+msgid "from {monthday1} to {monthday2}"
+msgstr "du {monthday1} au {monthday2}"
+
+#: humanized_opening_hours/rendering.py:180
+#, python-format
+msgid "%B %-d %Y"
+msgstr "%-d %B %Y"
+
+#: humanized_opening_hours/rendering.py:183
+#: humanized_opening_hours/rendering.py:195
+#: humanized_opening_hours/rendering.py:196
+#: humanized_opening_hours/rendering.py:200
+#: humanized_opening_hours/rendering.py:201
+#, python-format
+msgid "%B %-d"
+msgstr "%-d %B"
+
+#: humanized_opening_hours/rendering.py:193
+msgid "in {year}, from {monthday1} to {monthday2}"
+msgstr "en {year}, du {monthday1} au {monthday2}"
+
+#: humanized_opening_hours/rendering.py:208
+msgid "in {year}, in {month}"
+msgstr "en {year}, en {month}"
+
+#: humanized_opening_hours/rendering.py:217
+msgid "in {year}, on easter"
+msgstr "en {year}, à pâques"
+
+#: humanized_opening_hours/rendering.py:219
+msgid "on easter"
+msgstr "à pâques"
+
+#: humanized_opening_hours/rendering.py:227
+msgid "week {n}"
+msgstr "semaine {n}"
+
+#: humanized_opening_hours/rendering.py:229
+msgid "from week {week1} to week {week2}"
+msgstr "de la semaine {week1} à la semaine {week2}"
+
+#: humanized_opening_hours/rendering.py:233
+msgid "from week {week1} to week {week2}, every {n} weeks"
+msgstr "de la semaine {week1} à la semaine {week2}, toutes les {n} weeks"
+
+#: humanized_opening_hours/rendering.py:250
+msgid "from {year1} to {year2}"
+msgstr "de {year1} à {year2}"
+
+#: humanized_opening_hours/rendering.py:254
+msgid "from {year1} to {year2}, every {n} years"
+msgstr "de {year1} à {year2}, tous les {n} ans"
+
+#: humanized_opening_hours/rendering.py:265
+#: humanized_opening_hours/rendering.py:276
+msgid "on {wd}"
+msgstr "le {wd}"
+
+#: humanized_opening_hours/rendering.py:270
+msgid "from {wd1} to {wd2}"
+msgstr "du {wd1} au {wd2}"
+
+#: humanized_opening_hours/rendering.py:283
+msgid "Public and school holidays"
+msgstr "Vacances scolaires et jours fériés"
+
+#: humanized_opening_hours/rendering.py:287
+#: humanized_opening_hours/rendering.py:289
+msgid " and "
+msgstr " et "
+
+#: humanized_opening_hours/rendering.py:296
+msgid "{holiday}, {wd}"
+msgstr "{holiday}, {wd}"
+
+#: humanized_opening_hours/rendering.py:300
+msgid "public holidays"
+msgstr "jours fériés"
+
+#: humanized_opening_hours/rendering.py:302
+msgid "school holidays"
+msgstr "vacances scolaires"
+
+#: humanized_opening_hours/rendering.py:321
+msgid "from {} to {}"
+msgstr "de {} à {}"

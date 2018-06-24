@@ -46,15 +46,15 @@ class TestGlobal(unittest.TestCase):
                     datetime.datetime(2018, 1, 1, 9, 0),
                     datetime.datetime(2018, 1, 1, 19, 0)
                 )],
-                ["9:00 AM - 7:00 PM"], "9:00 AM - 7:00 PM"
+                ["9:00 AM – 7:00 PM"], "9:00 AM – 7:00 PM"
             )
         )
         # Rendering
         self.assertEqual(
             oh.plaintext_week_description(),
-            "Monday: 9:00 AM - 7:00 PM\nTuesday: 9:00 AM - 7:00 PM\n"
-            "Wednesday: 9:00 AM - 7:00 PM\nThursday: 9:00 AM - 7:00 PM\n"
-            "Friday: 9:00 AM - 7:00 PM\nSaturday: 9:00 AM - 7:00 PM\n"
+            "Monday: 9:00 AM – 7:00 PM\nTuesday: 9:00 AM – 7:00 PM\n"
+            "Wednesday: 9:00 AM – 7:00 PM\nThursday: 9:00 AM – 7:00 PM\n"
+            "Friday: 9:00 AM – 7:00 PM\nSaturday: 9:00 AM – 7:00 PM\n"
             "Sunday: closed"
         )
     
@@ -89,16 +89,16 @@ class TestGlobal(unittest.TestCase):
                         datetime.datetime(2018, 1, 1, 19, 0)
                     )
                 ],
-                ["9:00 AM - 12:00 PM", "1:00 PM - 7:00 PM"],
-                "9:00 AM - 12:00 PM and 1:00 PM - 7:00 PM"
+                ["9:00 AM – 12:00 PM", "1:00 PM – 7:00 PM"],
+                "9:00 AM – 12:00 PM and 1:00 PM – 7:00 PM"
             )
         )
         # Rendering
         self.assertEqual(
             oh.plaintext_week_description(),
-            "Monday: 9:00 AM - 12:00 PM and 1:00 PM - 7:00 PM\n"
+            "Monday: 9:00 AM – 12:00 PM and 1:00 PM – 7:00 PM\n"
             "Tuesday: closed\nWednesday: closed\n"
-            "Thursday: 9:00 AM - 12:00 PM and 1:00 PM - 7:00 PM\n"
+            "Thursday: 9:00 AM – 12:00 PM and 1:00 PM – 7:00 PM\n"
             "Friday: closed\nSaturday: closed\nSunday: closed"
         )
     
