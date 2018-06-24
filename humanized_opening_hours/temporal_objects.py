@@ -351,7 +351,7 @@ class Time:
     def __init__(self, t):
         self.t = t
         # ("normal", datetime.time) / ("name", "offset_sign", "delta_seconds")
-        # TODO : Use named tupple.
+        # TODO: Set only two attributes: "kind" (str) and "offset" (signed int).
     
     def get_time(self, solar_hours, date):
         """Returns the corresponding datetime.datetime.

@@ -328,9 +328,7 @@ class OHParser:
         self.solar_hours = SolarHours(location=location)
     
     @classmethod
-    def from_geojson(
-        cls, geojson, timezone_getter=None, locale="en"
-    ):
+    def from_geojson(cls, geojson, timezone_getter=None, locale="en"):
         """A classmethod which creates an OHParser instance from a GeoJSON.
         
         Parameters
@@ -390,7 +388,6 @@ class OHParser:
         
         Warns
         -----
-        UserWarning
             When the given locale is not supported by the 'description()'
             method (the others will work fine).
         """
