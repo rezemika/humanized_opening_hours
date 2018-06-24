@@ -650,7 +650,7 @@ class OHParser:
         return timespans
     
     def plaintext_week_description(
-        self, year=None, weeknumber=None, first_weekday=0
+        self, year=None, weeknumber=None, first_weekday=None
     ):
         """Returns the opening periods of the given day.
         
@@ -664,13 +664,15 @@ class OHParser:
             The current week default.
         first_weekday : int, optional
             The first day of the week, 0 means "Monday".
-            0 default.
+            None default, meaning use the current locale's first weekday.
         
         Returns
         -------
         str
             The plaintext schedules of the week. Contains 7 lines.
         """
+        if first_weekday is None:
+            first_weekday = self.locale.first_week_day
         week = days_of_week(year, weeknumber, first_weekday)
         output = []
         # TODO: For the first day, add the last timespan of yesterday
