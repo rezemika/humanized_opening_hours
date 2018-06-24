@@ -285,11 +285,14 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
             return _("Public and school holidays")
     
     def holiday_and_weekday_sequence_selector(self, args):
-        # TODO: Use babel.lists
-        if type(args[0]) == str:
-            return args[0] + _(" and ") + args[1]
-        else:
-            return args[0][0][0].format(wd=args[0][0][1]) + _(" and ") + args[1]
+        return babel.lists.format_list(
+            [
+                args[0], args[1][0][0].format(
+                    wd1=args[1][0][1],
+                    wd2=args[1][0][2]
+                )
+            ], locale=self._locale
+        )
     
     def holiday_in_weekday_sequence_selector(self, args):
         if len(args[1][0]) == 2:
