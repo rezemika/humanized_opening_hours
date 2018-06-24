@@ -4,6 +4,7 @@ import os
 
 import lark
 import babel
+import babel.lists
 
 from humanized_opening_hours.temporal_objects import WEEKDAYS, MONTHS
 
@@ -61,20 +62,19 @@ def render_time(time, babel_locale):
 
 
 def render_timespan(timespan, babel_locale):
-    """Returns a string from a TimeSpan object."""
+    """Returns a string from a TimeSpan object and a locale."""
     return babel_locale.interval_formats[None].format(
         render_time(timespan.beginning, babel_locale),
         render_time(timespan.end, babel_locale)
     )
 
 
-def join_list(l: list) -> str:
+def join_list(l: list, babel_locale) -> str:
+    """Returns a string from a list and a locale."""
     if not l:
         return ''
     values = [str(value) for value in l]
-    if len(values) == 1:
-        return values[0]
-    return ', '.join(values[:-1]) + _(" and ") + values[-1]
+    return babel.lists.format_list(l, locale=babel_locale)
 
 
 def translate_open_closed(babel_locale):
@@ -140,6 +140,7 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
                     descriptions.append(selector[1])
             else:
                 descriptions.append(selector)
+        # TODO: Use 'babel.lists.format_list(style="unit")'?
         output = ', '.join(descriptions)
         output = output[0].upper() + output[1:]
         return ('RS', output)
@@ -154,7 +155,7 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
     
     # Monthday range
     def monthday_selector(self, args):
-        return join_list(args)
+        return join_list(args, self._locale)
     
     def monthday_range(self, args):
         if len(args) == 1:  # "Dec 25"
@@ -215,7 +216,7 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
     
     # Week
     def week_selector(self, args):
-        return join_list(args[1:])
+        return join_list(args[1:], self._locale)
     
     def week(self, args):
         if len(args) == 1:
@@ -251,7 +252,7 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
             )
     
     def year_selector(self, args):
-        return join_list(args)
+        return join_list(args, self._locale)
     
     # Weekdays
     def weekday_range(self, args):
@@ -268,7 +269,7 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
         # TODO : Fix this hack.
         if len(args) != 1:
             weekdays = [t[1] for t in args]
-            return (_("on {wd}"), join_list(weekdays))
+            return (_("on {wd}"), join_list(weekdays, self._locale))
         return args
     
     def weekday_or_holiday_sequence_selector(self, args):
@@ -316,7 +317,7 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
         return _("from {} to {}").format(args[0], args[1])
     
     def time_selector(self, args):
-        return join_list(args)
+        return join_list(args, self._locale)
     
     def variable_time(self, args):
         # ("event", "offset_sign", "hour_minutes")
