@@ -365,7 +365,10 @@ class TestFieldDescription(unittest.TestCase):
         field = "Mo-Fr 10:00-19:00; Sa 10:00-12:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["From Monday to Friday: from 10:00 to 19:00.", "On Saturday: from 10:00 to 12:00."]
+            [
+                "From Monday to Friday: from 10:00 AM to 7:00 PM.",
+                "On Saturday: from 10:00 AM to 12:00 PM."
+            ]
         )
         
         field = "sunrise-sunset"
@@ -380,104 +383,104 @@ class TestFieldDescription(unittest.TestCase):
             [
                 "Every days: from sunrise to sunset.",
                 "On Sunday: closed.",
-                "Public holidays: from 10:00 to 20:00."
+                "Public holidays: from 10:00 AM to 8:00 PM."
             ]
         )
         
         field = "10:00-(sunset+02:00)"
         self.assertEqual(
             OHParser(field).description(),
-            ["Every days: from 10:00 to 02:00 after sunset."]
+            ["Every days: from 10:00 AM to 2 hours after sunset."]
         )
         
         field = "Jan-Feb 10:00-20:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["From January to February: from 10:00 to 20:00."]
+            ["From January to February: from 10:00 AM to 8:00 PM."]
         )
         
         field = "Jan-Feb Mo-Fr 10:00-20:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["From January to February, from Monday to Friday: from 10:00 to 20:00."]
+            ["From January to February, from Monday to Friday: from 10:00 AM to 8:00 PM."]
         )
         
         field = "Jan 10:00-20:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["January: from 10:00 to 20:00."]
+            ["January: from 10:00 AM to 8:00 PM."]
         )
         
         field = "Jan,Dec 10:00-20:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["January and December: from 10:00 to 20:00."]
+            ["January and December: from 10:00 AM to 8:00 PM."]
         )
         
         field = "Jan,Dec 10:00-20:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["January and December: from 10:00 to 20:00."]
+            ["January and December: from 10:00 AM to 8:00 PM."]
         )
         
         field = "Dec 25 09:00-12:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["December 25: from 09:00 to 12:00."]
+            ["December 25: from 9:00 AM to 12:00 PM."]
         )
         
         field = "Dec 25,Jan 1 09:00-12:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["December 25 and January 1: from 09:00 to 12:00."]
+            ["December 25 and January 1: from 9:00 AM to 12:00 PM."]
         )
         
         field = "Dec 24-26 09:00-12:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["From December 24 to December 26: from 09:00 to 12:00."]
+            ["From December 24 to December 26: from 9:00 AM to 12:00 PM."]
         )
         
         field = "Dec Mo 10:00-20:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["December, Monday: from 10:00 to 20:00."]
+            ["December, Monday: from 10:00 AM to 8:00 PM."]
         )
         
         field = "Jan-Feb Mo 10:00-20:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["From January to February, Monday: from 10:00 to 20:00."]
+            ["From January to February, Monday: from 10:00 AM to 8:00 PM."]
         )
         
         field = "Jan-Feb Mo-Fr 10:00-20:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["From January to February, from Monday to Friday: from 10:00 to 20:00."]
+            ["From January to February, from Monday to Friday: from 10:00 AM to 8:00 PM."]
         )
         
         field = "easter 10:00-20:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["On easter: from 10:00 to 20:00."]
+            ["On easter: from 10:00 AM to 8:00 PM."]
         )
         
         field = "PH,SH 10:00-20:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["Public and school holidays: from 10:00 to 20:00."]
+            ["Public and school holidays: from 10:00 AM to 8:00 PM."]
         )
         
         field = "PH Sa 10:00-20:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["Public holidays, on Saturday: from 10:00 to 20:00."]
+            ["Public holidays, on Saturday: from 10:00 AM to 8:00 PM."]
         )
         
         field = "SH Mo-Fr 10:00-20:00"
         self.assertEqual(
             OHParser(field).description(),
-            ["School holidays, from Monday to Friday: from 10:00 to 20:00."]
+            ["School holidays, from Monday to Friday: from 10:00 AM to 8:00 PM."]
         )
         
         field = "24/7"

@@ -5,6 +5,7 @@ import os
 import lark
 import babel
 import babel.lists
+import babel.dates
 
 from humanized_opening_hours.temporal_objects import WEEKDAYS, MONTHS
 
@@ -311,6 +312,7 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
     
     # Time
     def hour_minutes(self, args):
+        # Returns a tuple like (format_time, format_timedelta).
         h, m = int(args[0].value), int(args[1].value)
         if (h, m) == (24, 0):
             dt = datetime.time.max
@@ -320,10 +322,19 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
             datetime.date.today(),
             dt
         ).time()
-        return babel.dates.format_time(dt, locale=self._locale, format="short")
+        return (
+            babel.dates.format_time(dt, locale=self._locale, format="short"),
+            babel.dates.format_timedelta(
+                datetime.timedelta(hours=h, minutes=m),
+                locale=self._locale
+            )
+        )
     
     def time(self, args):
-        return args[0]
+        if type(args[0]) is tuple:
+            return args[0][0]
+        else:
+            return args[0]
     
     def timespan(self, args):
         # TODO: Use 'render_timespan'?
@@ -349,14 +360,14 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
                 "sunset": _("{time} after sunset"),
                 "dawn": _("{time} after dawn"),
                 "dusk": _("{time} after dusk")
-            }.get(kind).format(time=args[2])
+            }.get(kind).format(time=args[2][1])
         else:
             return {
                 "sunrise": _("{time} before sunrise"),
                 "sunset": _("{time} before sunset"),
                 "dawn": _("{time} before dawn"),
                 "dusk": _("{time} before dusk")
-            }.get(kind).format(time=args[2])
+            }.get(kind).format(time=args[2][1])
     
     # Rule modifiers
     def rule_modifier_open(self, args):
