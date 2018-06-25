@@ -13,7 +13,7 @@ To get started, simply do:
 """
 # flake8: noqa
 
-__version__ = "1.0.0a1"
+__version__ = "1.0.0a2"
 __appname__ = "osm_humanized_opening_hours"
 __author__ = "rezemika <reze.mika@gmail.com>"
 __licence__ = "AGPLv3"
