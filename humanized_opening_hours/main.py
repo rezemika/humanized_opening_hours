@@ -574,13 +574,14 @@ class OHParser:
             A dict with the keys "days" and "months" containing lists
             of respectively 7 and 12 strings.
         """
-        days = []
-        months = []
-        for i in range(7):
-            days.append(self.locale.days["format"]["wide"][i])
-        for i in range(12):
-            months.append(self.locale.months['format']['wide'][i+1])
-        return {"days": days, "months": months}
+        return {
+            "days": list(
+                babel.dates.get_day_names(locale=self.locale).values()
+            ),
+            "months": list(
+                babel.dates.get_month_names(locale=self.locale).values()
+            )
+        }
     
     def get_current_rule(self, dt=None):
         """Returns the rule corresponding to the given day.
@@ -671,8 +672,6 @@ class OHParser:
             first_weekday = self.locale.first_week_day
         week = days_of_week(year, weeknumber, first_weekday)
         output = []
-        # TODO: For the first day, add the last timespan of yesterday
-        # if spanning over midnight.
         for day in week:
             day_periods = self.get_day_periods(dt=day, _check_yesterday=False)
             output.append(
