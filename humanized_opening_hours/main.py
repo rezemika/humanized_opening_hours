@@ -19,7 +19,7 @@ from humanized_opening_hours.rendering import (
     join_list, translate_open_closed, translate_colon
 )
 from humanized_opening_hours.exceptions import (
-    ParseError, CommentOnlyField, NextChangeRecursionError
+    ParseError, CommentOnlyField, AlwaysClosed, NextChangeRecursionError
 )
 
 
@@ -223,7 +223,6 @@ class SolarHours(dict):
             return self._SH_DICT
 
 
-# TODO: Handle "closed".
 class OHParser:
     def __init__(self, field, locale="en", location=None, optimize=True):
         """A parser for the OSM opening_hours fields.
@@ -278,9 +277,16 @@ class OHParser:
         
         Raises
         ------
-        humanized_opening_hours.ParseError
+        humanized_opening_hours.exceptions.ParseError
             When something goes wrong during the parsing
             (e.g. the field is invalid or contains an unsupported pattern).
+        humanized_opening_hours.exceptions.CommentOnlyField
+            When the field contains only a comment.
+            The comment is accessible via the 'comment' attribute.
+            Inherits from 'ParseError'.
+        humanized_opening_hours.exceptions.AlwaysClosed
+            When the field indicates only "closed" or "off".
+            Inherits from 'ParseError'.
         """
         self.original_field = field
         self.field = sanitize(self.original_field)
@@ -296,6 +302,8 @@ class OHParser:
                 ),
                 field.strip('"')
             )
+        if self.field in ("closed", "off"):
+            raise AlwaysClosed("This facility is always closed.")
         
         if self.field in ("24/7", "00:00-24:00"):
             self.is_24_7 = True

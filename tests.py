@@ -13,6 +13,7 @@ from humanized_opening_hours.exceptions import (
     HOHError,
     ParseError,
     SolarHoursError,
+    AlwaysClosed,
     NextChangeRecursionError
 )
 
@@ -271,6 +272,15 @@ class TestPatterns(unittest.TestCase):
         
         field = "Su[1] 10:00-20:00"
         with self.assertRaises(ParseError) as context:
+            oh = OHParser(field)
+    
+    def test_always_closed(self):
+        field = "closed"
+        with self.assertRaises(AlwaysClosed) as context:
+            oh = OHParser(field)
+        
+        field = "off"
+        with self.assertRaises(AlwaysClosed) as context:
             oh = OHParser(field)
 
 

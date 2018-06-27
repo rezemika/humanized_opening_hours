@@ -28,6 +28,13 @@ class CommentOnlyField(ParseError):
         self.comment = comment
 
 
+class AlwaysClosed(ParseError):
+    """
+    Raised when trying to parse a field which only indicates "closed" or "off".
+    """
+    pass
+
+
 class NextChangeRecursionError(HOHError):
     """
     Raised when reaching the maximum recursion in
