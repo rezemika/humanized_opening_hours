@@ -100,6 +100,9 @@ If you try to parse a field which is invalid or contains a pattern which is not 
 If a field contains only a comment (like `"on appointment"`), a `CommentOnlyField` exception (inheriting from `ParseError`) will be raised.
 It contains a `comment` attribute, allowing you to display it instead of the opening hours.
 
+The `OHParser` contains an `is_24_7` attribute, which is true if the field is simply `24/7` or `00:00-24:00`, and false either.
+The `next_change()` method won't try recursion if this attribute is true and will directly raise a `NextChangeRecursionError` (except if you set `max_recursion` to zero, in this case it will just return the last time of the current day).
+
 ## Solar hours
 
 If the field contains solar hours, here is how to deal with them.

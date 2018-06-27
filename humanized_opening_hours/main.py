@@ -218,6 +218,8 @@ class SolarHours(dict):
             return self._SH_DICT
 
 
+# TODO: Equal methods.
+# TODO: Handle "closed".
 class OHParser:
     def __init__(self, field, locale="en", location=None, optimize=True):
         """A parser for the OSM opening_hours fields.
@@ -249,6 +251,9 @@ class OHParser:
             The locale used for translations. As it is a property,
             you can change it by assigning a new string (the name of the locale)
             to it, it will be converted into a `babel.Locale` object.
+        is_24_7 : bool
+            Indicates whether the field is "24/7", i.e. the facility is
+            always open.
         needs_solar_hours_setting : dict{str: bool}
             A dict indicating if solar hours setting is required
             for each solar hour (sunrise, sunset, dawn and dusk).
@@ -287,6 +292,11 @@ class OHParser:
                 ),
                 field.strip('"')
             )
+        
+        if self.field in ("24/7", "00:00-24:00"):
+            self.is_24_7 = True
+        else:
+            self.is_24_7 = False
         
         try:
             self._tree, self.rules = get_tree_and_rules(
@@ -415,6 +425,8 @@ class OHParser:
         bool
             True if it's open, False else.
         """
+        if self.is_24_7:
+            return True
         dt = set_dt(dt)
         timespans = self._get_day_timespans(dt)
         for timespan in timespans:
@@ -443,6 +455,11 @@ class OHParser:
         -------
         datetime.datetime
             The datetime of the next change.
+        
+        Raises
+        ------
+        humanized_opening_hours.exceptions.NextChangeRecursionError
+            When reaching the maximum recursion level.
         """
         # Returns None if in recursion and don't start with datetime.time.min.
         def _current_or_next_timespan(dt):
@@ -486,6 +503,15 @@ class OHParser:
         beginning_time, end_time = next_timespan.get_times(
             new_dt, self.solar_hours[new_dt.date()]
         )
+        
+        if self.is_24_7:
+            if max_recursion == 0:
+                return end_time
+            else:
+                raise NextChangeRecursionError(
+                    "This facility is always open ('24/7').",
+                    end_time
+                )
         
         if _recursion_level > 1 and beginning_time.time() != datetime.time.min:
             return None
