@@ -406,7 +406,7 @@ class Time:
         solar_hour = solar_hours[self.t[0]]
         if solar_hour is None:
             raise SolarHoursError()
-        if self.t[1] == '+':
+        if self.t[1] == 1:
             return datetime.datetime.combine(
                 date,
                 (

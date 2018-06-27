@@ -47,7 +47,7 @@ def render_time(time, babel_locale):
             "dawn": _("dawn"),
             "dusk": _("dusk")
         }.get(time.t[0])
-    if time.t[1] == '+':
+    if time.t[1] == 1:
         delta_str = babel.dates.format_time(
             time.t[2], locale=babel_locale, format="short"
         )
