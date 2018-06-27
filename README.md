@@ -152,12 +152,12 @@ However, the `description()` method needs more translations, so it works only wi
 
 -----
 
-The `get_human_names()` method returns a dict of lists with the names of months and weekdays in the current locale.
+The `get_localized_names()` method returns a dict of lists with the names of months and weekdays in the current locale.
 
 Example:
 
 ```python
->>> ohr.get_human_names()
+>>> ohr.get_localized_names()
 {
     'months': [
         'January', 'February', 'March',

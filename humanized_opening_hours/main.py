@@ -554,7 +554,7 @@ class OHParser:
             self._tree = PARSER.parse(self.field)
         transformer = DescriptionTransformer()
         transformer._locale = self.locale
-        transformer._human_names = self.get_human_names()
+        transformer._human_names = self.get_localized_names()
         transformer._install_locale()
         return transformer.transform(self._tree)
     
@@ -591,7 +591,7 @@ class OHParser:
             add_direction=word
         )
     
-    def get_human_names(self):  # TODO : Rename ?
+    def get_localized_names(self):
         """Gets months and days names in the locale given to the constructor.
         
         Returns
@@ -741,7 +741,7 @@ class OHParser:
             dt, _check_yesterday=_check_yesterday
         )
         
-        weekday_name = self.get_human_names()["days"][dt.weekday()]
+        weekday_name = self.get_localized_names()["days"][dt.weekday()]
         periods = []
         for timespan in timespans:
             periods.append(
