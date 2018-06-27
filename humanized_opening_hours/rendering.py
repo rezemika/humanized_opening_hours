@@ -110,7 +110,7 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
     def time_domain(self, args):
         return args
     
-    def rule_sequence(self, args):  # TODO : Handle "Mo-Fr" (raises IndexError).
+    def rule_sequence(self, args):
         if len(args) == 1 and not isinstance(args[0], tuple):
             return args[0][0].upper() + args[0][1:] + '.'
         else:

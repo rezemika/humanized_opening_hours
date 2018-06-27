@@ -47,14 +47,24 @@ class MainTransformer(lark.Transformer):
     def time_domain(self, args):
         return args
     
-    def rule_sequence(self, args):
+    def rule_sequence(self, args):  # TODO: Clean.
+        if (
+            len(args) == 1 and
+            len(args[0]) == 1 and
+            type(args[0][0]) is not AlwaysOpenSelector
+        ):  # Only weekdays, without opening periods.
+            raise lark.common.ParseError()
         return Rule(args)
     
     def always_open(self, args):
         return [AlwaysOpenSelector()]
     
     def selector_sequence(self, args):
-        if len(args) == 1:
+        if (
+            len(args) == 1 and
+            type(args[0]) is list and
+            type(args[0][0]) is TimeSpan
+        ):
             return [AlwaysOpenSelector(), args[0]]
         return args
     

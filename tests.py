@@ -273,6 +273,10 @@ class TestPatterns(unittest.TestCase):
         field = "Su[1] 10:00-20:00"
         with self.assertRaises(ParseError) as context:
             oh = OHParser(field)
+        
+        field = "Mo-Fr"
+        with self.assertRaises(ParseError) as context:
+            oh = OHParser(field)
     
     def test_always_closed(self):
         field = "closed"
