@@ -128,7 +128,6 @@ def sanitize(field):
     return '; '.join(parts)
 
 
-# TODO : Find a better solution.
 def days_of_week(year=None, weeknumber=None, first_weekday=0):
     """Returns a list of the days in the requested week.
     
@@ -152,14 +151,17 @@ def days_of_week(year=None, weeknumber=None, first_weekday=0):
     if not year or not weeknumber:
         dt = datetime.date.today()
         year, weeknumber, _ = dt.isocalendar()
-    cal = calendar.Calendar(firstweekday=first_weekday)
-    i = -5  # For an unidentified reason, this doesn't work with 0.
-    for month_index in range(1, 13):
-        month = cal.monthdatescalendar(2018, month_index)
-        for week_days in month:
-            i += 1
-            if i == weeknumber:
-                return week_days
+    
+    # Code inspired from https://github.com/gisle/isoweek/blob/c6f2cc01f1dbc7cfdf75294421ad14ab4007d93b/isoweek.py#L93-L96  # noqa
+    base_date = datetime.date(year, 1, 4+first_weekday)
+    days = []
+    for i in range(7):
+        days.append(
+            base_date + datetime.timedelta(
+                weeks=weeknumber-1, days=(-base_date.weekday())+i-first_weekday
+            )
+        )
+    return days
 
 
 class SolarHours(dict):
@@ -218,7 +220,6 @@ class SolarHours(dict):
             return self._SH_DICT
 
 
-# TODO: Equal methods.
 # TODO: Handle "closed".
 class OHParser:
     def __init__(self, field, locale="en", location=None, optimize=True):
@@ -753,7 +754,6 @@ class OHParser:
             rendered_periods = [
                 render_timespan(ts[1], self.locale) for ts in timespans
             ]
-            # TODO : Check for locale.
             joined_rendered_periods = join_list(rendered_periods, self.locale)
         else:
             closed_word = translate_open_closed(self.locale)[1]

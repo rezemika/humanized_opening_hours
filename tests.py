@@ -5,7 +5,9 @@ from lark import Tree
 from lark.lexer import Token
 
 from humanized_opening_hours import field_parser
-from humanized_opening_hours.main import OHParser, sanitize, DayPeriods
+from humanized_opening_hours.main import (
+    OHParser, sanitize, days_of_week, DayPeriods
+)
 from humanized_opening_hours.temporal_objects import easter_date
 from humanized_opening_hours.exceptions import (
     HOHError,
@@ -541,6 +543,68 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(
             field_parser.cycle_slice(l, 7, 2),
             "HIJABC"
+        )
+    
+    def test_days_of_week(self):
+        self.assertEqual(
+            days_of_week(2018, 1, first_weekday=0),
+            [
+                datetime.date(2018, 1, 1),
+                datetime.date(2018, 1, 2),
+                datetime.date(2018, 1, 3),
+                datetime.date(2018, 1, 4),
+                datetime.date(2018, 1, 5),
+                datetime.date(2018, 1, 6),
+                datetime.date(2018, 1, 7)
+            ]
+        )
+        self.assertEqual(
+            days_of_week(2018, 1, first_weekday=6),
+            [
+                datetime.date(2018, 1, 2),
+                datetime.date(2018, 1, 3),
+                datetime.date(2018, 1, 4),
+                datetime.date(2018, 1, 5),
+                datetime.date(2018, 1, 6),
+                datetime.date(2018, 1, 7),
+                datetime.date(2018, 1, 8)
+            ]
+        )
+        self.assertEqual(
+            days_of_week(2018, 30, first_weekday=0),
+            [
+                datetime.date(2018, 7, 23),
+                datetime.date(2018, 7, 24),
+                datetime.date(2018, 7, 25),
+                datetime.date(2018, 7, 26),
+                datetime.date(2018, 7, 27),
+                datetime.date(2018, 7, 28),
+                datetime.date(2018, 7, 29)
+            ]
+        )
+        self.assertEqual(
+            days_of_week(2018, 30, first_weekday=1),
+            [
+                datetime.date(2018, 7, 22),
+                datetime.date(2018, 7, 23),
+                datetime.date(2018, 7, 24),
+                datetime.date(2018, 7, 25),
+                datetime.date(2018, 7, 26),
+                datetime.date(2018, 7, 27),
+                datetime.date(2018, 7, 28)
+            ]
+        )
+        self.assertEqual(
+            days_of_week(2018, 30, first_weekday=6),
+            [
+                datetime.date(2018, 7, 24),
+                datetime.date(2018, 7, 25),
+                datetime.date(2018, 7, 26),
+                datetime.date(2018, 7, 27),
+                datetime.date(2018, 7, 28),
+                datetime.date(2018, 7, 29),
+                datetime.date(2018, 7, 30)
+            ]
         )
 
 
