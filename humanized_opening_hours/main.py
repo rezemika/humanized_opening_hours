@@ -764,6 +764,30 @@ class OHParser:
             rendered_periods, joined_rendered_periods
         )
     
+    def __eq__(self, other):
+        if type(other) is OHParser:
+            self_location = self.solar_hours.location
+            other_location = other.solar_hours.location
+            if (
+                self_location is None and other_location is not None or
+                self_location is not None and other_location is None
+            ):
+                return False
+            if self_location is None and other_location is None:
+                return self.field == other.field
+            return (
+                self.field == other.field and
+                # All this tests are necessary because Astral does not
+                # provide equality method for Location yet.
+                self_location.name == other_location.name and
+                self_location.region == other_location.region and
+                self_location.latitude == other_location.latitude and
+                self_location.longitude == other_location.longitude and
+                self_location.timezone == other_location.timezone and
+                self_location.elevation == other_location.elevation
+            )
+        return NotImplemented
+    
     def __repr__(self):
         return str(self)
     

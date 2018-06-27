@@ -103,6 +103,21 @@ It contains a `comment` attribute, allowing you to display it instead of the ope
 The `OHParser` contains an `is_24_7` attribute, which is true if the field is simply `24/7` or `00:00-24:00`, and false either.
 The `next_change()` method won't try recursion if this attribute is true and will directly raise a `NextChangeRecursionError` (except if you set `max_recursion` to zero, in this case it will just return the last time of the current day).
 
+You can check equality between two `OHParser` instances.
+It will be true if both have the same field and the same location.
+
+```python
+>>> import humanized_opening_hours as hoh
+>>> 
+>>> oh1 = hoh.OHParser("Mo 10:00-20:00")
+>>> oh2 = hoh.OHParser("Mo 10:00-20:00")
+>>> oh3 = hoh.OHParser("Mo 09:00-21:00")
+>>> oh1 == oh2
+True
+>>> oh1 == oh3
+False
+```
+
 ## Solar hours
 
 If the field contains solar hours, here is how to deal with them.

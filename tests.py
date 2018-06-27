@@ -169,6 +169,22 @@ class TestGlobal(unittest.TestCase):
                 datetime.date(2018, 1, 8), datetime.time.max
             )
         )
+    
+    def test_equality(self):  # TODO
+        oh1 = OHParser("Mo 10:00-20:00")
+        oh2 = OHParser("Mo 10:00-20:00")
+        oh3 = OHParser("Mo 09:00-21:00")
+        
+        self.assertEqual(oh1, oh2)
+        self.assertNotEqual(oh1, oh3)
+        
+        oh4 = OHParser("Mo 10:00-20:00", location=(59.9, 10.7, "Europe/Oslo", 0))
+        oh5 = OHParser("Mo 10:00-20:00", location=(59.9, 10.7, "Europe/Oslo", 0))
+        oh6 = OHParser("Mo 10:00-20:00", location=(59.3, 18, "Europe/Stockholm", 0))
+        
+        self.assertNotEqual(oh1, oh4)
+        self.assertEqual(oh4, oh5)
+        self.assertNotEqual(oh5, oh6)
 
 
 class TestPatterns(unittest.TestCase):
