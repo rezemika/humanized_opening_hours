@@ -180,6 +180,9 @@ class SolarHours(dict):
             getting of solar hours. Must be an 'astral.Location' object
             or a tuple like '(latitude, longitude, timezone_name, elevation)'.
             None default, meaning it relies only on manual settings.
+            Although this is mostly intended for manual testing, you can
+            also use one of the capital/city names supported by Astral,
+            like "London" or "Copenhagen".
         
         Attributes
         ----------
@@ -196,7 +199,7 @@ class SolarHours(dict):
             self.location = astral.Location(
                 ["Location", "Region", *location]
             )
-        elif isinstance(location, str):  # TODO : Keep/document?
+        elif isinstance(location, str):
             self.location = astral.Astral()[location]
         else:
             self.location = None
