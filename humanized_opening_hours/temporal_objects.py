@@ -195,10 +195,10 @@ class YearSelector(BaseSelector):
 # Ranges
 
 
-# TODO : '__str__' and '__repr__' methods.
 class MonthDayRange:
     def __init__(self, monthday_dates):
-        # Prevent case like "Jan 1-5-Feb 1-5" (monthday_date - monthday_date).
+        # TODO: Prevent case like "Jan 1-5-Feb 1-5"
+        # (monthday_date - monthday_date).
         self.date_from = monthday_dates[0]
         self.date_to = monthday_dates[1] if len(monthday_dates) == 2 else None
     
@@ -209,9 +209,17 @@ class MonthDayRange:
             dt_from = sorted(self.date_from.get_dates(dt))[0]
             dt_to = sorted(self.date_to.get_dates(dt))[-1]
             return dt_from <= dt <= dt_to
+    
+    def __repr__(self):
+        return str(self)
+    
+    def __str__(self):
+        return "<MonthDayRange {date_from} - {date_to}>".format(
+            date_from=self.date_from,
+            date_to=self.date_to
+        )
 
 
-# TODO : '__str__' and '__repr__' methods.
 class MonthDayDate:
     def __init__(
         self, kind, year=None, month=None, monthday=None, monthday_to=None
@@ -268,6 +276,31 @@ class MonthDayDate:
                 self.month,
                 self.year or dt.year
             )])
+    
+    def __repr__(self):
+        return str(self)
+    
+    def __str__(self):
+        if self.kind == "easter":
+            return "<MonthDayDate 'easter'>"
+        elif self.kind == "month":
+            return "<MonthDayDate {year}{month}>".format(
+                year=(self.year if self.year else '') + ' ',
+                month=MONTHS[self.month-1]
+            )
+        elif self.kind == "monthday-day":
+            return "<MonthDayDate {year}{month} {day_from} - {day_to}>".format(
+                year=(self.year if self.year else '') + ' ',
+                month=MONTHS[self.month-1],
+                day_from=self.monthday,
+                day_to=self.monthday_to
+            )
+        else:  # self.kind == "monthday"
+            return "<MonthDayDate {year}{month} {day}>".format(
+                year=(self.year if self.year else '') + ' ',
+                month=MONTHS[self.month-1],
+                day=self.monthday
+            )
 
 
 class TimeSpan:
