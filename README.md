@@ -22,12 +22,39 @@ On Saturday and Sunday: from 8:00 AM to 12:00 PM.
 
 **This module is still in development and bugs may occur. If you discover one, please create an issue.**
 
+# Table of contents
+
+- [Installation](#installation)
+  - [Dependencies](#dependencies)
+- [How to use it](#how-to-use-it)
+  - [Basic methods](#basic-methods)
+  - [Solar hours](#solar-hours)
+  - [Have nice schedules](#have-nice-schedules)
+  - [Objects](#objects)
+    - [Rule](#rule)
+    - [TimeSpan](#timespan)
+    - [Time](#time)
+- [Supported field formats](#supported-field-formats)
+- [Alternatives](#alternatives)
+- [Performances](#performances)
+- [Licence](#licence)
+
 # Installation
 
 This library is so small, you can include it directly into your project.
 Also, it is available on PyPi.
 
     $ pip3 install osm-humanized-opening-hours
+
+## Dependencies
+
+This module requires the following modules, which should be automatically installed when installing HOH with `pip`.
+
+```python
+lark-parser
+babel
+astral
+```
 
 # How to use it
 
@@ -345,17 +372,6 @@ For more complex fields (like `Jan-Feb Mo-Fr 08:00-19:00`), the parsing is slowe
 - 0.006 seconds for a single field;
 - 0.55 seconds for a hundred;
 - 5.7 seconds for a thousand.
-
-# Dependencies
-
-This module requires the following modules, which can be installed with `pip3`.
-
-```python
-lark-parser
-pytz
-babel
-astral
-```
 
 # Licence
 
