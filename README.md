@@ -324,10 +324,29 @@ Mo-Fr 10:00+
 Mo-Fr 10:00,12:00,20:00  # Does not support points in time.
 ```
 
+# Alternatives
+
+If you want to parse `opening_hours` fields but HOH doesn't fit your needs, here are a few other libraries which might interest you.
+
+- [opening_hours.js](https://github.com/opening-hours/opening_hours.js/tree/master): The main library to parse these fields, but written in JS.
+- [pyopening_hours](https://github.com/opening-hours/pyopening_hours): A Python implementation of the previous library.
+- [simple-opening-hours](https://github.com/ubahnverleih/simple-opening-hours): Another small JS library which can parse simple fields.
+
 # Performances
 
 HOH uses the module [Lark](https://github.com/erezsh/lark) (with the Earley parser) to parse the fields.
-It takes about 0.003 seconds to parse a basic field, 0.3 seconds to parse a hundred, and 3.4 for a thousand.
+
+It is very optimized (about 20 times faster) for the simplest fields (like `Mo-Fr 10:00-20:00`), so their parsing will be very fast:
+
+- 0.0002 seconds for a single field;
+- 0.019 seconds for a hundred;
+- 0.195 seconds for a thousand.
+
+For more complex fields (like `Jan-Feb Mo-Fr 08:00-19:00`), the parsing is slower:
+
+- 0.006 seconds for a single field;
+- 0.55 seconds for a hundred;
+- 5.7 seconds for a thousand.
 
 # Dependencies
 
