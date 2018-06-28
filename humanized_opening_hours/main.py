@@ -439,7 +439,7 @@ class OHParser:
         if self.is_24_7:
             return True
         dt = set_dt(dt)
-        timespans = self._get_day_timespans(dt)
+        timespans = self._get_day_timespans(dt.date())
         for timespan in timespans:
             beginning, end = timespan[1].get_times(
                 timespan[0], self.solar_hours[timespan[0]]
@@ -490,7 +490,7 @@ class OHParser:
                 new_time
             )
             
-            timespans = self._get_day_timespans(new_dt)
+            timespans = self._get_day_timespans(new_dt.date())
             for timespan in timespans:
                 beginning, end_time = timespan[1].get_times(
                     timespan[0], self.solar_hours[timespan[0]]
@@ -652,6 +652,12 @@ class OHParser:
         # span over midnight.
         if not dt:
             dt = datetime.date.today()
+        
+        if type(dt) is not datetime.date:
+            raise TypeError(
+                "The 'dt' parameter must be a 'datetime.date' object."
+            )
+        
         current_rule = self.get_current_rule(dt)
         
         # List of tuples (datetime.date, TimeSpan).

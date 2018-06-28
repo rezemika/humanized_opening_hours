@@ -173,7 +173,67 @@ class TestGlobal(unittest.TestCase):
             )
         )
     
-    def test_equality(self):  # TODO
+    def test_5(self):
+        field = "Mo-Fr 19:00-02:00"
+        oh = OHParser(field)
+        # Is it open?
+        dt = datetime.datetime(2018, 1, 1, 10, 0)
+        self.assertFalse(oh.is_open(dt))
+        dt = datetime.datetime(2018, 1, 1, 20, 0)
+        self.assertTrue(oh.is_open(dt))
+        
+        dt = datetime.datetime(2018, 1, 6, 1, 0)
+        self.assertTrue(oh.is_open(dt))
+        dt = datetime.datetime(2018, 1, 6, 3, 0)
+        self.assertFalse(oh.is_open(dt))
+        # Day periods.
+        self.assertEqual(
+            oh.get_day_periods(datetime.date(2018, 1, 1)),
+            DayPeriods(
+                "Monday", datetime.date(2018, 1, 1),
+                [
+                    (
+                        datetime.datetime(2018, 1, 1, 19, 0),
+                        datetime.datetime(2018, 1, 2, 2, 0)
+                    )
+                ],
+                ["7:00 PM – 2:00 AM"],
+                "7:00 PM – 2:00 AM"
+            )
+        )
+        # Periods
+        dt = datetime.datetime(2018, 1, 1, 10, 0)
+        self.assertEqual(
+            len(oh.get_current_rule(dt.date()).time_selectors),
+            1
+        )
+        self.assertEqual(
+            (
+                oh.get_current_rule(dt.date())
+                .time_selectors[0].beginning.get_time(self.SOLAR_HOURS, dt)
+            ),
+            datetime.datetime.combine(dt.date(), datetime.time(19, 0))
+        )
+        # Next change
+        dt = datetime.datetime(2018, 1, 7, 10, 0)
+        self.assertEqual(
+            oh.next_change(dt),
+            datetime.datetime(2018, 1, 8, 19, 0)
+        )
+        
+        dt = datetime.datetime(2018, 1, 8, 10, 0)
+        self.assertEqual(
+            oh.next_change(dt),
+            datetime.datetime(2018, 1, 8, 19, 0)
+        )
+        
+        dt = datetime.datetime(2018, 1, 8, 21, 0)
+        self.assertEqual(
+            oh.next_change(dt),
+            datetime.datetime(2018, 1, 9, 2, 0)
+        )
+    
+    def test_equality(self):
         oh1 = OHParser("Mo 10:00-20:00")
         oh2 = OHParser("Mo 10:00-20:00")
         oh3 = OHParser("Mo 09:00-21:00")
