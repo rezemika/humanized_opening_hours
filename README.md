@@ -15,8 +15,8 @@ True
 datetime.datetime(2017, 12, 24, 12, 0)
 >>> print('\n'.join(oh.description()))
 """
-From Monday to Friday: from 06:00 to 21:00.
-On Saturday and Sunday: from 08:00 to 12:00.
+From Monday to Friday: from 6:00 AM to 9:00 PM.
+On Saturday and Sunday: from 8:00 AM to 12:00 PM.
 """
 ```
 
@@ -33,7 +33,7 @@ Also, it is available on PyPi.
 
 The only mandatory argument to give to the constructor is the field, which must be a string.
 It can also take a `locale` argument, which can be any valid locale name. You can change it later by changing the `locale` attribute (which is, in fact, a `property`).
-However, to be able to use the `description()` method, it must be in `hoh.DESCRIPTION_LOCALES` (a warning will be printed otherwise).
+However, to be able to use the most of the rendering methods, it must be in `hoh.AVAILABLE_LOCALES` (a warning will be printed otherwise).
 
 ```python
 >>> import humanized_opening_hours as hoh
@@ -192,7 +192,7 @@ Like `next_change()`, it can take a `datetime.datetime` moment to get next chang
 ```python
 # Field: "Mo-Fr 10:00-19:00; Sa 10:00-12:00; Dec 25 off"
 >>> print(' '.join(oh.description()))
-"Monday to Friday: 10:00 to 19:00. Saturday: 10:00 to 12:00. 25 December: closed."
+"From Monday to Friday: from 10:00 AM to 7:00 PM. On Saturday: from 10:00 AM to 12:00 PM. December 25: closed."
 ```
 
 -----
@@ -312,6 +312,8 @@ The following formats are NOT supported yet and their parsing will raise a Parse
 Su[1] 10:00-20:00
 easter +1 day 10:00-20:00
 easter +2 days 10:00-20:00
+Mo-Fr 10:00+
+Mo-Fr 10:00,12:00,20:00  # Does not support points in time.
 ```
 
 # Performances
