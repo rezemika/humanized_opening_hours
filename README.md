@@ -118,6 +118,14 @@ True
 False
 ```
 
+-----
+
+The `OHParser` object contains two other attributes: `PH_dates` and `SH_dates`, which are empty lists default.
+To indicate a date is a public or a school holiday, you can pass its `datetime.date` into these lists.
+You can also use the [python-holidays](https://github.com/dr-prodigy/python-holidays) module to get dynamic dictionnary (which updates the year) to replace these lists.
+In fact, any iterable object with a `__contains__` method (receiving `datetime.date` objects) will work.
+If you have GPS coordinates and want to have a country name, you can use the [countries](https://github.com/che0/countries) module.
+
 ## Solar hours
 
 If the field contains solar hours, here is how to deal with them.
