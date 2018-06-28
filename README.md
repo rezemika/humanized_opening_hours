@@ -269,11 +269,9 @@ Attributes:
 - `end` (Time object) : the end of the TimeSpan.
 
 A TimeSpan is an opening period, with a beginning and an end. It provides an `is_open()` method, which takes a `datetime.time` object and the dict of solar hours, and returns whether it's open at the given time.
+It also provides `spans_over_midnight()` (the name is explicit) and `get_times()`, which takes the same arguments as `is_open()` and returns a tuple like `(beginning_datetime, end_datetime)` with the beginning and the end of the timespan (`datetime.datetime` objects, **which may not be in the same day**).
 
 ### Time
-
-Attributes:
-- `t` (tuple) : a tuple containing raw informations, probably not useful for you.
 
 A `Time` object provides a `get_time()` method, which takes the dict of solar hours in argument and returns a not localized `datetime.time`.
 
