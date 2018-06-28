@@ -68,7 +68,7 @@ However, to be able to use the most of the rendering methods, it must be in `hoh
 >>> oh = hoh.OHParser(field)
 ```
 
-If you have a GeoJSON, you can a dedicated classmethod: `from_geojson()`.
+If you have a GeoJSON, you can use a dedicated classmethod: `from_geojson()`, which returns an `OHParser` instance.
 It takes the GeoJSON, and optionally the following arguments:
 
 - `timezone_getter` (callable): A function to call, which takes two arguments (latitude and longitude, as floats), and returns a timezone name or None, allowing to get solar hours for the facility;
