@@ -183,7 +183,8 @@ Attention, except if the facility is on the equator, this setting will be valid 
 ## Have nice schedules
 
 You can pass any valid locale name to `OHParser`, it will work for the majority of methods, cause they only need Babel's translations.
-However, the `description()` method needs more translations, so it works only with a few locales, whose list is available with `hoh.DESCRIPTION_LOCALE`. Use another one will raise an exception.
+However, the `description()` and `plaintext_week_description()` methods need more translations, so it works only with a few locales, whose list is available with `hoh.AVAILABLE_LOCALES`.
+Use another one will make methods return inconsistent sentences.
 
 -----
 
