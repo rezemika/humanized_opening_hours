@@ -442,7 +442,7 @@ class OHParser:
             beginning, end = timespan[1].get_times(
                 timespan[0], self.solar_hours[timespan[0]]
             )
-            if beginning < dt < end:
+            if beginning <= dt < end:
                 return True
         return False
     
