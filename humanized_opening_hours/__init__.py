@@ -18,11 +18,11 @@ __appname__ = "osm_humanized_opening_hours"
 __author__ = "rezemika <reze.mika@gmail.com>"
 __licence__ = "AGPLv3"
 
-import os
-import gettext
-gettext.install("HOH",
-    os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), "locales"
+import os as _os
+import gettext as _gettext
+_gettext.install("HOH",
+    _os.path.join(
+        _os.path.dirname(_os.path.realpath(__file__)), "locales"
     )
 )
 
