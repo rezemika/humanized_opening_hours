@@ -471,9 +471,9 @@ class OHParser:
             When reaching the maximum recursion level.
         """
         # Returns None if in recursion and don't start with datetime.time.min.
-        def _current_or_next_timespan(dt):
+        def _current_or_next_timespan(dt, i=0):
+            # The 'i' parameter fixes a RecursionError in some weird cases.
             current_rule = None
-            i = 0
             while current_rule is None:
                 current_rule = self.get_current_rule(
                     dt.date()+datetime.timedelta(i)
@@ -496,7 +496,8 @@ class OHParser:
                 if new_dt < end_time:
                     return (i, timespan[1])
             
-            return _current_or_next_timespan(new_dt)
+            new_dt = datetime.datetime.combine(new_dt.date()+datetime.timedelta(1), datetime.time.min)
+            return _current_or_next_timespan(new_dt, i=i+1)
         
         dt = set_dt(dt)
         days_offset, next_timespan = _current_or_next_timespan(dt)
