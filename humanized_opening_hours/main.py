@@ -633,11 +633,16 @@ class OHParser:
         """
         if dt is None:
             dt = datetime.date.today()
-        for rule in self.rules:
-            if rule.range_selectors.is_included(
+        matching_rules = [
+            r for r in self.rules if r.range_selectors.is_included(
                 dt, self.SH_dates, self.PH_dates
-            ):
-                return rule
+            )
+        ]
+        matching_rules = list(reversed(
+            sorted(matching_rules, key=lambda r: r.priority)
+        ))
+        if matching_rules:
+            return matching_rules[0]
         return None
     
     def _get_day_timespans(self, dt=None, _check_yesterday=True):

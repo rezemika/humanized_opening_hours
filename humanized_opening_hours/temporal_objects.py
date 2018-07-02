@@ -48,6 +48,13 @@ class Rule:
             self.always_open = True
         else:
             self.always_open = False
+        
+        try:
+            self.priority = sum(
+                [sel.priority for sel in self.range_selectors.selectors]
+            )
+        except AttributeError:  # TimeSpan in range selectors.
+            self.priority = 1
     
     def get_status_at(self, dt: datetime.datetime, solar_hours):
         for timespan in self.time_selectors:
@@ -62,10 +69,10 @@ class Rule:
         return str(self)
     
     def __str__(self):
-        return (
-            '<Rule ' + str(self.range_selectors) +
-            ' - ' +
-            str(self.time_selectors) + '>'
+        return "<Rule {} - {} (priority: {})>".format(
+            self.range_selectors,
+            self.time_selectors,
+            self.priority
         )
 
 
@@ -73,6 +80,8 @@ class Rule:
 
 
 class BaseSelector:
+    priority = 1
+    
     def __init__(self, selectors):
         self.selectors = selectors
     
@@ -113,6 +122,8 @@ class AlwaysOpenSelector(BaseSelector):
 
 
 class MonthDaySelector(BaseSelector):
+    priority = 2
+    
     def is_included(self, dt, SH_dates, PH_dates):
         for selector in self.selectors:
             if selector.is_included(dt, SH_dates, PH_dates):
@@ -155,6 +166,8 @@ class HolidaySelector(BaseSelector):
 
 
 class WeekdayInHolidaySelector(BaseSelector):
+    priority = 3
+    
     def __init__(self, weekdays, holidays):
         self.weekdays = weekdays
         self.holidays = holidays
@@ -176,6 +189,8 @@ class WeekdayInHolidaySelector(BaseSelector):
 
 
 class WeekSelector(BaseSelector):
+    priority = 3
+    
     def __init__(self, week_numbers):
         self.week_numbers = week_numbers
     
@@ -188,6 +203,8 @@ class WeekSelector(BaseSelector):
 
 
 class YearSelector(BaseSelector):
+    priority = 4
+    
     def is_included(self, dt: datetime.datetime, SH_dates, PH_dates):
         return dt.year in self.selectors
 
@@ -244,12 +261,12 @@ class MonthDayDate:
             first_monthday = datetime.date(
                 self.year or dt.year,
                 self.month,
-                self.safe_monthrange(dt.year, dt.month)[0]
+                1
             )
             last_monthday = datetime.date(
                 self.year or dt.year,
                 self.month,
-                self.safe_monthrange(dt.year, dt.month)[1]
+                self.safe_monthrange(self.year or dt.year, dt.month)[1]
             )
             dates = []
             for i in range((last_monthday - first_monthday).days + 1):

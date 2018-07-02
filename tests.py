@@ -275,6 +275,202 @@ class TestGlobal(unittest.TestCase):
             datetime.datetime(2018, 1, 9, 2, 0)
         )
     
+    def test_6(self):
+        field = "week 1 Mo-Fr 10:00-20:00; week 2-3 Mo-Fr 08:00-19:00"
+        oh = OHParser(field)
+        # Is it open?
+        dt = datetime.datetime(2018, 1, 1, 9, 0)
+        self.assertFalse(oh.is_open(dt))
+        dt = datetime.datetime(2018, 1, 1, 10, 0)
+        self.assertTrue(oh.is_open(dt))
+        
+        dt = datetime.datetime(2018, 1, 8, 7, 0)
+        self.assertFalse(oh.is_open(dt))
+        dt = datetime.datetime(2018, 1, 8, 9, 0)
+        self.assertTrue(oh.is_open(dt))
+        # Day periods.
+        self.assertEqual(
+            oh.get_day_periods(datetime.date(2018, 1, 1)),
+            DayPeriods(
+                "Monday", datetime.date(2018, 1, 1),
+                [
+                    (
+                        datetime.datetime(2018, 1, 1, 10, 0),
+                        datetime.datetime(2018, 1, 1, 20, 0)
+                    )
+                ],
+                ["10:00 AM – 8:00 PM"],
+                "10:00 AM – 8:00 PM"
+            )
+        )
+        # Opening periods
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.date(2018, 1, 1),
+                datetime.date(2018, 1, 7)
+            ),
+            [
+                (datetime.datetime(2018, 1, 1, 10, 0), datetime.datetime(2018, 1, 1, 20, 0)),
+                (datetime.datetime(2018, 1, 2, 10, 0), datetime.datetime(2018, 1, 2, 20, 0)),
+                (datetime.datetime(2018, 1, 3, 10, 0), datetime.datetime(2018, 1, 3, 20, 0)),
+                (datetime.datetime(2018, 1, 4, 10, 0), datetime.datetime(2018, 1, 4, 20, 0)),
+                (datetime.datetime(2018, 1, 5, 10, 0), datetime.datetime(2018, 1, 5, 20, 0))
+            ]
+        )
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.date(2018, 1, 8),
+                datetime.date(2018, 1, 12)
+            ),
+            [
+                (datetime.datetime(2018, 1, 8, 8, 0), datetime.datetime(2018, 1, 8, 19, 0)),
+                (datetime.datetime(2018, 1, 9, 8, 0), datetime.datetime(2018, 1, 9, 19, 0)),
+                (datetime.datetime(2018, 1, 10, 8, 0), datetime.datetime(2018, 1, 10, 19, 0)),
+                (datetime.datetime(2018, 1, 11, 8, 0), datetime.datetime(2018, 1, 11, 19, 0)),
+                (datetime.datetime(2018, 1, 12, 8, 0), datetime.datetime(2018, 1, 12, 19, 0))
+            ]
+        )
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.date(2018, 1, 22),
+                datetime.date(2018, 1, 28)
+            ),
+            []
+        )
+        # Periods
+        dt = datetime.datetime(2018, 1, 1, 10, 0)
+        self.assertEqual(
+            len(oh.get_current_rule(dt.date()).time_selectors),
+            1
+        )
+        self.assertEqual(
+            (
+                oh.get_current_rule(dt.date())
+                .time_selectors[0].beginning.get_time(self.SOLAR_HOURS, dt)
+            ),
+            datetime.datetime.combine(dt.date(), datetime.time(10, 0))
+        )
+        # Next change
+        dt = datetime.datetime(2018, 1, 7, 10, 0)
+        self.assertEqual(
+            oh.next_change(dt),
+            datetime.datetime(2018, 1, 8, 8, 0)
+        )
+        
+        dt = datetime.datetime(2018, 1, 8, 10, 0)
+        self.assertEqual(
+            oh.next_change(dt),
+            datetime.datetime(2018, 1, 8, 19, 0)
+        )
+        
+        dt = datetime.datetime(2018, 1, 8, 21, 0)
+        self.assertEqual(
+            oh.next_change(dt),
+            datetime.datetime(2018, 1, 9, 8, 0)
+        )
+    
+    def test_7(self):
+        field = "Mo-Fr 10:00-20:00; Jul-Aug Sa-Su 10:00-12:00; Dec off"
+        oh = OHParser(field)
+        # Is it open?
+        dt = datetime.datetime(2018, 1, 1, 9, 0)
+        self.assertFalse(oh.is_open(dt))
+        dt = datetime.datetime(2018, 1, 1, 10, 0)
+        self.assertTrue(oh.is_open(dt))
+        
+        # TODO: Check in specifications if it's correct.
+        dt = datetime.datetime(2018, 7, 2, 9, 0)
+        self.assertFalse(oh.is_open(dt))
+        dt = datetime.datetime(2018, 7, 2, 10, 0)
+        self.assertTrue(oh.is_open(dt))
+        
+        dt = datetime.datetime(2018, 7, 7, 9, 0)
+        self.assertFalse(oh.is_open(dt))
+        dt = datetime.datetime(2018, 7, 7, 10, 0)
+        self.assertTrue(oh.is_open(dt))
+        # Day periods.
+        self.assertEqual(
+            oh.get_day_periods(datetime.date(2018, 1, 1)),
+            DayPeriods(
+                "Monday", datetime.date(2018, 1, 1),
+                [
+                    (
+                        datetime.datetime(2018, 1, 1, 10, 0),
+                        datetime.datetime(2018, 1, 1, 20, 0)
+                    )
+                ],
+                ["10:00 AM – 8:00 PM"],
+                "10:00 AM – 8:00 PM"
+            )
+        )
+        # Opening periods
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.date(2018, 1, 1),
+                datetime.date(2018, 1, 7)
+            ),
+            [
+                (datetime.datetime(2018, 1, 1, 10, 0), datetime.datetime(2018, 1, 1, 20, 0)),
+                (datetime.datetime(2018, 1, 2, 10, 0), datetime.datetime(2018, 1, 2, 20, 0)),
+                (datetime.datetime(2018, 1, 3, 10, 0), datetime.datetime(2018, 1, 3, 20, 0)),
+                (datetime.datetime(2018, 1, 4, 10, 0), datetime.datetime(2018, 1, 4, 20, 0)),
+                (datetime.datetime(2018, 1, 5, 10, 0), datetime.datetime(2018, 1, 5, 20, 0))
+            ]
+        )
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.date(2018, 7, 2),
+                datetime.date(2018, 7, 8)
+            ),
+            [
+                (datetime.datetime(2018, 7, 2, 10, 0), datetime.datetime(2018, 7, 2, 20, 0)),
+                (datetime.datetime(2018, 7, 3, 10, 0), datetime.datetime(2018, 7, 3, 20, 0)),
+                (datetime.datetime(2018, 7, 4, 10, 0), datetime.datetime(2018, 7, 4, 20, 0)),
+                (datetime.datetime(2018, 7, 5, 10, 0), datetime.datetime(2018, 7, 5, 20, 0)),
+                (datetime.datetime(2018, 7, 6, 10, 0), datetime.datetime(2018, 7, 6, 20, 0)),
+                (datetime.datetime(2018, 7, 7, 10, 0), datetime.datetime(2018, 7, 7, 12, 0)),
+                (datetime.datetime(2018, 7, 8, 10, 0), datetime.datetime(2018, 7, 8, 12, 0))
+            ]
+        )
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.date(2018, 12, 3),
+                datetime.date(2018, 12, 9)
+            ),
+            []
+        )
+        # Periods
+        dt = datetime.datetime(2018, 1, 1, 10, 0)
+        self.assertEqual(
+            len(oh.get_current_rule(dt.date()).time_selectors),
+            1
+        )
+        self.assertEqual(
+            (
+                oh.get_current_rule(dt.date())
+                .time_selectors[0].beginning.get_time(self.SOLAR_HOURS, dt)
+            ),
+            datetime.datetime.combine(dt.date(), datetime.time(10, 0))
+        )
+        # Next change
+        dt = datetime.datetime(2018, 1, 7, 12, 0)
+        self.assertEqual(
+            oh.next_change(dt),
+            datetime.datetime(2018, 1, 8, 10, 0)
+        )
+        
+        dt = datetime.datetime(2018, 1, 8, 10, 0)
+        self.assertEqual(
+            oh.next_change(dt),
+            datetime.datetime(2018, 1, 8, 20, 0)
+        )
+        
+        dt = datetime.datetime(2018, 1, 8, 21, 0)
+        self.assertEqual(
+            oh.next_change(dt),
+            datetime.datetime(2018, 1, 9, 10, 0)
+        )
+    
     def test_equality(self):
         oh1 = OHParser("Mo 10:00-20:00")
         oh2 = OHParser("Mo 10:00-20:00")

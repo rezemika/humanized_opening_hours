@@ -172,7 +172,6 @@ class MainTransformer(lark.Transformer):
             return set(range(args[0], args[1]+1, int(args[2].value)))
     
     def year_selector(self, args):
-        print(args)
         return YearSelector(set([item for sublist in args for item in sublist]))
     
     # Week
