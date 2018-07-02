@@ -561,8 +561,6 @@ class OHParser:
             A list of sentences (beginning with a capital letter and ending
             with a point). Ex: ['From Monday to Friday: 10:00 - 20:00.']
         """
-        if not self._tree:
-            self._tree = PARSER.parse(self.field)
         transformer = DescriptionTransformer()
         transformer._locale = self.locale
         transformer._human_names = self.get_localized_names()
@@ -715,7 +713,7 @@ class OHParser:
             first_weekday = self.locale.first_week_day
         week = days_of_week(year, weeknumber, first_weekday)
         output = []
-        for day in week:
+        for day in week:  # TODO: Check yesterday for first day?
             day_periods = self.get_day_periods(dt=day, _check_yesterday=False)
             output.append(
                 (day_periods.weekday_name, day_periods.joined_rendered_periods)
