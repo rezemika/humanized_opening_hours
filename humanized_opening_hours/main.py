@@ -10,9 +10,7 @@ import babel.dates
 import astral
 
 from humanized_opening_hours.temporal_objects import WEEKDAYS, MONTHS
-from humanized_opening_hours.field_parser import (
-    PARSER, get_tree_and_rules
-)
+from humanized_opening_hours.field_parser import get_tree_and_rules
 from humanized_opening_hours.rendering import (
     DescriptionTransformer, AVAILABLE_LOCALES, render_timespan,
     join_list, translate_open_closed, translate_colon
@@ -777,6 +775,53 @@ class OHParser:
             weekday_name, dt, periods,
             rendered_periods, joined_rendered_periods
         )
+    
+    def opening_periods_between(self, dt1, dt2):
+        """Returns a list of tuples representing opening periods.
+        
+        Parameters
+        ----------
+        datetime.date or datetime.datetime
+            The date from which get the opening periods.
+            Give a 'datetime.datetime' to "chop" opening periods before
+            this datetime.
+        datetime.date or datetime.datetime
+            The date until which to get the opening periods.
+            Give a 'datetime.datetime' to "chop" opening periods before
+            this datetime.
+        
+        Returns
+        -------
+        list[tuple(datetime.datetime, datetime.datetime)]
+            The opening periods between the given dates.
+        """
+        dt1_date = dt1.date() if isinstance(dt1, datetime.datetime) else dt1
+        dt2_date = dt2.date() if isinstance(dt2, datetime.datetime) else dt2
+        delta = dt2_date - dt1_date
+        periods = []
+        for date in (
+            dt1_date + datetime.timedelta(n) for n in range(delta.days+1)
+        ):
+            day_periods = self.get_day_periods(date)
+            periods.extend(day_periods.periods)
+        # Uses a set to removes doubles periods (cause we also get those which
+        # span over midnight.
+        periods = sorted(set(periods))
+        output_periods = []
+        for i, period in enumerate(periods):
+            if (
+                i == 0 and isinstance(dt1, datetime.datetime) and
+                period[0] < dt1 < period[1]
+            ):
+                output_periods.append((dt1, period[1]))
+            elif (
+                i+1 == len(periods) and isinstance(dt2, datetime.datetime) and
+                period[0] < dt2 < period[1]
+            ):
+                output_periods.append((period[0], dt2))
+            else:
+                output_periods.append(period)
+        return output_periods
     
     def __eq__(self, other):
         if type(other) is OHParser:

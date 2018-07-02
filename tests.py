@@ -52,6 +52,21 @@ class TestGlobal(unittest.TestCase):
                 ["9:00 AM – 7:00 PM"], "9:00 AM – 7:00 PM"
             )
         )
+        # Opening periods
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.date(2018, 1, 1),
+                datetime.date(2018, 1, 7)
+            ),
+            [
+                (datetime.datetime(2018, 1, 1, 9, 0), datetime.datetime(2018, 1, 1, 19, 0)),
+                (datetime.datetime(2018, 1, 2, 9, 0), datetime.datetime(2018, 1, 2, 19, 0)),
+                (datetime.datetime(2018, 1, 3, 9, 0), datetime.datetime(2018, 1, 3, 19, 0)),
+                (datetime.datetime(2018, 1, 4, 9, 0), datetime.datetime(2018, 1, 4, 19, 0)),
+                (datetime.datetime(2018, 1, 5, 9, 0), datetime.datetime(2018, 1, 5, 19, 0)),
+                (datetime.datetime(2018, 1, 6, 9, 0), datetime.datetime(2018, 1, 6, 19, 0))
+            ]
+        )
         # Rendering
         self.assertEqual(
             oh.plaintext_week_description(),
@@ -95,6 +110,19 @@ class TestGlobal(unittest.TestCase):
                 ["9:00 AM – 12:00 PM", "1:00 PM – 7:00 PM"],
                 "9:00 AM – 12:00 PM and 1:00 PM – 7:00 PM"
             )
+        )
+        # Opening periods
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.date(2018, 1, 1),
+                datetime.date(2018, 1, 7)
+            ),
+            [
+                (datetime.datetime(2018, 1, 1, 9, 0), datetime.datetime(2018, 1, 1, 12, 0)),
+                (datetime.datetime(2018, 1, 1, 13, 0), datetime.datetime(2018, 1, 1, 19, 0)),
+                (datetime.datetime(2018, 1, 4, 9, 0), datetime.datetime(2018, 1, 4, 12, 0)),
+                (datetime.datetime(2018, 1, 4, 13, 0), datetime.datetime(2018, 1, 4, 19, 0))
+            ]
         )
         # Rendering
         self.assertEqual(
@@ -200,6 +228,20 @@ class TestGlobal(unittest.TestCase):
                 ["7:00 PM – 2:00 AM"],
                 "7:00 PM – 2:00 AM"
             )
+        )
+        # Opening periods
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.date(2018, 1, 1),
+                datetime.date(2018, 1, 7)
+            ),
+            [
+                (datetime.datetime(2018, 1, 1, 19, 0), datetime.datetime(2018, 1, 2, 2, 0)),
+                (datetime.datetime(2018, 1, 2, 19, 0), datetime.datetime(2018, 1, 3, 2, 0)),
+                (datetime.datetime(2018, 1, 3, 19, 0), datetime.datetime(2018, 1, 4, 2, 0)),
+                (datetime.datetime(2018, 1, 4, 19, 0), datetime.datetime(2018, 1, 5, 2, 0)),
+                (datetime.datetime(2018, 1, 5, 19, 0), datetime.datetime(2018, 1, 6, 2, 0))
+            ]
         )
         # Periods
         dt = datetime.datetime(2018, 1, 1, 10, 0)

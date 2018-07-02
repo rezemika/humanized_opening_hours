@@ -112,6 +112,29 @@ datetime.datetime(2018, 1, 11, 23, 59, 59, 999999)
 
 -----
 
+To get a list of the opening periods between to dates, you can the use `opening_periods_between()` method.
+It takes two arguments, which can be `datetime.date` or `datetime.datetime` objects.
+If you pass `datetime.date` objects, it will return all opening periods between these dates (inclusive).
+If you pass `datetime.datetime`, the returned opening periods will be "choped" on these times.
+
+The returned opening periods are tuples of two `datetime.datetime` objects, representing the beginning and the end of the period.
+
+```python
+>>> oh = hoh.OHParser("Mo-Fr 06:00-21:00; Sa,Su 07:00-21:00")
+>>> oh.opening_periods_between(datetime.date(2018, 1, 1), datetime.date(2018, 1, 7))
+[
+    (datetime.datetime(2018, 1, 1, 6, 0), datetime.datetime(2018, 1, 1, 21, 0)),
+    (datetime.datetime(2018, 1, 2, 6, 0), datetime.datetime(2018, 1, 2, 21, 0)),
+    (datetime.datetime(2018, 1, 3, 6, 0), datetime.datetime(2018, 1, 3, 21, 0)),
+    (datetime.datetime(2018, 1, 4, 6, 0), datetime.datetime(2018, 1, 4, 21, 0)),
+    (datetime.datetime(2018, 1, 5, 6, 0), datetime.datetime(2018, 1, 5, 21, 0)),
+    (datetime.datetime(2018, 1, 6, 7, 0), datetime.datetime(2018, 1, 6, 21, 0)),
+    (datetime.datetime(2018, 1, 7, 7, 0), datetime.datetime(2018, 1, 7, 21, 0))
+]
+```
+
+-----
+
 You can get a sanitized version of the field given to the constructor with the `sanitize()` function or the `field` attribute.
 
 ```python
