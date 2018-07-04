@@ -122,7 +122,7 @@ class AlwaysOpenSelector(BaseSelector):
 
 
 class MonthDaySelector(BaseSelector):
-    priority = 2
+    priority = 5
     
     def is_included(self, dt, SH_dates, PH_dates):
         for selector in self.selectors:
@@ -289,9 +289,9 @@ class MonthDayDate:
             return set(dates)
         else:  # self.kind == "monthday"
             return set([datetime.date(
-                self.monthday,
+                self.year or dt.year,
                 self.month,
-                self.year or dt.year
+                self.monthday
             )])
     
     def __repr__(self):
