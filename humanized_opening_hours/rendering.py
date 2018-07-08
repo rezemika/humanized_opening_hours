@@ -115,7 +115,10 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
             return args[0][0].upper() + args[0][1:] + '.'
         else:
             if isinstance(args[0], tuple):
-                if args[0][0] == 'NO_TS':
+                if type(args[0][1]) is lark.lexer.Token:
+                    sentence = _("open 24 hours a day and 7 days a week")
+                    return sentence[0].upper() + sentence[1:] + '.'
+                elif args[0][0] == 'NO_TS':
                     range_selectors = args[0][1]
                     time_selector = args[1]
                 else:

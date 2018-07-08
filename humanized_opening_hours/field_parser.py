@@ -5,11 +5,11 @@ import lark
 
 from humanized_opening_hours.temporal_objects import (
     WEEKDAYS, MONTHS,
-    Rule, RangeSelector, AlwaysOpenSelector,
+    Rule, BaseSelector, RangeSelector, AlwaysOpenSelector,
     MonthDaySelector, WeekdayHolidaySelector,
     WeekdayInHolidaySelector, WeekSelector,
     YearSelector, MonthDayRange, MonthDayDate,
-    TimeSpan, Time
+    TimeSpan, Time, TIMESPAN_ALL_THE_DAY
 )
 from humanized_opening_hours.frequent_fields import (
     FREQUENT_FIELDS, parse_simple_field
@@ -47,29 +47,52 @@ class MainTransformer(lark.Transformer):
     def time_domain(self, args):
         return args
     
-    def rule_sequence(self, args):  # TODO: Clean.
-        if (
-            len(args) == 1 and
-            len(args[0]) == 1 and
-            type(args[0][0]) is not AlwaysOpenSelector
-        ):  # Only weekdays, without opening periods.
+    def rule_sequence(self, args):
+        """
+        Takes list[selector_sequence, rule_modifier?].
+        """
+        if len(args) == 2:
+            selector_sequence, rule_modifier = args
+        else:
+            selector_sequence = args[0]
+            rule_modifier = None
+        range_selectors, time_selectors = selector_sequence
+        
+        if range_selectors and not time_selectors and not rule_modifier:  # "Mo-Fr" (without periods).
             raise lark.common.ParseError()
-        return Rule(args)
+        
+        if range_selectors is None:
+            range_selectors = AlwaysOpenSelector()
+        if rule_modifier:
+            return Rule(range_selectors, time_selectors, status=rule_modifier)
+        return Rule(range_selectors, time_selectors)
     
     def always_open(self, args):
-        return [AlwaysOpenSelector()]
+        return (None, [TIMESPAN_ALL_THE_DAY])
     
     def selector_sequence(self, args):
-        if (
-            len(args) == 1 and
-            type(args[0]) is list and
-            type(args[0][0]) is TimeSpan
-        ):
-            return [AlwaysOpenSelector(), args[0]]
-        return args
+        """
+        Takes :
+        - list[range_selectors], list[time_selectors]
+        - list[time_selectors]
+        
+        Returns a tuple like (range_selectors, time_selectors) or
+        (None, time_selectors) (in case of "24/7" or "08:00-20:00") or
+        (range_selectors, []) (in case of "Mo-Fr off").
+        """
+        if len(args) == 1:
+            if isinstance(args[0], BaseSelector):
+                return (args[0], [])
+            return (None, args[0])
+        else:
+            range_selectors, time_selectors = args
+            return (range_selectors, time_selectors)
     
-    def range_selectors(self, args):
+    def range_selectors(self, args):  # TODO: Include in Rule.
         return RangeSelector(args)
+    
+    def time_selector(self, args):
+        return args
     
     # Dates
     def monthday_selector(self, args):
@@ -191,9 +214,6 @@ class MainTransformer(lark.Transformer):
         return int(args[0].value)
     
     # Time
-    def time_selector(self, args):
-        return args
-    
     def timespan(self, args):
         return TimeSpan(*args)
     

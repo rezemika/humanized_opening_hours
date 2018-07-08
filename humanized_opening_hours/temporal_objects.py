@@ -28,33 +28,14 @@ def easter_date(year):
 
 
 class Rule:
-    def __init__(self, sequence):
-        self.status = "open"
-        if len(sequence) > 1:
-            self.status = sequence[1]  # Can be "open" or "closed".
-        sequence = sequence[0]
-        if len(sequence) == 1:
-            self.range_selectors = sequence[0]
-            self.time_selectors = []
-        else:
-            self.range_selectors = sequence[0]
-            self.time_selectors = sequence[1]
+    def __init__(self, range_selectors, time_selectors, status="open"):
+        self.range_selectors = range_selectors
+        self.time_selectors = time_selectors
+        self.status = status
         
-        if isinstance(self.range_selectors, AlwaysOpenSelector):
-            self.time_selectors = [TimeSpan(
-                Time(("normal", datetime.time.min)),
-                Time(("normal", datetime.time.max))
-            )]
-            self.always_open = True
-        else:
-            self.always_open = False
-        
-        try:
-            self.priority = sum(
-                [sel.priority for sel in self.range_selectors.selectors]
-            )
-        except AttributeError:  # TimeSpan in range selectors.
-            self.priority = 1
+        self.priority = sum(
+            [sel.priority for sel in self.range_selectors.selectors]
+        )
     
     def get_status_at(self, dt: datetime.datetime, solar_hours):
         for timespan in self.time_selectors:
@@ -110,12 +91,7 @@ class RangeSelector(BaseSelector):
 
 class AlwaysOpenSelector(BaseSelector):
     def __init__(self):
-        self.selectors = [
-            TimeSpan(
-                Time(("normal", datetime.time.min)),
-                Time(("normal", datetime.time.max))
-            )
-        ]
+        self.selectors = []
     
     def is_included(self, dt, SH_dates, PH_dates):
         return True
@@ -399,8 +375,14 @@ class TimeSpan:
 
 class Time:
     def __init__(self, t):
-        self.t = t
         # ("normal", datetime.time) / ("name", "offset_sign", "delta_seconds")
+        self.t = t
+        self.is_min_time = (
+            self.t[0] == "normal" and self.t[1] == datetime.time.min
+        )
+        self.is_max_time = (
+            self.t[0] == "normal" and self.t[1] == datetime.time.max
+        )
         # TODO: Set only two attributes: "kind" (str) and "offset" (signed int).
     
     def get_time(self, solar_hours, date):
@@ -449,3 +431,9 @@ class Time:
     def __str__(self):
         # TODO : Use 'rendering.render_time()"?
         return str(self.t)
+
+
+TIMESPAN_ALL_THE_DAY = TimeSpan(
+    Time(("normal", datetime.time.min)),
+    Time(("normal", datetime.time.max))
+)
