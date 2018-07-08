@@ -496,7 +496,7 @@ class OHParser:
                 if new_dt < end_time:
                     return (i, timespan[1])
             
-            new_dt = datetime.datetime.combine(new_dt.date()+datetime.timedelta(1), datetime.time.min)
+            new_dt = datetime.datetime.combine(new_dt.date()+datetime.timedelta(i), datetime.time.min)
             return _current_or_next_timespan(new_dt, i=i+1)
         
         dt = set_dt(dt)
