@@ -58,7 +58,8 @@ class MainTransformer(lark.Transformer):
             rule_modifier = None
         range_selectors, time_selectors = selector_sequence
         
-        if range_selectors and not time_selectors and not rule_modifier:  # "Mo-Fr" (without periods).
+        # Raise exception on "Mo-Fr" rules (without periods).
+        if range_selectors and not time_selectors and not rule_modifier:
             raise lark.common.ParseError()
         
         if range_selectors is None:
