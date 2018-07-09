@@ -143,6 +143,9 @@ You can get a sanitized version of the field given to the constructor with the `
 "Mo-Su 09:30-20:00; Jan off"
 ```
 
+If sanitization is the only thing you need, use HOH for it is probably overkill.
+You might be interested in the [OH Sanitizer](https://github.com/rezemika/oh_sanitizer) module, or you can copy directly the code of the sanitize function in your project.
+
 -----
 
 If you try to parse a field which is invalid or contains a pattern which is not supported, an `humanized_opening_hours.exceptions.ParseError` (inheriting from `humanized_opening_hours.exceptions.HOHError`) will be raised.
