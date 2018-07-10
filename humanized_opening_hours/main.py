@@ -377,8 +377,8 @@ class OHParser:
         def centroid(coordinates):
             # Returns the mean of a list of coordinates like [(lat, lon)].
             # Source: https://stackoverflow.com/a/23021198
-            x, y = zip(*coordinates)
-            return (statistics.mean(x), statistics.mean(y))
+            latitudes, longitudes = coordinates[0::2], coordinates[1::2]
+            return (statistics.mean(latitudes), statistics.mean(longitudes))
         
         if geojson["geometry"]["type"] != "Point":
             coordinates = centroid(geojson["geometry"]["coordinates"][::-1])
