@@ -108,28 +108,23 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
     
     # Main
     def time_domain(self, args):
+        # TODO: Fix this creepy hack for this WTF bug with "00:00-24:00".
+        if isinstance(args[0], tuple) and args[0][0] == 'TS_ONLY':
+            return [_("{}: {}").format(_("Every days"), args[0][1]) + '.']
         return args
     
     def rule_sequence(self, args):
         if len(args) == 1 and not isinstance(args[0], tuple):
             return args[0][0].upper() + args[0][1:] + '.'
-        else:
-            if isinstance(args[0], tuple):
-                if type(args[0][1]) is lark.lexer.Token:
-                    sentence = _("open 24 hours a day and 7 days a week")
-                    return sentence[0].upper() + sentence[1:] + '.'
-                elif args[0][0] == 'NO_TS':
-                    range_selectors = args[0][1]
-                    time_selector = args[1]
-                else:
-                    range_selectors = _("Every days")
-                    time_selector = args[0][1]
-            else:
-                range_selectors = args[0][0].upper()+args[0][1:]
-                time_selector = args[0][1:]
-            return _("{}: {}").format(
-                range_selectors, time_selector
-            ) + '.'
+        elif args[0][0] == 'NO_TS':
+            range_selectors = args[0][1]
+            time_selector = args[1]
+        else:  # "TS_ONLY"
+            range_selectors = _("Every days")
+            time_selector = args[0][1]
+        return _("{}: {}").format(
+            range_selectors, time_selector
+        ) + '.'
     
     def always_open(self, args):
         return _("open 24 hours a day and 7 days a week")
@@ -178,51 +173,31 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
     
     # Dates
     def monthday_date_monthday(self, args):
-        year = args.pop(0) if len(args) == 3 else None
+        # TODO: The year is not passed to monthday. Check 'field.ebnf'.
         month = MONTHS.index(args[0].value)+1
         monthday = int(args[1].value)
-        if year:
-            dt = datetime.date(year, month, monthday)
-            return dt.strftime(_("%B %-d %Y"))
-        else:
-            dt = datetime.date(2000, month, monthday)
-            return dt.strftime(_("%B %-d"))
+        dt = datetime.date(2000, month, monthday)
+        return dt.strftime(_("%B %-d"))
     
     def monthday_date_day_to_day(self, args):
-        year = args.pop(0) if len(args) == 4 else None
+        # TODO: The year is not passed to monthday. Check 'field.ebnf'.
         month = MONTHS.index(args[0].value)+1
         monthday_from = int(args[1].value)
         monthday_to = int(args[2].value)
         dt_from = datetime.date(2000, month, monthday_from)
         dt_to = datetime.date(2000, month, monthday_to)
-        if year:
-            return _("in {year}, from {monthday1} to {monthday2}").format(
-                year=year,
-                monthday1=dt_from.strftime(_("%B %-d")),
-                monthday2=dt_to.strftime(_("%B %-d"))
-            )
-        else:
-            return _("from {monthday1} to {monthday2}").format(
-                monthday1=dt_from.strftime(_("%B %-d")),
-                monthday2=dt_to.strftime(_("%B %-d"))
-            )
+        return _("from {monthday1} to {monthday2}").format(
+            monthday1=dt_from.strftime(_("%B %-d")),
+            monthday2=dt_to.strftime(_("%B %-d"))
+        )
     
     def monthday_date_month(self, args):
-        year = args.pop(0) if len(args) == 3 else None
-        month = self._get_month(MONTHS.index(args[0].value))
-        if year:
-            return _("in {year}, in {month}").format(
-                year=year, month=month
-            )
-        else:
-            return month
+        # TODO: The year is not passed to monthday. Check 'field.ebnf'.
+        return self._get_month(MONTHS.index(args[0].value))
     
     def monthday_date_easter(self, args):
-        year = args.pop(0) if len(args) == 3 else None
-        if year:
-            return _("in {year}, on easter").format(year=year)
-        else:
-            return _("on easter")
+        # TODO: The year is not passed to monthday. Check 'field.ebnf'.
+        return _("on easter")
     
     # Week
     def week_selector(self, args):
@@ -276,10 +251,6 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
         return (_("from {wd1} to {wd2}"), first_day, last_day)
     
     def weekday_sequence(self, args):
-        # TODO : Fix this hack.
-        if len(args) != 1:
-            weekdays = [t[1] for t in args]
-            return (_("on {wd}"), join_list(weekdays, self._locale))
         return args
     
     def weekday_or_holiday_sequence_selector(self, args):
@@ -289,14 +260,18 @@ class DescriptionTransformer(lark.Transformer):  # TODO : Specify "every days".
             return _("Public and school holidays")
     
     def holiday_and_weekday_sequence_selector(self, args):
+        if len(args[1]) == 1:
+            return babel.lists.format_list(
+                [args[0], args[1][0][1]],
+                locale=self._locale
+            )
         return babel.lists.format_list(
             [
-                args[1][0][0].format(
-                    wd1=args[1][0][1],
-                    wd2=args[1][0][2]
-                ),
-                args[0]
-            ], locale=self._locale
+                args[0],
+                args[1][0][1],
+                args[1][1][1]
+            ],
+            locale=self._locale
         )
     
     def holiday_in_weekday_sequence_selector(self, args):
