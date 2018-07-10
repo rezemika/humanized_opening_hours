@@ -670,6 +670,60 @@ class TestGlobal(unittest.TestCase):
         self.assertEqual(oh4, oh5)
         self.assertNotEqual(oh5, oh6)
     
+    def test_geojson_1(self):
+        geojson = {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [0.1, 51.5]
+            },
+            "properties": {
+                "name": "A great bakery",
+                "shop": "bakery",
+                "opening_hours": "Mo-Fr 08:00-19:00; Sa 09:00-19:00"
+            }
+        }
+        oh1 = OHParser.from_geojson(geojson)
+        oh2 = OHParser("Mo-Fr 08:00-19:00; Sa 09:00-19:00")
+        self.assertEqual(oh1, oh2)
+        
+        timezone_getter = lambda lat, lon: "UTC"
+        oh3 = OHParser.from_geojson(geojson, timezone_getter=timezone_getter)
+        oh4 = OHParser(
+            "Mo-Fr 08:00-19:00; Sa 09:00-19:00",
+            location=(51.5, 0.1, "UTC", 0)
+        )
+        self.assertEqual(oh3, oh4)
+        self.assertNotEqual(oh1, oh3)
+        self.assertNotEqual(oh2, oh4)
+    
+    def test_geojson_2(self):
+        geojson = {
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [-0.124, 51.531, -0.1227, 51.533]
+            },
+            "properties": {
+                "name": "A great bakery",
+                "shop": "bakery",
+                "opening_hours": "Mo-Fr 08:00-19:00; Sa 09:00-19:00"
+            }
+        }
+        oh1 = OHParser.from_geojson(geojson)
+        oh2 = OHParser("Mo-Fr 08:00-19:00; Sa 09:00-19:00")
+        self.assertEqual(oh1, oh2)
+        
+        timezone_getter = lambda lat, lon: "UTC"
+        oh3 = OHParser.from_geojson(geojson, timezone_getter=timezone_getter)
+        oh4 = OHParser(
+            "Mo-Fr 08:00-19:00; Sa 09:00-19:00",
+            location=(51.532, -0.12335, "UTC", 0)
+        )
+        self.assertEqual(oh3, oh4)
+        self.assertNotEqual(oh1, oh3)
+        self.assertNotEqual(oh2, oh4)
+    
     def test_locales_handling(self):
         field = "Mo-Fr 10:00-20:00"
         with self.assertWarns(Warning):
