@@ -3,6 +3,7 @@ import datetime
 
 from lark import Tree
 from lark.lexer import Token
+import astral
 
 from humanized_opening_hours import field_parser
 from humanized_opening_hours.main import (
@@ -626,6 +627,122 @@ class TestGlobal(unittest.TestCase):
         self.assertNotEqual(oh5, oh6)
 
 
+class TestSolarHours(unittest.TestCase):
+    maxDiff = None
+    
+    def test_tuple_1(self):
+        oh = OHParser(
+            "Mo-Fr sunrise-sunset",
+            location=(51.168, 0.0, "Europe/London", 24)
+        )
+        
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.date(2018, 1, 1),
+                datetime.date(2018, 1, 7)
+            ),
+            [
+                (datetime.datetime(2018, 1, 1, 8, 4, 1), datetime.datetime(2018, 1, 1, 16, 2, 37)),
+                (datetime.datetime(2018, 1, 2, 8, 3, 55), datetime.datetime(2018, 1, 2, 16, 3, 39)),
+                (datetime.datetime(2018, 1, 3, 8, 3, 46), datetime.datetime(2018, 1, 3, 16, 4, 44)),
+                (datetime.datetime(2018, 1, 4, 8, 3, 34), datetime.datetime(2018, 1, 4, 16, 5, 51)),
+                (datetime.datetime(2018, 1, 5, 8, 3, 18), datetime.datetime(2018, 1, 5, 16, 7, 1))
+            ]
+        )
+    
+    def test_tuple_2(self):
+        oh = OHParser(
+            "Mo-Fr (sunrise-01:00)-(sunset+02:15)",
+            location=(51.168, 0.0, "Europe/London", 24)
+        )
+        
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.date(2018, 1, 1),
+                datetime.date(2018, 1, 7)
+            ),
+            [
+                (datetime.datetime(2018, 1, 1, 7, 4, 1), datetime.datetime(2018, 1, 1, 18, 17, 37)),
+                (datetime.datetime(2018, 1, 2, 7, 3, 55), datetime.datetime(2018, 1, 2, 18, 18, 39)),
+                (datetime.datetime(2018, 1, 3, 7, 3, 46), datetime.datetime(2018, 1, 3, 18, 19, 44)),
+                (datetime.datetime(2018, 1, 4, 7, 3, 34), datetime.datetime(2018, 1, 4, 18, 20, 51)),
+                (datetime.datetime(2018, 1, 5, 7, 3, 18), datetime.datetime(2018, 1, 5, 18, 22, 1))
+            ]
+        )
+    
+    def test_location_1(self):
+        oh = OHParser(
+            "Mo-Fr sunrise-sunset",
+            location=astral.Location((
+                "Greenwich",
+                "England",
+                51.168, 0.0,
+                "Europe/London",
+                24
+            ))
+        )
+        
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.date(2018, 1, 1),
+                datetime.date(2018, 1, 7)
+            ),
+            [
+                (datetime.datetime(2018, 1, 1, 8, 4, 1), datetime.datetime(2018, 1, 1, 16, 2, 37)),
+                (datetime.datetime(2018, 1, 2, 8, 3, 55), datetime.datetime(2018, 1, 2, 16, 3, 39)),
+                (datetime.datetime(2018, 1, 3, 8, 3, 46), datetime.datetime(2018, 1, 3, 16, 4, 44)),
+                (datetime.datetime(2018, 1, 4, 8, 3, 34), datetime.datetime(2018, 1, 4, 16, 5, 51)),
+                (datetime.datetime(2018, 1, 5, 8, 3, 18), datetime.datetime(2018, 1, 5, 16, 7, 1))
+            ]
+        )
+    
+    def test_location_2(self):
+        oh = OHParser(
+            "Mo-Fr (sunrise-01:00)-(sunset+02:15)",
+            location=astral.Location((
+                "Greenwich",
+                "England",
+                51.168, 0.0,
+                "Europe/London",
+                24
+            ))
+        )
+        
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.date(2018, 1, 1),
+                datetime.date(2018, 1, 7)
+            ),
+            [
+                (datetime.datetime(2018, 1, 1, 7, 4, 1), datetime.datetime(2018, 1, 1, 18, 17, 37)),
+                (datetime.datetime(2018, 1, 2, 7, 3, 55), datetime.datetime(2018, 1, 2, 18, 18, 39)),
+                (datetime.datetime(2018, 1, 3, 7, 3, 46), datetime.datetime(2018, 1, 3, 18, 19, 44)),
+                (datetime.datetime(2018, 1, 4, 7, 3, 34), datetime.datetime(2018, 1, 4, 18, 20, 51)),
+                (datetime.datetime(2018, 1, 5, 7, 3, 18), datetime.datetime(2018, 1, 5, 18, 22, 1))
+            ]
+        )
+    
+    def test_location_name(self):
+        oh = OHParser(
+            "Mo-Fr sunrise-sunset",
+            location="London"
+        )
+        
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.date(2018, 1, 1),
+                datetime.date(2018, 1, 7)
+            ),
+            [
+                (datetime.datetime(2018, 1, 1, 8, 6, 6), datetime.datetime(2018, 1, 1, 16, 1, 27)),
+                (datetime.datetime(2018, 1, 2, 8, 6), datetime.datetime(2018, 1, 2, 16, 2, 30)),
+                (datetime.datetime(2018, 1, 3, 8, 5, 50), datetime.datetime(2018, 1, 3, 16, 3, 35)),
+                (datetime.datetime(2018, 1, 4, 8, 5, 37), datetime.datetime(2018, 1, 4, 16, 4, 43)),
+                (datetime.datetime(2018, 1, 5, 8, 5, 21), datetime.datetime(2018, 1, 5, 16, 5, 54))
+            ]
+        )
+
+
 class TestPatterns(unittest.TestCase):
     # Checks there is no error with regular fields.
     maxDiff = None
@@ -747,6 +864,11 @@ class TestSanitize(unittest.TestCase):
         sanitized_field = "week 1-12/2 08:00-19:00"
         self.assertEqual(sanitize(field), sanitized_field)
     
+    def test_valid_5(self):
+        field = 'Mo-Fr 10:00-20:00 "on appointement"'
+        sanitized_field = 'Mo-Fr 10:00-20:00 "on appointement"'
+        self.assertEqual(sanitize(field), sanitized_field)
+    
     def test_invalid_1(self):
         field = "mo-sa 09:00-19:00"
         sanitized_field = "Mo-Sa 09:00-19:00"
@@ -785,7 +907,7 @@ class TestSanitize(unittest.TestCase):
         self.assertEqual(sanitize(field), field)
 
 
-class TestSolarHours(unittest.TestCase):
+class TestSolarHoursParsing(unittest.TestCase):
     maxDiff = None
     
     def test_valid_solar(self):
