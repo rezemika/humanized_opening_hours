@@ -9,6 +9,7 @@ from humanized_opening_hours import field_parser
 from humanized_opening_hours.main import (
     OHParser, sanitize, days_of_week, DayPeriods
 )
+from humanized_opening_hours.frequent_fields import parse_simple_field
 from humanized_opening_hours.temporal_objects import easter_date
 from humanized_opening_hours.exceptions import (
     HOHError,
@@ -42,6 +43,13 @@ class TestGlobal(unittest.TestCase):
         dt = datetime.datetime(2017, 1, 2, 15, 30)
         # Is it open?
         self.assertTrue(oh.is_open(dt))
+        self.assertTrue(oh.rules[0].get_status_at(dt, self.SOLAR_HOURS))
+        self.assertFalse(
+            oh.rules[0].get_status_at(
+                datetime.datetime(2017, 1, 2, 20, 0),
+                self.SOLAR_HOURS
+            )
+        )
         # Day periods.
         self.assertEqual(
             oh.get_day_periods(datetime.date(2018, 1, 1)),
@@ -888,6 +896,15 @@ class TestPatterns(unittest.TestCase):
         field = "Mo-Sa 09:00-19:00"
         oh = OHParser(field)
         
+        field = "Mo-Sa 09:00-19:00; Su off"
+        oh = OHParser(field)
+        
+        field = "Mo-Sa 09:00-19:00; Su closed"
+        oh = OHParser(field)
+        
+        field = "Mo-Sa 09:00-19:00 open"
+        oh = OHParser(field)
+        
         field = "Fr-Mo 09:00-19:00"
         oh = OHParser(field)
         
@@ -900,7 +917,7 @@ class TestPatterns(unittest.TestCase):
         field = "SH,Mo 09:00-19:00"
         oh = OHParser(field)
         
-        field = "SH,Mo 09:00-19:00"
+        field = "PH,Mo 09:00-19:00"
         oh = OHParser(field)
         
         field = "Jan 09:00-19:00"
@@ -946,6 +963,15 @@ class TestPatterns(unittest.TestCase):
         oh = OHParser(field)
         
         field = "week 1-53/2 Fr 09:00-12:00"
+        oh = OHParser(field)
+        
+        field = "2010 Mo-Fr 09:00-12:00"
+        oh = OHParser(field)
+        
+        field = "2010-2020 Mo-Fr 09:00-12:00"
+        oh = OHParser(field)
+        
+        field = "2010-2020/2 Mo-Fr 09:00-12:00"
         oh = OHParser(field)
         
         #field = "easter +2 days 09:00-19:00"
@@ -1099,6 +1125,55 @@ class TestSolarHoursParsing(unittest.TestCase):
             oh.is_open(dt)
 
 
+class TestFrequentFields(unittest.TestCase):
+    maxDiff = None
+    
+    def test_valid_fields(self):
+        field = "Mo-Fr 10:00-20:00"
+        tree = Tree("time_domain", [Tree("rule_sequence", [Tree("selector_sequence", [Tree("range_selectors", [Tree("weekday_or_holiday_sequence_selector", [Tree("weekday_sequence", [Tree("weekday_range", [Token("WDAY", 'Mo'), Token("WDAY", 'Fr')])])])]), Tree("time_selector", [Tree("timespan", [Tree("time", [Tree("hour_minutes", [Token("TWO_DIGITS", '10'), Token("TWO_DIGITS", '00')])]), Tree("time", [Tree("hour_minutes", [Token("TWO_DIGITS", '20'), Token("TWO_DIGITS", '00')])])])])])])])
+        self.assertEqual(parse_simple_field(field), tree)
+        
+        field = "Mo 10:00-20:00"
+        tree = Tree("time_domain", [Tree("rule_sequence", [Tree("selector_sequence", [Tree("range_selectors", [Tree("weekday_or_holiday_sequence_selector", [Tree("weekday_sequence", [Tree("weekday_range", [Token("WDAY", 'Mo')])])])]), Tree("time_selector", [Tree("timespan", [Tree("time", [Tree("hour_minutes", [Token("TWO_DIGITS", '10'), Token("TWO_DIGITS", '00')])]), Tree("time", [Tree("hour_minutes", [Token("TWO_DIGITS", '20'), Token("TWO_DIGITS", '00')])])])])])])])
+        self.assertEqual(parse_simple_field(field), tree)
+        
+        field = "Mo off"
+        tree = Tree("time_domain", [Tree("rule_sequence", [Tree("selector_sequence", [Tree("range_selectors", [Tree("weekday_or_holiday_sequence_selector", [Tree("weekday_sequence", [Tree("weekday_range", [Token("WDAY", 'Mo')])])])])]), Tree("rule_modifier_closed", [Token("CLOSED", ' off')])])])
+        self.assertEqual(parse_simple_field(field), tree)
+        
+        field = "10:00-20:00"
+        tree = Tree("time_domain", [Tree("selector_sequence", [Tree("time_selector", [Tree("timespan", [Tree("time", [Tree("hour_minutes", [Token("TWO_DIGITS", '10'), Token("TWO_DIGITS", '00')])]), Tree("time", [Tree("hour_minutes", [Token("TWO_DIGITS", '20'), Token("TWO_DIGITS", '00')])])])])])])
+        self.assertEqual(parse_simple_field(field), tree)
+    
+    def test_invalid_fields(self):
+        field = "Mo-We,Fr 10:00-20:00"
+        self.assertEqual(parse_simple_field(field), None)
+        
+        field = "Mo 10:00-12:00,13:00-20:00"
+        self.assertEqual(parse_simple_field(field), None)
+        
+        field = "Ma off"
+        self.assertEqual(parse_simple_field(field), None)
+        
+        field = "Ma-Ju 10:00-12:00,13:00-20:00"
+        self.assertEqual(parse_simple_field(field), None)
+        
+        field = "Ma-Ju 10:00-20:00"
+        self.assertEqual(parse_simple_field(field), None)
+        
+        field = "Ma 10:00-12:00"
+        self.assertEqual(parse_simple_field(field), None)
+        
+        field = "Jan-Feb 10:00-20:00"
+        self.assertEqual(parse_simple_field(field), None)
+        
+        field = "2010-2020 10:00-20:00"
+        self.assertEqual(parse_simple_field(field), None)
+        
+        field = "sunrise-sunset"
+        self.assertEqual(parse_simple_field(field), None)
+
+
 class TestFieldDescription(unittest.TestCase):
     maxDiff = None
     
@@ -1116,6 +1191,13 @@ class TestFieldDescription(unittest.TestCase):
         self.assertEqual(
             OHParser(field).description(),
             ["Every days: from sunrise to sunset."]
+        )
+        
+        # TODO: Improve this.
+        field = "00:00-24:00"
+        self.assertEqual(
+            OHParser(field).description(),
+            ["Every days: from 12:00 AM to 11:59 PM."]
         )
         
         field = "sunrise-sunset; Su off; PH 10:00-20:00"
@@ -1182,6 +1264,18 @@ class TestFieldDescription(unittest.TestCase):
             ["From December 24 to December 26: from 9:00 AM to 12:00 PM."]
         )
         
+        field = "2020 Dec 24-26 09:00-12:00"
+        self.assertEqual(
+            OHParser(field).description(),
+            ["2020, from December 24 to December 26: from 9:00 AM to 12:00 PM."]
+        )
+        
+        field = "2010 Dec 25 09:00-12:00"
+        self.assertEqual(
+            OHParser(field).description(),
+            ["2010, December 25: from 9:00 AM to 12:00 PM."]
+        )
+        
         field = "Dec Mo 10:00-20:00"
         self.assertEqual(
             OHParser(field).description(),
@@ -1200,6 +1294,23 @@ class TestFieldDescription(unittest.TestCase):
             ["From January to February, from Monday to Friday: from 10:00 AM to 8:00 PM."]
         )
         
+        field = "2010-2020 Mo-Fr 10:00-19:00; 2010-2020 Sa 10:00-12:00"
+        self.assertEqual(
+            OHParser(field).description(),
+            [
+                "From 2010 to 2020, from Monday to Friday: from 10:00 AM to 7:00 PM.",
+                "From 2010 to 2020, Saturday: from 10:00 AM to 12:00 PM."
+            ]
+        )
+        
+        field = "2010-2020/2 Mo-Fr 10:00-19:00"
+        self.assertEqual(
+            OHParser(field).description(),
+            [
+                "From 2010 to 2020, every 2 years, from Monday to Friday: from 10:00 AM to 7:00 PM.",
+            ]
+        )
+        
         field = "easter 10:00-20:00"
         self.assertEqual(
             OHParser(field).description(),
@@ -1212,6 +1323,18 @@ class TestFieldDescription(unittest.TestCase):
             ["Public and school holidays: from 10:00 AM to 8:00 PM."]
         )
         
+        field = "PH,Sa 10:00-20:00"
+        self.assertEqual(
+            OHParser(field).description(),
+            ["Public holidays and Saturday: from 10:00 AM to 8:00 PM."]
+        )
+        
+        field = "PH,Sa,Su 10:00-20:00"
+        self.assertEqual(
+            OHParser(field).description(),
+            ["Public holidays, Saturday, and Sunday: from 10:00 AM to 8:00 PM."]
+        )
+        
         field = "PH Sa 10:00-20:00"
         self.assertEqual(
             OHParser(field).description(),
@@ -1222,6 +1345,24 @@ class TestFieldDescription(unittest.TestCase):
         self.assertEqual(
             OHParser(field).description(),
             ["School holidays, from Monday to Friday: from 10:00 AM to 8:00 PM."]
+        )
+        
+        field = "week 1 Mo-Fr 10:00-20:00"
+        self.assertEqual(
+            OHParser(field).description(),
+            ["Week 1, from Monday to Friday: from 10:00 AM to 8:00 PM."]
+        )
+        
+        field = "week 1-5 Mo-Fr 10:00-20:00"
+        self.assertEqual(
+            OHParser(field).description(),
+            ["From week 1 to week 5, from Monday to Friday: from 10:00 AM to 8:00 PM."]
+        )
+        
+        field = "week 1-10/2 Mo-Fr 10:00-20:00"
+        self.assertEqual(
+            OHParser(field).description(),
+            ["From week 1 to week 10, every 2 weeks, from Monday to Friday: from 10:00 AM to 8:00 PM."]
         )
         
         field = "24/7"
