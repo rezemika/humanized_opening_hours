@@ -212,10 +212,12 @@ class SolarHours(dict):
         try:
             # Removes localization and date part
             # from datetimes returned by Astral.
-            return dict([
+            sh = dict([
                 (k, v.replace(tzinfo=None).time()) for (k, v) in
-                self.location.sun().items()
+                self.location.sun(date=dt, local=True).items()
             ])
+            self[dt] = sh
+            return sh
         except astral.AstralError:
             return self._SH_DICT
 
