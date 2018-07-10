@@ -139,9 +139,6 @@ class MainTransformer(lark.Transformer):
         return (offset_sign, days)
     
     # Holidays
-    def holiday_sequence(self, args):
-        return set(args)
-    
     def holiday(self, args):
         return set([args[0].value])
     
