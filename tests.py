@@ -15,6 +15,7 @@ from humanized_opening_hours.exceptions import (
     ParseError,
     SolarHoursError,
     AlwaysClosed,
+    CommentOnlyField,
     NextChangeRecursionError
 )
 
@@ -838,6 +839,11 @@ class TestPatterns(unittest.TestCase):
         
         field = "off"
         with self.assertRaises(AlwaysClosed) as context:
+            oh = OHParser(field)
+    
+    def test_comment_only_fields(self):
+        field = '"on appointement"'
+        with self.assertRaises(CommentOnlyField) as context:
             oh = OHParser(field)
 
 
