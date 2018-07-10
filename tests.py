@@ -69,6 +69,17 @@ class TestGlobal(unittest.TestCase):
                 (datetime.datetime(2018, 1, 6, 9, 0), datetime.datetime(2018, 1, 6, 19, 0))
             ]
         )
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.datetime(2018, 1, 1, 10, 0),
+                datetime.datetime(2018, 1, 3, 18, 0)
+            ),
+            [
+                (datetime.datetime(2018, 1, 1, 10, 0), datetime.datetime(2018, 1, 1, 19, 0)),
+                (datetime.datetime(2018, 1, 2, 9, 0), datetime.datetime(2018, 1, 2, 19, 0)),
+                (datetime.datetime(2018, 1, 3, 9, 0), datetime.datetime(2018, 1, 3, 18, 0))
+            ]
+        )
         # Rendering
         self.assertEqual(
             oh.plaintext_week_description(),
@@ -93,6 +104,14 @@ class TestGlobal(unittest.TestCase):
         self.assertEqual(
             oh.next_change(dt),
             datetime.datetime(2018, 6, 4, 13, 0)
+        )
+        self.assertEqual(
+            oh.time_before_next_change(dt),
+            "in 50 minutes"
+        )
+        self.assertEqual(
+            oh.time_before_next_change(dt, word=False),
+            "50 minutes"
         )
         # Day periods.
         self.assertEqual(
@@ -145,6 +164,16 @@ class TestGlobal(unittest.TestCase):
         self.assertTrue(oh.is_open(dt))
         dt = datetime.datetime(2016, 2, 1, 12, 10)
         self.assertTrue(oh.is_open(dt))
+        # Next change
+        dt = datetime.datetime(2018, 1, 1, 10, 0)
+        self.assertEqual(
+            oh.next_change(dt, max_recursion=0),
+            datetime.datetime.combine(
+                datetime.date(2018, 1, 1), datetime.time.max
+            )
+        )
+        with self.assertRaises(NextChangeRecursionError) as context:
+            oh.next_change(dt, max_recursion=10)
         # Periods
         now = datetime.datetime.now()
         self.assertEqual(
@@ -189,6 +218,15 @@ class TestGlobal(unittest.TestCase):
             datetime.datetime(2018, 1, 8, 0, 0)
         )
         
+        self.assertEqual(
+            oh.time_before_next_change(dt),
+            "in 14 hours"
+        )
+        self.assertEqual(
+            oh.time_before_next_change(dt, word=False),
+            "14 hours"
+        )
+        
         dt = datetime.datetime(2018, 1, 8, 10, 0)
         self.assertEqual(
             oh.next_change(dt),
@@ -202,6 +240,10 @@ class TestGlobal(unittest.TestCase):
                 datetime.date(2018, 1, 8), datetime.time.max
             )
         )
+        
+        with self.assertRaises(NextChangeRecursionError) as context:
+            dt = datetime.datetime(2018, 1, 1, 10, 0)
+            oh.next_change(dt, max_recursion=3)
     
     def test_5(self):
         field = "Mo-Fr 19:00-02:00"
@@ -618,6 +660,7 @@ class TestGlobal(unittest.TestCase):
         
         self.assertEqual(oh1, oh2)
         self.assertNotEqual(oh1, oh3)
+        self.assertNotEqual(oh1, '')
         
         oh4 = OHParser("Mo 10:00-20:00", location=(59.9, 10.7, "Europe/Oslo", 0))
         oh5 = OHParser("Mo 10:00-20:00", location=(59.9, 10.7, "Europe/Oslo", 0))
@@ -626,6 +669,11 @@ class TestGlobal(unittest.TestCase):
         self.assertNotEqual(oh1, oh4)
         self.assertEqual(oh4, oh5)
         self.assertNotEqual(oh5, oh6)
+    
+    def test_locales_handling(self):
+        field = "Mo-Fr 10:00-20:00"
+        with self.assertWarns(Warning):
+            oh = OHParser(field, locale="ja")
 
 
 class TestSolarHours(unittest.TestCase):
@@ -952,6 +1000,15 @@ class TestSolarHoursParsing(unittest.TestCase):
         field = "Mo,Th 09:00-12:00,13:00-(sunrise+02:00"
         with self.assertRaises(ParseError) as context:
             oh = OHParser(field)
+    
+    def test_antarctica(self):
+        # On Antactica, the sun may never reach low positions in sky,
+        # so dawn / dusk hours can't be get.
+        location = (-77.85, 166.72, "UTC", 0)
+        oh = OHParser("Mo-Fr sunrise-sunset", location=location)
+        dt = datetime.datetime(2018, 1, 1, 10, 0)
+        with self.assertRaises(SolarHoursError) as context:
+            oh.is_open(dt)
 
 
 class TestFieldDescription(unittest.TestCase):
