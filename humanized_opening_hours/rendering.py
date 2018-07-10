@@ -48,7 +48,7 @@ def render_time(time, babel_locale):
             "dusk": _("dusk")
         }.get(time.t[0])
     if time.t[1] == 1:
-        delta_str = babel.dates.format_time(
+        delta_str = babel.dates.format_timedelta(
             time.t[2], locale=babel_locale, format="short"
         )
         return {
@@ -58,7 +58,7 @@ def render_time(time, babel_locale):
             "dusk": _("{time} after dusk")
         }.get(time.t[0]).format(time=delta_str)
     else:
-        delta_str = babel.dates.format_time(
+        delta_str = babel.dates.format_timedelta(
             time.t[2], locale=babel_locale, format="short"
         )
         return {
