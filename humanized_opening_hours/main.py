@@ -322,15 +322,6 @@ class OHParser:
                     context=e.context
                 )
             )
-        except lark.common.UnexpectedToken as e:
-            raise ParseError(
-                "The field could not be parsed, it may be invalid. "
-                "Error happened on column {col} when "
-                "parsing {context!r}.".format(
-                    col=e.column,
-                    context=e.token.value
-                )
-            )
         except lark.common.ParseError as e:
             raise ParseError(
                 "The field could not be parsed, it may be invalid."
@@ -659,7 +650,7 @@ class OHParser:
         if not dt:
             dt = datetime.date.today()
         
-        if type(dt) is not datetime.date:
+        if type(dt) is not datetime.date:  # pragma: no cover
             raise TypeError(
                 "The 'dt' parameter must be a 'datetime.date' object."
             )
