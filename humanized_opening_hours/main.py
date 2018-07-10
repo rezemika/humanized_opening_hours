@@ -470,22 +470,22 @@ class OHParser:
         humanized_opening_hours.exceptions.NextChangeRecursionError
             When reaching the maximum recursion level.
         """
-        # Returns None if in recursion and don't start with datetime.time.min.
         def _current_or_next_timespan(dt, i=0):
+            # Returns None if in recursion and don't start
+            # with datetime.time.min.
             # The 'i' parameter fixes a RecursionError in some weird cases.
-            current_rule = None
-            while current_rule is None:
+            while True:
                 current_rule = self.get_current_rule(
                     dt.date()+datetime.timedelta(i)
                 )
-                if current_rule is None:
-                    if _recursion_level != 0:
-                        return (None, None)
-                    i += 1
-            new_time = dt.time() if i == 0 else datetime.time.min
+                if current_rule:
+                    break
+                elif _recursion_level > 0:
+                    return (None, None)
+                i += 1
             new_dt = datetime.datetime.combine(
                 dt.date() + datetime.timedelta(i),
-                new_time
+                dt.time() if i == 0 else datetime.time.min
             )
             
             timespans = self._get_day_timespans(new_dt.date())
@@ -507,10 +507,9 @@ class OHParser:
         if (days_offset, next_timespan) == (None, None):
             return None
         
-        new_time = dt.time() if days_offset == 0 else datetime.time.min
         new_dt = datetime.datetime.combine(
             dt.date() + datetime.timedelta(days_offset),
-            new_time
+            dt.time() if days_offset == 0 else datetime.time.min
         )
         
         beginning_time, end_time = next_timespan.get_times(
@@ -525,20 +524,20 @@ class OHParser:
                     "This facility is always open ('24/7').",
                     end_time
                 )
-        
-        if _recursion_level > 1 and beginning_time.time() != datetime.time.min:
+        elif (
+            _recursion_level > 1 and
+            beginning_time.time() != datetime.time.min
+        ):
             return None
-        
-        if dt < beginning_time:
+        elif dt < beginning_time:
             return beginning_time
-        
-        if _recursion_level == max_recursion != 0:
+        elif _recursion_level == max_recursion != 0:
             raise NextChangeRecursionError(
                 "Done {} recursions but couldn't get "
                 "the true next change.".format(_recursion_level),
                 end_time
             )
-        if (
+        elif (
             end_time.time() == datetime.time.max and
             max_recursion != 0
         ):
