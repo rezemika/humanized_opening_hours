@@ -1,0 +1,15 @@
+[report]
+exclude_lines =
+    pragma: no cover
+    def __str__
+    def __repr__
+    dt = datetime.date(time)?.today
+
+[run]
+include =
+    humanized_opening_hours/main.py
+    humanized_opening_hours/frequent_fields.py
+    humanized_opening_hours/temporal_objects.py
+    humanized_opening_hours/field_parser.py
+    humanized_opening_hours/rendering.py
+    humanized_opening_hours/exceptions.py

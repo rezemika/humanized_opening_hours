@@ -30,6 +30,12 @@ benchmark-complex:
 	@echo "=== Time for 1000 fields:"
 	@python3 -m timeit -v -r 5 -u sec -n 1000 -s 'import humanized_opening_hours as hoh' 'oh = hoh.OHParser("Jan-Feb Mo-Fr 08:00-19:00")'
 
+coverage:
+	@coverage erase
+	coverage run tests.py
+	@clear
+	coverage report -m
+
 help:
 	@echo "Available commands:"
 	@echo "  freeze          Updates 'requirements.txt'"

@@ -60,7 +60,7 @@ class Rule:
 # Selectors
 
 
-class BaseSelector:
+class BaseSelector:  #pragma: no cover
     priority = 1
     
     def __init__(self, selectors):

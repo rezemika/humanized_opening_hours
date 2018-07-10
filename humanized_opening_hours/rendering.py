@@ -77,7 +77,7 @@ def render_timespan(timespan, babel_locale):
     )
 
 
-def join_list(l: list, babel_locale) -> str:
+def join_list(l: list, babel_locale) -> str:  # pragma: no cover
     """Returns a string from a list and a locale."""
     if not l:
         return ''
@@ -85,12 +85,12 @@ def join_list(l: list, babel_locale) -> str:
     return babel.lists.format_list(values, locale=babel_locale)
 
 
-def translate_open_closed(babel_locale):
+def translate_open_closed(babel_locale):  # pragma: no cover
     set_locale(babel_locale)
     return (_("open"), _("closed"))
 
 
-def translate_colon(babel_locale):
+def translate_colon(babel_locale):  # pragma: no cover
     set_locale(babel_locale)
     return _("{}: {}")
 
