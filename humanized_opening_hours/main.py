@@ -796,13 +796,14 @@ class OHParser:
             this datetime.
         datetime.date or datetime.datetime
             The date until which to get the opening periods.
-            Give a 'datetime.datetime' to "chop" opening periods before
+            Give a 'datetime.datetime' to "chop" opening periods after
             this datetime.
         
         Returns
         -------
         list[tuple(datetime.datetime, datetime.datetime)]
-            The opening periods between the given dates.
+            The opening periods between the given dates,
+            of the shape (beginning, end).
         """
         dt1_date = dt1.date() if isinstance(dt1, datetime.datetime) else dt1
         dt2_date = dt2.date() if isinstance(dt2, datetime.datetime) else dt2
