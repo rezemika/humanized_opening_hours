@@ -206,6 +206,12 @@ oh.solar_hours[datetime.date.today()] = solar_hours
 
 Attention, except if the facility is on the equator, this setting will be valid only for a short period (except if you provide coordinates, because they will be automatically updated).
 
+If you try to do something with a field containing solar hours without providing a location, a `humanized_opening_hours.exceptions.SolarHoursError` exception will be raised.
+
+In some very rare cases, it might be impossible to get solar hours.
+For example, in Antactica, the sun may never reach the dawn / dusk location in the sky, so the `astral` module can't return the down time.
+So, if you try to get, for example, the next change with a field containing solar hours and located in such location, a `humanized_opening_hours.exceptions.SolarHoursError` exception will also be raised.
+
 ## Have nice schedules
 
 You can pass any valid locale name to `OHParser`, it will work for the majority of methods, cause they only need Babel's translations.
