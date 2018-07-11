@@ -9,11 +9,12 @@ import lark
 import babel.dates
 import astral
 
-from humanized_opening_hours.temporal_objects import WEEKDAYS, MONTHS
+from humanized_opening_hours.temporal_objects import (
+    WEEKDAYS, MONTHS, render_timespan
+)
 from humanized_opening_hours.field_parser import get_tree_and_rules
 from humanized_opening_hours.rendering import (
-    DescriptionTransformer, AVAILABLE_LOCALES, render_timespan,
-    join_list, translate_open_closed, translate_colon
+    AVAILABLE_LOCALES, join_list, translate_open_closed, translate_colon
 )
 from humanized_opening_hours.exceptions import (
     ParseError, CommentOnlyField, AlwaysClosed, NextChangeRecursionError
@@ -553,11 +554,10 @@ class OHParser:
             A list of sentences (beginning with a capital letter and ending
             with a point). Ex: ['From Monday to Friday: 10:00 - 20:00.']
         """
-        transformer = DescriptionTransformer()
-        transformer._locale = self.locale
-        transformer._human_names = self.get_localized_names()
-        transformer._install_locale()
-        return transformer.transform(self._tree)
+        localized_names = self.get_localized_names()
+        return [
+            r.description(localized_names, self.locale) for r in self.rules
+        ]
     
     def time_before_next_change(self, dt=None, word=True):
         """Returns a human-readable string of the remaining time

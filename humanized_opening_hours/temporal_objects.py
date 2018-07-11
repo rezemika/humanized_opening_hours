@@ -1,7 +1,18 @@
 import datetime
 import calendar
+import gettext
+from itertools import groupby
+from operator import itemgetter
 
+import babel
+
+from humanized_opening_hours.rendering import (
+    set_locale, join_list, render_timespan, render_time
+)
 from humanized_opening_hours.exceptions import SolarHoursError
+
+
+gettext.install("hoh", "locales")
 
 
 WEEKDAYS = (
@@ -11,6 +22,30 @@ MONTHS = (
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 )
+
+
+def consecutive_groups(iterable, ordering=lambda x: x):
+    """Yields groups of consecutive items using 'itertools.groupby'.
+    The *ordering* function determines whether two items are adjacent by
+    returning their position.
+    
+    By default, the ordering function is the identity function. This is
+    suitable for finding runs of numbers:
+    
+        >>> iterable = [1, 10, 11, 12, 20, 30, 31, 32, 33, 40]
+        >>> for group in consecutive_groups(iterable):
+        ...     print(list(group))
+        [1]
+        [10, 11, 12]
+        [20]
+        [30, 31, 32, 33]
+        [40]
+    """
+    # Code from https://more-itertools.readthedocs.io/en/latest/api.html#more_itertools.consecutive_groups  # noqa
+    for k, g in groupby(
+        enumerate(iterable), key=lambda x: x[0] - ordering(x[1])
+    ):
+        yield map(itemgetter(1), g)
 
 
 def easter_date(year):
@@ -46,6 +81,38 @@ class Rule:
                     return False
         return False
     
+    def description(self, localized_names, babel_locale):
+        set_locale(babel_locale)
+        if (
+            isinstance(self.range_selectors, AlwaysOpenSelector) and
+            self.time_selectors == [TIMESPAN_ALL_THE_DAY]
+        ):
+            return _("Open 24 hours a day and 7 days a week.")
+        
+        range_selectors_description = ', '.join(
+            [
+                sel.description(localized_names, babel_locale)
+                for sel in self.range_selectors.selectors
+            ]
+        )
+        if not range_selectors_description:
+            range_selectors_description = _("every days")
+        if not self.time_selectors:
+            time_selectors_description = _("closed")
+        else:
+            time_selectors_description = join_list(
+                [
+                    timespan.description(localized_names, babel_locale)
+                    for timespan in self.time_selectors
+                ],
+                babel_locale
+            )
+        full_description = _("{}: {}").format(
+            range_selectors_description,
+            time_selectors_description
+        ) + '.'
+        return full_description[0].upper() + full_description[1:]
+    
     def __repr__(self):
         return str(self)
     
@@ -60,13 +127,17 @@ class Rule:
 # Selectors
 
 
-class BaseSelector:  #pragma: no cover
+class BaseSelector:  # pragma: no cover
     priority = 1
+    rendering_data = ()
     
     def __init__(self, selectors):
         self.selectors = selectors
     
     def is_included(self, dt, SH_dates, PH_dates):
+        pass
+    
+    def description(self, localized_names, babel_locale):
         pass
     
     def __repr__(self):
@@ -105,6 +176,14 @@ class MonthDaySelector(BaseSelector):
             if selector.is_included(dt, SH_dates, PH_dates):
                 return True
         return False
+    
+    def description(self, localized_names, babel_locale):
+        set_locale(babel_locale)
+        rendered_selectors = [
+            sel.description(localized_names, babel_locale)
+            for sel in self.selectors
+        ]
+        return join_list(rendered_selectors, babel_locale)
 
 
 class WeekdayHolidaySelector(BaseSelector):
@@ -121,6 +200,42 @@ class WeekdayHolidaySelector(BaseSelector):
         else:
             wd = WEEKDAYS[dt.weekday()]
             return wd in self.selectors
+    
+    def description(self, localized_names, babel_locale):
+        # TODO: SH and PH
+        set_locale(babel_locale)
+        day_groups = []
+        for group in consecutive_groups(
+            sorted(self.selectors, key=WEEKDAYS.index), ordering=WEEKDAYS.index
+        ):
+            group = list(group)
+            if len(group) == 1:
+                day_groups.append((group[0],))
+            else:
+                day_groups.append((group[0], group[-1]))
+        output = []
+        for group in day_groups:
+            if len(group) == 1:
+                output.append(_("on {weekday}").format(
+                    weekday=localized_names["days"][WEEKDAYS.index(group[0])]
+                ))
+            else:
+                output.append(_("from {weekday1} to {weekday2}").format(
+                    weekday1=localized_names["days"][WEEKDAYS.index(group[0])],
+                    weekday2=localized_names["days"][WEEKDAYS.index(group[1])]
+                ))
+        holidays_description = {
+            (True, True): _("on public and school holidays"),
+            (True, False): _("on public holidays"),
+            (False, True): _("on school holidays")
+        }.get((self.PH, self.SH))
+        if holidays_description:
+            return babel.lists.format_list(
+                [holidays_description] + output,
+                locale=babel_locale
+            )
+        else:
+            return join_list(output, babel_locale)
     
     def __str__(self):
         return "<WeekdayHolidaySelector {} (SH: {}; PH: {})>".format(
@@ -158,6 +273,42 @@ class WeekdayInHolidaySelector(BaseSelector):
             return True
         return False
     
+    def _weekdays_description(self, localized_names, babel_locale):
+        set_locale(babel_locale)
+        day_groups = []
+        for group in consecutive_groups(
+            sorted(self.weekdays, key=WEEKDAYS.index), ordering=WEEKDAYS.index
+        ):
+            group = list(group)
+            if len(group) == 1:
+                day_groups.append((group[0],))
+            else:
+                day_groups.append((group[0], group[-1]))
+        output = []
+        for group in day_groups:
+            if len(group) == 1:
+                output.append(_("on {weekday}").format(
+                    weekday=localized_names["days"][WEEKDAYS.index(group[0])]
+                ))
+            else:
+                output.append(_("from {weekday1} to {weekday2}").format(
+                    weekday1=localized_names["days"][WEEKDAYS.index(group[0])],
+                    weekday2=localized_names["days"][WEEKDAYS.index(group[1])]
+                ))
+        return output
+    
+    def description(self, localized_names, babel_locale):
+        set_locale(babel_locale)
+        weekdays_description = self._weekdays_description(
+            localized_names, babel_locale
+        )
+        holidays_description = {
+            (True, True): _("on public and school holidays"),
+            (True, False): _("on public holidays"),
+            (False, True): _("on school holidays")
+        }.get(('PH' in self.holidays, 'SH' in self.holidays))
+        return ', '.join([holidays_description] + weekdays_description)
+    
     def __str__(self):
         return "<WeekdayInHolidaySelector {} in {}>".format(
             str(self.weekdays), str(self.holidays)
@@ -174,6 +325,29 @@ class WeekSelector(BaseSelector):
         week_number = dt.isocalendar()[1]
         return week_number in self.week_numbers
     
+    def description(self, localized_names, babel_locale):
+        set_locale(babel_locale)
+        output = []
+        for week_range in self.rendering_data:
+            if len(week_range) == 1:
+                output.append(_("in week {week}").format(week=week_range[0]))
+            elif len(week_range) == 2:
+                output.append(_("from week {week1} to week {week2}").format(
+                    week1=week_range[0],
+                    week2=week_range[1]
+                ))
+            else:
+                output.append(
+                    _(
+                        "from week {week1} to week {week2}, every {n} weeks"
+                    ).format(
+                        week1=week_range[0],
+                        week2=week_range[1],
+                        n=week_range[2]
+                    )
+                )
+        return join_list(output, babel_locale)
+    
     def __str__(self):
         return '<WeekSelector ' + str(self.week_numbers) + '>'
 
@@ -183,6 +357,29 @@ class YearSelector(BaseSelector):
     
     def is_included(self, dt: datetime.datetime, SH_dates, PH_dates):
         return dt.year in self.selectors
+    
+    def description(self, localized_names, babel_locale):
+        set_locale(babel_locale)
+        output = []
+        for year_range in self.rendering_data:
+            if len(year_range) == 1:
+                output.append(_("in {year}").format(year=year_range[0]))
+            elif len(year_range) == 2:
+                output.append(_("from {year1} to {year2}").format(
+                    year1=year_range[0],
+                    year2=year_range[1]
+                ))
+            else:
+                output.append(
+                    _(
+                        "from {year1} to {year2}, every {n} years"
+                    ).format(
+                        year1=year_range[0],
+                        year2=year_range[1],
+                        n=year_range[2]
+                    )
+                )
+        return join_list(output, babel_locale)
 
 
 # Ranges
@@ -202,6 +399,20 @@ class MonthDayRange:
             dt_from = sorted(self.date_from.get_dates(dt))[0]
             dt_to = sorted(self.date_to.get_dates(dt))[-1]
             return dt_from <= dt <= dt_to
+    
+    def description(self, localized_names, babel_locale):
+        set_locale(babel_locale)
+        if not self.date_to:
+            return self.date_from.description(localized_names, babel_locale)
+        else:
+            return _("from {monthday1} to {monthday2}").format(
+                monthday1=self.date_from.description(
+                    localized_names, babel_locale
+                ),
+                monthday2=self.date_to.description(
+                    localized_names, babel_locale
+                )
+            )
     
     def __repr__(self):
         return str(self)
@@ -269,6 +480,34 @@ class MonthDayDate:
                 self.month,
                 self.monthday
             )])
+    
+    def description(self, localized_names, babel_locale):
+        set_locale(babel_locale)
+        if self.kind == "easter":
+            return _("on easter")
+        elif self.kind == "month":
+            return localized_names["months"][self.month-1]
+        elif self.kind == "monthday-day":
+            if self.year:
+                return _("{month} {day1} to {day2}, {year}").format(
+                    month=localized_names["months"][self.month-1],
+                    day1=self.monthday,
+                    day2=self.monthday_to,
+                    year=self.year
+                )
+            else:
+                return _("from {month} {day1} to {day2}").format(
+                    month=localized_names["months"][self.month-1],
+                    day1=self.monthday,
+                    day2=self.monthday_to
+                )
+        else:  # self.kind == "monthday"
+            if self.year:
+                date = datetime.date(self.year, self.month, self.monthday)
+                return babel.dates.format_date(date, format="long")
+            else:
+                date = datetime.date(2000, self.month, self.monthday)
+                return date.strftime(_("%B %-d"))
     
     def __repr__(self):
         return str(self)
@@ -364,6 +603,10 @@ class TimeSpan:
         beginning_time, end_time = self.get_times(dt.date(), solar_hours)
         return beginning_time <= dt <= end_time
     
+    def description(self, localized_names, babel_locale):
+        set_locale(babel_locale)
+        return render_timespan(self, babel_locale)
+    
     def __repr__(self):
         return "<TimeSpan from {} to {}>".format(
             str(self.beginning), str(self.end)
@@ -424,6 +667,10 @@ class Time:
                     self.t[2]
                 ).time()
             )
+    
+    def description(self, localized_names, babel_locale):
+        set_locale(babel_locale)
+        return render_time(self, babel_locale)
     
     def __repr__(self):
         return "<Time ({!r})>".format(str(self))

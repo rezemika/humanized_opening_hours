@@ -5,7 +5,7 @@ import lark
 
 from humanized_opening_hours.temporal_objects import (
     WEEKDAYS, MONTHS,
-    Rule, BaseSelector, RangeSelector, AlwaysOpenSelector,
+    Rule, RangeSelector, AlwaysOpenSelector,
     MonthDaySelector, WeekdayHolidaySelector,
     WeekdayInHolidaySelector, WeekSelector,
     YearSelector, MonthDayRange, MonthDayDate,
@@ -169,27 +169,59 @@ class MainTransformer(lark.Transformer):
     
     def year_range(self, args):
         if len(args) == 1:
-            return set([args[0]])
+            return (
+                (args[0],),
+                set([args[0]])
+            )
         elif len(args) == 2:
-            return set(range(args[0], args[1]+1))
+            return (
+                (args[0], args[1]),
+                set(range(args[0], args[1]+1))
+            )
         else:
-            return set(range(args[0], args[1]+1, int(args[2].value)))
+            return (
+                (args[0], args[1], int(args[2].value)),
+                set(range(args[0], args[1]+1, int(args[2].value)))
+            )
     
     def year_selector(self, args):
-        return YearSelector(set([item for sublist in args for item in sublist]))
+        years = set()
+        rendering_data = []
+        for (arg_rendering_data, arg_years) in args:
+            years = years.union(arg_years)
+            rendering_data.append(arg_rendering_data)
+        ys = YearSelector(years)
+        ys.rendering_data = rendering_data
+        return ys
     
     # Week
     def week_selector(self, args):
         args = args[1:]
-        return WeekSelector(args[0])
+        weeks = set()
+        rendering_data = []
+        for (arg_rendering_data, arg_weeks) in args:
+            weeks = weeks.union(arg_weeks)
+            rendering_data.append(arg_rendering_data)
+        ws = WeekSelector(weeks)
+        ws.rendering_data = rendering_data
+        return ws
     
     def week(self, args):
         if len(args) == 1:
-            return set([args[0]])
+            return (
+                (args[0],),
+                set([args[0]])
+            )
         elif len(args) == 2:
-            return set(range(args[0], args[1]+1))
+            return (
+                (args[0], args[1]),
+                set(range(args[0], args[1]+1))
+            )
         else:
-            return set(range(args[0], args[1]+1, int(args[2].value)))
+            return (
+                (args[0], args[1], int(args[2].value)),
+                set(range(args[0], args[1]+1, int(args[2].value)))
+            )
     
     def weeknum(self, args):
         return int(args[0].value)
