@@ -44,6 +44,7 @@ def cycle_slice(l, start_index, end_index):
 
 
 class MainTransformer(lark.Transformer):
+    # TODO: Rewrite this part (errors with timespan only fields).
     def time_domain(self, args):
         return args
     
@@ -60,7 +61,7 @@ class MainTransformer(lark.Transformer):
         
         # Raise exception on "Mo-Fr" rules (without periods).
         if range_selectors and not time_selectors and not rule_modifier:
-            raise lark.common.ParseError()
+            raise lark.exceptions.ParseError()
         
         if range_selectors is None:
             range_selectors = AlwaysOpenSelector()

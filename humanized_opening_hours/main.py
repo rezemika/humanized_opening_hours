@@ -313,16 +313,14 @@ class OHParser:
             self._tree, self.rules = get_tree_and_rules(
                 self.field, optimize
             )
-        except lark.lexer.UnexpectedInput as e:
+        except lark.exceptions.UnexpectedInput as e:
             raise ParseError(
                 "The field could not be parsed, it may be invalid. "
-                "Error happened on column {col} when "
-                "parsing {context!r}.".format(
-                    col=e.column,
-                    context=e.context
+                "Error happened on column {col}.".format(
+                    col=e.column
                 )
             )
-        except lark.common.ParseError as e:
+        except lark.exceptions.ParseError as e:
             raise ParseError(
                 "The field could not be parsed, it may be invalid."
             )
