@@ -18,15 +18,16 @@ PLUS_OR_MINUS : "+" | "-"
 
 time_domain : rule_sequence ("; " rule_sequence)*
 
-rule_sequence : selector_sequence [rule_modifier]
-              | rule_modifier
+rule_sequence : ALWAYS_OPEN -> always_open_rule
+              | range_selectors " " time_selector
+              | range_selectors " " time_selector rule_modifier
+              | time_selector
+              | time_selector rule_modifier -> time_modifier_rule
+              | range_selectors rule_modifier -> range_modifier_rule
+//              | rule_modifier -> modifier_only_rule  // TODO: Allow only "off".
 
 rule_modifier : OPEN -> rule_modifier_open
               | CLOSED -> rule_modifier_closed
-
-selector_sequence : ALWAYS_OPEN -> always_open
-                  | range_selectors [" " time_selector]
-                  | time_selector
 
 //
 

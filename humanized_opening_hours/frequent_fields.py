@@ -8,9 +8,9 @@ from humanized_opening_hours.temporal_objects import WEEKDAYS
 # flake8: noqa
 
 FREQUENT_FIELDS = {
-    "24/7": Tree("time_domain", [Tree("rule_sequence", [Tree("always_open", [Token("ALWAYS_OPEN", '24/7')])])]),
-    "sunrise-sunset": Tree("time_domain", [Tree("rule_sequence", [Tree("selector_sequence", [Tree("time_selector", [Tree("timespan", [Tree("time", [Tree("variable_time", [Token("EVENT", 'sunrise')])]), Tree("time", [Tree("variable_time", [Token("EVENT", 'sunset')])])])])])])]),
-    "sunset-sunrise": Tree("time_domain", [Tree("rule_sequence", [Tree("selector_sequence", [Tree("time_selector", [Tree("timespan", [Tree("time", [Tree("variable_time", [Token("EVENT", 'sunset')])]), Tree("time", [Tree("variable_time", [Token("EVENT", 'sunrise')])])])])])])]),
+    "24/7": Tree(time_domain, [Tree(always_open_rule, [Token(ALWAYS_OPEN, '24/7')])]),
+    "sunrise-sunset": Tree(time_domain, [Tree(rule_sequence, [Tree(time_selector, [Tree(timespan, [Tree(time, [Tree(variable_time, [Token(EVENT, 'sunrise')])]), Tree(time, [Tree(variable_time, [Token(EVENT, 'sunset')])])])])])]),
+    "sunset-sunrise": Tree(time_domain, [Tree(rule_sequence, [Tree(time_selector, [Tree(timespan, [Tree(time, [Tree(variable_time, [Token(EVENT, 'sunset')])]), Tree(time, [Tree(variable_time, [Token(EVENT, 'sunrise')])])])])])]),
 }
 
 
@@ -38,7 +38,7 @@ def parse_simple_field(field):
             if wday not in WEEKDAYS:
                 return None
             parsed_parts.append(
-                Tree("rule_sequence", [Tree("selector_sequence", [Tree("range_selectors", [Tree("weekday_or_holiday_sequence_selector", [Tree("weekday_sequence", [Tree("weekday_range", [Token("WDAY", wday)])])])])]), Tree("rule_modifier_closed", [Token("CLOSED", ' off')])])
+                Tree("range_modifier_rule", [Tree("range_selectors", [Tree("weekday_or_holiday_sequence_selector", [Tree("weekday_sequence", [Tree("weekday_range", [Token("WDAY", wday)])])])]), Tree("rule_modifier_closed", [Token("CLOSED", ' off')])])
             )
         elif RE_WDAY_TIMESPAN.match(part):
             wday = part[:2]
@@ -51,7 +51,7 @@ def parse_simple_field(field):
                     Tree("timespan", [Tree("time", [Tree("hour_minutes", [Token("TWO_DIGITS", from_h), Token("TWO_DIGITS", from_m)])]), Tree("time", [Tree("hour_minutes", [Token("TWO_DIGITS", to_h), Token("TWO_DIGITS", to_m)])])])
                 )
             parsed_parts.append(
-                Tree("rule_sequence", [Tree("selector_sequence", [Tree("range_selectors", [Tree("weekday_or_holiday_sequence_selector", [Tree("weekday_sequence", [Tree("weekday_range", [Token("WDAY", wday)])])])]), Tree("time_selector", timespans)])])
+                Tree("rule_sequence", [Tree("range_selectors", [Tree("weekday_or_holiday_sequence_selector", [Tree("weekday_sequence", [Tree("weekday_range", [Token("WDAY", wday)])])])]), Tree("time_selector", [timespans)])
             )
         elif RE_WDAY_WDAY_TIMESPAN.match(part):
             wday_from, wday_to = part[:5].split('-')
@@ -64,13 +64,13 @@ def parse_simple_field(field):
                     Tree("timespan", [Tree("time", [Tree("hour_minutes", [Token("TWO_DIGITS", from_h), Token("TWO_DIGITS", from_m)])]), Tree("time", [Tree("hour_minutes", [Token("TWO_DIGITS", to_h), Token("TWO_DIGITS", to_m)])])])
                 )
             parsed_parts.append(
-                Tree("rule_sequence", [Tree("selector_sequence", [Tree("range_selectors", [Tree("weekday_or_holiday_sequence_selector", [Tree("weekday_sequence", [Tree("weekday_range", [Token("WDAY", wday_from), Token("WDAY", wday_to)])])])]), Tree("time_selector", timespans)])])
+                Tree("rule_sequence", [Tree("range_selectors", [Tree("weekday_or_holiday_sequence_selector", [Tree("weekday_sequence", [Tree("weekday_range", [Token("WDAY", wday_from), Token("WDAY", wday_to)])])])]), Tree("time_selector", timespans)])
             )
         elif RE_TIMESPAN.match(part):
             from_h, from_m = part[:5].split(':')
             to_h, to_m = part[6:].split(':')
             parsed_parts.append(
-                Tree("selector_sequence", [Tree("time_selector", [Tree("timespan", [Tree("time", [Tree("hour_minutes", [Token("TWO_DIGITS", from_h), Token("TWO_DIGITS", from_m)])]), Tree("time", [Tree("hour_minutes", [Token("TWO_DIGITS", to_h), Token("TWO_DIGITS", to_m)])])])])])
+                Tree("rule_sequence", [Tree("time_selector", [Tree("timespan", [Tree("time", [Tree("hour_minutes", [Token("TWO_DIGITS", from_h), Token("TWO_DIGITS", from_m)])]), Tree("time", [Tree("hour_minutes", [Token("TWO_DIGITS", to_h), Token("TWO_DIGITS", to_m)])])])])])
             )
         else:
             return None

@@ -44,53 +44,35 @@ def cycle_slice(l, start_index, end_index):
 
 
 class MainTransformer(lark.Transformer):
-    # TODO: Rewrite this part (errors with timespan only fields).
     def time_domain(self, args):
         return args
     
+    # Rule
     def rule_sequence(self, args):
-        """
-        Takes list[selector_sequence, rule_modifier?].
-        """
-        if len(args) == 2:
-            selector_sequence, rule_modifier = args
-        else:
-            selector_sequence = args[0]
-            rule_modifier = None
-        range_selectors, time_selectors = selector_sequence
-        
-        # Raise exception on "Mo-Fr" rules (without periods).
-        if range_selectors and not time_selectors and not rule_modifier:
+        if len(args) == 1:  # "time_selector"
+            return Rule(AlwaysOpenSelector(), args[0])
+        if len(args) == 2:  # "range_selectors time_selector"
+            return Rule(args[0], args[1])
+        else:  # "range_selectors time_selector rule_modifier"
+            return Rule(args[0], args[1], status=args[2])
+    
+    def always_open_rule(self, args):  # "ALWAYS_OPEN"
+        return Rule(AlwaysOpenSelector(), [TIMESPAN_ALL_THE_DAY])
+    
+    def time_modifier_rule(self, args):  # "time_selector rule_modifier"
+        return Rule(AlwaysOpenSelector(), args[0], status=args[1])
+    
+    def range_modifier_rule(self, args):  # "range_selectors rule_modifier"
+        modifier = args[1]
+        if modifier == "open":
             raise lark.exceptions.ParseError()
-        
-        if range_selectors is None:
-            range_selectors = AlwaysOpenSelector()
-        if rule_modifier:
-            return Rule(range_selectors, time_selectors, status=rule_modifier)
-        return Rule(range_selectors, time_selectors)
+        return Rule(args[0], [], status=modifier)
     
-    def always_open(self, args):
-        return (None, [TIMESPAN_ALL_THE_DAY])
+    # def modifier_only_rule(self, args): # "rule_modifier"
+    #     pass
     
-    def selector_sequence(self, args):
-        """
-        Takes :
-        - list[range_selectors], list[time_selectors]
-        - list[time_selectors]
-        
-        Returns a tuple like (range_selectors, time_selectors) or
-        (None, time_selectors) (in case of "24/7" or "08:00-20:00") or
-        (range_selectors, []) (in case of "Mo-Fr off").
-        """
-        if len(args) == 1:
-            if isinstance(args[0], BaseSelector):
-                return (args[0], [])
-            return (None, args[0])
-        else:
-            range_selectors, time_selectors = args
-            return (range_selectors, time_selectors)
-    
-    def range_selectors(self, args):  # TODO: Include in Rule.
+    # Main selectors
+    def range_selectors(self, args):
         return RangeSelector(args)
     
     def time_selector(self, args):
