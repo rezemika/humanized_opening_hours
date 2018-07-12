@@ -192,8 +192,8 @@ The second is to use the `SolarHours` object (which inherits from `dict`), *via*
 
 ```python
 # First method. You can use either an 'astral.Location' object or a tuple.
-location = astral.Location(["Greenwich", "England", 51.168, 0.0, "Europe/London", 0, 24])
-location = (51.168, 0.0, "Europe/London", 0, 24)
+location = astral.Location(["Greenwich", "England", 51.168, 0.0, "Europe/London", 24])
+location = (51.168, 0.0, "Europe/London", 24)
 oh = hoh.OHParser(field, location=location)
 
 # Second method.
