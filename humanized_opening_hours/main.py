@@ -305,10 +305,7 @@ class OHParser:
         if self.field in ("closed", "off"):
             raise AlwaysClosed("This facility is always closed.")
         
-        if self.field in ("24/7", "00:00-24:00"):
-            self.is_24_7 = True
-        else:
-            self.is_24_7 = False
+        self.is_24_7 = self.field in ("24/7", "00:00-24:00")
         
         try:
             self._tree, self.rules = get_tree_and_rules(
@@ -775,7 +772,7 @@ class OHParser:
             rendered_periods, joined_rendered_periods
         )
     
-    def opening_periods_between(self, dt1, dt2):
+    def opening_periods_between(self, dt1, dt2, merge=False):
         """Returns a list of tuples representing opening periods.
         
         Parameters
@@ -795,6 +792,20 @@ class OHParser:
             The opening periods between the given dates,
             of the shape (beginning, end).
         """
+        def merge_date_ranges(data):
+            # Code from https://stackoverflow.com/a/34797890
+            result = []
+            t_old = data[0]
+            for t in data[1:]:
+                if t_old[1] >= t[0]:
+                    t_old = ((min(t_old[0], t[0]), max(t_old[1], t[1])))
+                else:
+                    result.append(t_old)
+                    t_old = t
+            else:
+                result.append(t_old)
+            return result
+        
         dt1_date = dt1.date() if isinstance(dt1, datetime.datetime) else dt1
         dt2_date = dt2.date() if isinstance(dt2, datetime.datetime) else dt2
         delta = dt2_date - dt1_date
@@ -821,6 +832,8 @@ class OHParser:
                 output_periods.append((period[0], dt2))
             else:
                 output_periods.append(period)
+        if merge:
+            return merge_date_ranges(output_periods)
         return output_periods
     
     def __eq__(self, other):
