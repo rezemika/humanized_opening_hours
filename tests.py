@@ -79,6 +79,21 @@ class TestGlobal(unittest.TestCase):
         )
         self.assertEqual(
             oh.opening_periods_between(
+                datetime.date(2018, 1, 1),
+                datetime.date(2018, 1, 7),
+                merge=True
+            ),
+            [
+                (datetime.datetime(2018, 1, 1, 9, 0), datetime.datetime(2018, 1, 1, 19, 0)),
+                (datetime.datetime(2018, 1, 2, 9, 0), datetime.datetime(2018, 1, 2, 19, 0)),
+                (datetime.datetime(2018, 1, 3, 9, 0), datetime.datetime(2018, 1, 3, 19, 0)),
+                (datetime.datetime(2018, 1, 4, 9, 0), datetime.datetime(2018, 1, 4, 19, 0)),
+                (datetime.datetime(2018, 1, 5, 9, 0), datetime.datetime(2018, 1, 5, 19, 0)),
+                (datetime.datetime(2018, 1, 6, 9, 0), datetime.datetime(2018, 1, 6, 19, 0))
+            ]
+        )
+        self.assertEqual(
+            oh.opening_periods_between(
                 datetime.datetime(2018, 1, 1, 10, 0),
                 datetime.datetime(2018, 1, 3, 18, 0)
             ),
@@ -206,6 +221,41 @@ class TestGlobal(unittest.TestCase):
         self.assertFalse(oh.is_open(dt))
         dt = datetime.datetime(2018, 1, 7, 10, 0)
         self.assertFalse(oh.is_open(dt))
+        # Opening periods
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.date(2018, 1, 1),
+                datetime.date(2018, 1, 7)
+            ),
+            [
+                (datetime.datetime(2018, 1, 1, 0, 0), datetime.datetime.combine(datetime.date(2018, 1, 1), datetime.time.max)),
+                (datetime.datetime(2018, 1, 2, 0, 0), datetime.datetime.combine(datetime.date(2018, 1, 2), datetime.time.max)),
+                (datetime.datetime(2018, 1, 3, 0, 0), datetime.datetime.combine(datetime.date(2018, 1, 3), datetime.time.max)),
+                (datetime.datetime(2018, 1, 4, 0, 0), datetime.datetime.combine(datetime.date(2018, 1, 4), datetime.time.max)),
+                (datetime.datetime(2018, 1, 5, 0, 0), datetime.datetime.combine(datetime.date(2018, 1, 5), datetime.time.max)),
+            ]
+        )
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.date(2018, 1, 1),
+                datetime.date(2018, 1, 7),
+                merge=True
+            ),
+            [
+                (datetime.datetime(2018, 1, 1, 0, 0), datetime.datetime.combine(datetime.date(2018, 1, 5), datetime.time.max))
+            ]
+        )
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.date(2018, 1, 1),
+                datetime.date(2018, 1, 8),
+                merge=True
+            ),
+            [
+                (datetime.datetime(2018, 1, 1, 0, 0), datetime.datetime.combine(datetime.date(2018, 1, 5), datetime.time.max)),
+                (datetime.datetime(2018, 1, 8, 0, 0), datetime.datetime.combine(datetime.date(2018, 1, 8), datetime.time.max))
+            ]
+        )
         # Periods
         dt = datetime.datetime(2018, 1, 1, 10, 0)
         self.assertEqual(

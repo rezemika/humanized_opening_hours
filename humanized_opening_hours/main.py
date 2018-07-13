@@ -785,6 +785,9 @@ class OHParser:
             The date until which to get the opening periods.
             Give a 'datetime.datetime' to "chop" opening periods after
             this datetime.
+        merge : bool, optional
+            Defines whether to merge consecutive opening periods.
+            False default.
         
         Returns
         -------
@@ -797,8 +800,8 @@ class OHParser:
             result = []
             t_old = data[0]
             for t in data[1:]:
-                if t_old[1] >= t[0]:
-                    t_old = ((min(t_old[0], t[0]), max(t_old[1], t[1])))
+                if (t_old[1] + datetime.timedelta(microseconds=1)) >= t[0]:
+                    t_old = (min(t_old[0], t[0]), max(t_old[1], t[1]))
                 else:
                     result.append(t_old)
                     t_old = t
