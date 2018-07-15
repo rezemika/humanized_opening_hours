@@ -68,13 +68,17 @@ class Rule:
         self.time_selectors = time_selectors
         self.status = status
         
+        for timespan in self.time_selectors:
+            timespan.status = status == "open"
+        
         self.priority = sum(
             [sel.priority for sel in self.range_selectors.selectors]
         )
     
     def get_status_at(self, dt: datetime.datetime, solar_hours):
+        # TODO: Remove?
         for timespan in self.time_selectors:
-            if timespan.is_open(dt, solar_hours):
+            if timespan.compute(dt, solar_hours).is_open(dt):
                 if self.status == "open":
                     return True
                 else:  # self.status == "closed"
@@ -535,10 +539,56 @@ class MonthDayDate:
             )
 
 
+class ComputedTimeSpan:
+    def __init__(self, beginning, end, status, timespan):
+        # 'beginning' and 'end' are 'datetime.datetime' objects.
+        self.beginning = beginning
+        self.end = end
+        self.status = status
+        self.timespan = timespan
+    
+    def spans_over_midnight(self):
+        """Returns whether the TimeSpan spans over midnight."""
+        return self.beginning.day != self.end.day
+    
+    def __contains__(self, dt):
+        if (
+            not isinstance(dt, datetime.date) or
+            not isinstance(dt, datetime.datetime)
+        ):
+            return NotImplemented
+        return self.beginning <= dt < self.end
+    
+    def __lt__(self, other):
+        if isinstance(other, ComputedTimeSpan):
+            return self.beginning < other.beginning
+        elif isinstance(other, datetime.datetime):
+            return self.beginning < other
+        return NotImplemented
+    
+    def to_tuple(self):
+        return (self.beginning, self.end)
+    
+    def is_open(self, dt):
+        return (dt in self) and self.status
+    
+    def __repr__(self):
+        return "<ComputedTimeSpan from {} to {}>".format(
+            self.beginning.strftime("%H:%M"), self.end.strftime("%H:%M")
+        )
+    
+    def __str__(self):
+        return "{} - {}".format(
+            self.beginning.strftime("%H:%M"),
+            self.end.strftime("%H:%M")
+        )
+
+
 class TimeSpan:
     def __init__(self, beginning, end):
         self.beginning = beginning
         self.end = end
+        self.status = True  # False if closed period.
     
     def spans_over_midnight(self):
         """Returns whether the TimeSpan spans over midnight."""
@@ -557,6 +607,14 @@ class TimeSpan:
         else:
             return False
     
+    def compute(self, date, solar_hours):
+        """Returns a 'ComputedTimeSpan' object."""
+        return ComputedTimeSpan(
+            *self.get_times(date, solar_hours),
+            self.status,
+            self
+        )
+    
     def get_times(self, date, solar_hours):
         """Returns the beginning and the end of the TimeSpan.
         
@@ -568,7 +626,8 @@ class TimeSpan:
         Parameters
         ----------
         date: datetime.date
-            The day to use for returned datetimes.
+            The day to use for returned datetimes. If the timespan spans
+            over midnight, it will be the date of the first day.
         solar_hours: dict{str: datetime.time}
             A dict containing hours of sunrise, sunset, dawn and dusk.
         
@@ -578,30 +637,10 @@ class TimeSpan:
             A tuple containing the beginning and the end of the TimeSpan.
         """
         beginning_time = self.beginning.get_time(solar_hours, date)
+        end_time = self.end.get_time(solar_hours, date)
         if self.spans_over_midnight():
-            delta = datetime.timedelta(1)
-        else:
-            delta = datetime.timedelta()
-        end_time = self.end.get_time(solar_hours, date+delta)
+            end_time += datetime.timedelta(1)
         return (beginning_time, end_time)
-    
-    def is_open(self, dt, solar_hours):
-        """Returns whether it's open at the given datetime.
-        
-        Parameters
-        ----------
-        datetime.datetime
-            The date for which to check the opening.
-        solar_hours: dict{str: datetime.time}
-            A dict containing hours of sunrise, sunset, dawn and dusk.
-        
-        Returns
-        -------
-        bool
-            True if it's open, False else.
-        """
-        beginning_time, end_time = self.get_times(dt.date(), solar_hours)
-        return beginning_time <= dt <= end_time
     
     def description(self, localized_names, babel_locale):
         set_locale(babel_locale)

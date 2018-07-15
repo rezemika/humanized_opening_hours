@@ -432,12 +432,9 @@ class OHParser:
         if self.is_24_7:
             return True
         dt = set_dt(dt)
-        timespans = self._get_day_timespans(dt.date())
-        for timespan in timespans:
-            beginning, end = timespan[1].get_times(
-                timespan[0], self.solar_hours[timespan[0]]
-            )
-            if beginning <= dt < end:
+        computed_timespans = self._get_day_timespans(dt.date())
+        for timespan in computed_timespans:
+            if timespan.is_open(dt):
                 return True
         return False
     
@@ -483,13 +480,10 @@ class OHParser:
                 dt.time() if i == 0 else datetime.time.min
             )
             
-            timespans = self._get_day_timespans(new_dt.date())
-            for timespan in timespans:
-                beginning, end_time = timespan[1].get_times(
-                    timespan[0], self.solar_hours[timespan[0]]
-                )
-                if new_dt < end_time:
-                    return (i, timespan[1])
+            computed_timespans = self._get_day_timespans(new_dt.date())
+            for timespan in computed_timespans:
+                if new_dt < timespan.end:
+                    return (i, timespan.timespan)
             
             new_dt = datetime.datetime.combine(
                 new_dt.date()+datetime.timedelta(i),
@@ -643,11 +637,10 @@ class OHParser:
     
     def _get_day_timespans(self, dt=None, _check_yesterday=True):
         """
-            Returns a list of tuples like (datetime.date, TimeSpan)
-            from the given date.
+        Returns a list of ComputedTimeSpan objects from the given date.
         """
-        # '_check_yesterday=True' allows to get TimeSpan from yesterday which
-        # span over midnight.
+        # '_check_yesterday=True' allows to get ComputedTimeSpan 
+        # from yesterday which span over midnight.
         if not dt:
             dt = datetime.date.today()
         
@@ -658,33 +651,28 @@ class OHParser:
         
         current_rule = self.get_current_rule(dt)
         
-        # List of tuples (datetime.date, TimeSpan).
-        # The datetimes are used to get times (if the TimeSpan is yesterday).
         timespans = []
         if current_rule:
             for current_rule_timespan in current_rule.time_selectors:
-                timespans.append((dt, current_rule_timespan))
+                timespans.append(
+                    current_rule_timespan.compute(dt, self.solar_hours[dt])
+                )
         
-        # If '_check_yesterday' is True, check in yesterday timespans if
-        # one spans over midnight (and so, is in the current day), and adds it
-        # to the current day timespans.
         if _check_yesterday:
-            yesterday_date = dt-datetime.timedelta(1)
+            yesterday_date = dt - datetime.timedelta(1)
             yesterday_rule = self.get_current_rule(
                 yesterday_date
             )
             if yesterday_rule:
                 yesterday_timespans = []
                 for yesterday_timespan in yesterday_rule.time_selectors:
-                    yesterday_timespan_times = yesterday_timespan.get_times(
-                        yesterday_date,
-                        self.solar_hours[yesterday_date]
+                    computed_timespan = yesterday_timespan.compute(
+                        yesterday_date, self.solar_hours[yesterday_date]
                     )
-                    if yesterday_timespan_times[1].date() == dt:
-                        yesterday_timespans.append(
-                            (yesterday_date, yesterday_timespan)
-                        )
+                    if computed_timespan.end.date() == dt:
+                        yesterday_timespans.append(computed_timespan)
                 timespans = yesterday_timespans + timespans
+        
         return timespans
     
     def plaintext_week_description(
@@ -752,21 +740,14 @@ class OHParser:
         """
         if not dt:
             dt = datetime.date.today()
-        timespans = self._get_day_timespans(
+        computed_timespans = self._get_day_timespans(
             dt, _check_yesterday=_check_yesterday
         )
-        
         weekday_name = self.get_localized_names()["days"][dt.weekday()]
-        periods = []
-        for timespan in timespans:
-            periods.append(
-                timespan[1].get_times(
-                    timespan[0], self.solar_hours[timespan[0]]
-                )
-            )
-        if periods:
+        if computed_timespans:
             rendered_periods = [
-                render_timespan(ts[1], self.locale) for ts in timespans
+                render_timespan(ts.timespan, self.locale)
+                for ts in computed_timespans
             ]
             joined_rendered_periods = join_list(rendered_periods, self.locale)
         else:
@@ -774,7 +755,7 @@ class OHParser:
             rendered_periods = [closed_word]
             joined_rendered_periods = closed_word
         return DayPeriods(
-            weekday_name, dt, periods,
+            weekday_name, dt, [ts.to_tuple() for ts in computed_timespans],
             rendered_periods, joined_rendered_periods
         )
     

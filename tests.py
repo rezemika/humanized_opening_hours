@@ -745,6 +745,17 @@ class TestGlobal(unittest.TestCase):
             datetime.datetime(2018, 1, 8, 0, 0)
         )
     
+    def test_closed(self):
+        oh = OHParser("24/7; Su 10:00-13:00 off")
+        dt = datetime.datetime(2018, 1, 6, 10, 0)
+        self.assertTrue(oh.is_open(dt))
+        # TODO: This doesn't work because there can only be one rule per day.
+        # Check '_get_day_timespans()' and 'get_current_rule()'.
+        #dt = datetime.datetime(2018, 1, 7, 9, 0)
+        #self.assertTrue(oh.is_open(dt))
+        dt = datetime.datetime(2018, 1, 7, 11, 0)
+        self.assertFalse(oh.is_open(dt))
+    
     def test_equality(self):
         oh1 = OHParser("Mo 10:00-20:00")
         oh2 = OHParser("Mo 10:00-20:00")
