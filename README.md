@@ -15,8 +15,8 @@ True
 datetime.datetime(2017, 12, 24, 12, 0)
 >>> print('\n'.join(oh.description()))
 """
-From Monday to Friday: from 6:00 AM to 9:00 PM.
-On Saturday and Sunday: from 8:00 AM to 12:00 PM.
+From Monday to Friday: 6:00 AM – 9:00 PM.
+From Saturday to Sunday: 8:00 AM – 12:00 PM.
 """
 ```
 
@@ -30,10 +30,6 @@ On Saturday and Sunday: from 8:00 AM to 12:00 PM.
   - [Basic methods](#basic-methods)
   - [Solar hours](#solar-hours)
   - [Have nice schedules](#have-nice-schedules)
-  - [Objects](#objects)
-    - [Rule](#rule)
-    - [TimeSpan](#timespan)
-    - [Time](#time)
 - [Supported field formats](#supported-field-formats)
 - [Alternatives](#alternatives)
 - [Performances](#performances)
@@ -133,6 +129,8 @@ The returned opening periods are tuples of two `datetime.datetime` objects, repr
 ]
 ```
 
+You can also set the `merge` parameter to True, to merge continuous opening periods.
+
 -----
 
 You can get a sanitized version of the field given to the constructor with the `sanitize()` function or the `field` attribute.
@@ -225,7 +223,7 @@ The `get_localized_names()` method returns a dict of lists with the names of mon
 Example:
 
 ```python
->>> ohr.get_localized_names()
+>>> oh.get_localized_names()
 {
     'months': [
         'January', 'February', 'March',
@@ -259,8 +257,14 @@ Like `next_change()`, it can take a `datetime.datetime` moment to get next chang
 
 ```python
 # Field: "Mo-Fr 10:00-19:00; Sa 10:00-12:00; Dec 25 off"
->>> print(' '.join(oh.description()))
-"From Monday to Friday: from 10:00 AM to 7:00 PM. On Saturday: from 10:00 AM to 12:00 PM. December 25: closed."
+>>> print(oh.description())
+['From Monday to Friday: 10:00 AM – 7:00 PM.', 'On Saturday: 10:00 AM – 12:00 PM.', 'December 25: closed.']
+>>> print('\n'.join(oh.description()))
+"""
+From Monday to Friday: 10:00 AM – 7:00 PM.
+On Saturday: 10:00 AM – 12:00 PM.
+December 25: closed.
+"""
 ```
 
 -----
@@ -302,38 +306,6 @@ The returned namedtuple contains the following attributes.
 - `joined_rendered_periods` (str) : the same list, but joined to string by comas and a terminal word (ex: "09:00 - 12:00 and 13:00 - 19:00").
 
 Attention, the `datetime.datetime` objects in `periods` may be in another day, if it contains a period which spans over midnight (like `Mo-Fr 20:00-02:00`).
-
-## Objects
-
-Apart the main OHParser class, HOH provides other objects representing the parts of the field. Their names are based on the official specifications, available [here](https://wiki.openstreetmap.org/wiki/Key:opening_hours/specification).
-
-Here are the most useful:
-- `Rule` : a rule, a part of the field delimited by semicolons;
-- `TimeSpan` : an opening period, containing two `Time` objects (the beginning and the end of the period);
-- `Time` : a moment in time, which can be a beginning or an end of a `TimeSpan`.
-
-### Rule
-
-Attributes:
-- `status` (str) : a string which can be `open` or `closed` (**the handling of this is not yet fully implemented**);
-- `range_selectors` (RangeSelector) : an object representing the moments concerned by opening periods;
-- `time_selectors` (bool) : a list of `TimeSpan` objects;
-- `always_open` (bool) : True if it's open from 00:00 to 24:00, False else.
-
-You can get a rule by two ways. The first is to access to the `rules` attribute of `OHParser`, containing all the rules of the field. The second is to use the `get_current_rule()` method, which can take a `datetime.date` object, and returns the rule corresponding to this date.
-
-### TimeSpan
-
-Attributes:
-- `beginning` (Time object) : the beginning of the TimeSpan;
-- `end` (Time object) : the end of the TimeSpan.
-
-A TimeSpan is an opening period, with a beginning and an end. It provides an `is_open()` method, which takes a `datetime.time` object and the dict of solar hours, and returns whether it's open at the given time.
-It also provides `spans_over_midnight()` (the name is explicit) and `get_times()`, which takes the same arguments as `is_open()` and returns a tuple like `(beginning_datetime, end_datetime)` with the beginning and the end of the timespan (`datetime.datetime` objects, **which may not be in the same day**).
-
-### Time
-
-A `Time` object provides a `get_time()` method, which takes the dict of solar hours in argument and returns a not localized `datetime.time`.
 
 # Supported field formats
 
@@ -382,6 +354,9 @@ Mo-Fr 10:00+
 Mo-Fr 10:00,12:00,20:00  # Does not support points in time.
 ```
 
+For fields like `24/7; Su 10:00-13:00 off`, Sundays are considered as entirely closed.
+This should be fixed in a later version.
+
 # Alternatives
 
 If you want to parse `opening_hours` fields but HOH doesn't fit your needs, here are a few other libraries which might interest you.
@@ -397,14 +372,14 @@ HOH uses the module [Lark](https://github.com/erezsh/lark) (with the Earley pars
 It is very optimized (about 20 times faster) for the simplest fields (like `Mo-Fr 10:00-20:00`), so their parsing will be very fast:
 
 - 0.0002 seconds for a single field;
-- 0.019 seconds for a hundred;
-- 0.195 seconds for a thousand.
+- 0.024 seconds for a hundred;
+- 0.24 seconds for a thousand.
 
 For more complex fields (like `Jan-Feb Mo-Fr 08:00-19:00`), the parsing is slower:
 
 - 0.006 seconds for a single field;
-- 0.55 seconds for a hundred;
-- 5.7 seconds for a thousand.
+- 0.62 seconds for a hundred;
+- 6 seconds for a thousand.
 
 # Licence
 
