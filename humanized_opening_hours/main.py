@@ -224,7 +224,7 @@ class SolarHours(dict):
 
 
 class OHParser:
-    def __init__(self, field, locale="en", location=None, optimize=True):
+    def __init__(self, field, locale="en", location=None, optimize=True, skip_sanitizing=False):
         """A parser for the OSM opening_hours fields.
         
         >>> oh = hoh.OHParser("Mo-Fr 10:00-19:00")
@@ -243,6 +243,9 @@ class OHParser:
             If True (default), the parsing will be skipped if the field is
             very frequent (ex: "24/7")  or simple and HOH will use a simpler
             and faster parser than Lark. Set to False to prevent this behavior.
+        skip_sanitizing : bool, optional
+            If set to True, the 'sanitize()' function won't be called and the
+            field will be parsed "as is". False default.
         
         Attributes
         ----------
@@ -289,7 +292,10 @@ class OHParser:
             Inherits from 'ParseError'.
         """
         self.original_field = field
-        self.field = sanitize(self.original_field)
+        if skip_sanitizing:
+            self.field = field
+        else:
+            self.field = sanitize(self.original_field)
         
         if (  # Ex: "on appointment"
             self.field.count('"') == 2 and
