@@ -5,9 +5,10 @@ from itertools import groupby
 from operator import itemgetter
 
 import babel
+import babel.dates
 
 from humanized_opening_hours.rendering import (
-    set_locale, join_list, render_timespan, render_time
+    set_locale, join_list, render_timespan, render_time, translate_open_closed
 )
 from humanized_opening_hours.exceptions import SolarHoursError
 
@@ -26,20 +27,21 @@ MONTHS = (
 
 def consecutive_groups(iterable, ordering=lambda x: x):
     """Yields groups of consecutive items using 'itertools.groupby'.
+    
     The *ordering* function determines whether two items are adjacent by
     returning their position.
     
     By default, the ordering function is the identity function. This is
     suitable for finding runs of numbers:
     
-        >>> iterable = [1, 10, 11, 12, 20, 30, 31, 32, 33, 40]
-        >>> for group in consecutive_groups(iterable):
-        ...     print(list(group))
-        [1]
-        [10, 11, 12]
-        [20]
-        [30, 31, 32, 33]
-        [40]
+    >>> iterable = [1, 10, 11, 12, 20, 30, 31, 32, 33, 40]
+    >>> for group in consecutive_groups(iterable):
+    ...     print(list(group))
+    [1]
+    [10, 11, 12]
+    [20]
+    [30, 31, 32, 33]
+    [40]
     """
     # Code from https://more-itertools.readthedocs.io/en/latest/api.html#more_itertools.consecutive_groups  # noqa
     for k, g in groupby(
@@ -60,6 +62,120 @@ def easter_date(year):
     month = f // 31
     day = f % 31 + 1
     return datetime.date(year, month, day)
+
+
+class Day:
+    def __init__(self, ohparser, date, computed_timespans):
+        """A representation of a day and its opening periods.
+        
+        Parameters
+        ----------
+        OHParser instance
+            The instance where the field come from.
+        datetime.datetime
+            The date of the day.
+        list[ComputedTimeSpan]
+            The opening periods of the day.
+        
+        Attributes
+        ----------
+        ohparser
+            The instance where the field come from.
+        date
+            The date of the day.
+        weekday_name
+            The name of the weekday, in the locale given to OHParser.
+        timespans
+            The opening periods of the day.
+        locale
+            The Babel locale given to OHParser.
+        """
+        self.ohparser = ohparser
+        self.date = date
+        self.locale = self.ohparser.locale
+        self.weekday_name = babel.dates.get_day_names(
+            locale=self.locale
+        )[date.weekday()]
+        self.timespans = computed_timespans
+    
+    def opens_today(self):
+        """Returns whether there is at least one opening period on this day."""
+        return bool(self.timespans)
+    
+    def opening_periods(self):
+        """
+        Returns the opening periods of the day as tuples of the shape
+        '(beginning, end)' (represented by datetime.datetime objects).
+        """
+        return [ts.to_tuple() for ts in self.timespans]
+    
+    def total_duration(self):
+        """
+        Returns the total duration of the opening periods of the day,
+        as a datetime.timedelta object.
+        """
+        return sum(
+            [p[1] - p[0] for p in self.opening_periods()],
+            datetime.timedelta()
+        )
+    
+    def render_periods(self, join=True):
+        """
+        Returns a list of translated strings
+        describing the opening periods of the day.
+        """
+        if self.opens_today():
+            rendered_periods = [
+                render_timespan(ts.timespan, self.locale)
+                for ts in self.timespans
+            ]
+        else:
+            closed_word = translate_open_closed(self.locale)[1]
+            rendered_periods = [closed_word]
+        if join:
+            return join_list(rendered_periods, self.locale)
+        else:
+            return rendered_periods
+    
+    def tomorrow(self):
+        """
+        Returns a Day object representing the next day.
+        
+        You can also use additions or subtractions with datetime.timedelta
+        objects, like this.
+        
+        >>> seven_days_later = day + datetime.timedelta(7)
+        >>> type(seven_days_later) == Day
+        """
+        return self + datetime.timedelta(1)
+    
+    def yersterday(self):
+        """
+        Returns a Day object representing the eve.
+        
+        You can also use additions or subtractions with datetime.timedelta
+        objects, like this.
+        
+        >>> seven_days_before = day - datetime.timedelta(7)
+        >>> type(seven_days_before) == Day
+        """
+        return self - datetime.timedelta(1)
+    
+    def __add__(self, other):
+        if isinstance(other, datetime.timedelta):
+            return self.ohparser.get_day(self.date + other)
+        return NotImplemented
+    
+    def __sub__(self, other):
+        if isinstance(other, datetime.timedelta):
+            return self.ohparser.get_day(self.date - other)
+        return NotImplemented
+    
+    def __repr__(self):
+        return str(self)
+    
+    def __str__(self):
+        return "<Day {!r} ({} periods)>".format(self.date, len(self.timespans))
 
 
 class Rule:

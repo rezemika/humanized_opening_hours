@@ -51,16 +51,25 @@ class TestGlobal(unittest.TestCase):
             )
         )
         # Day periods.
+        day = oh.get_day(datetime.date(2018, 1, 1))
         self.assertEqual(
-            oh.get_day_periods(datetime.date(2018, 1, 1)),
-            DayPeriods(
-                "Monday", datetime.date(2018, 1, 1),
-                [(
-                    datetime.datetime(2018, 1, 1, 9, 0),
-                    datetime.datetime(2018, 1, 1, 19, 0)
-                )],
-                ["9:00 AM – 7:00 PM"], "9:00 AM – 7:00 PM"
-            )
+            day.weekday_name,
+            "Monday"
+        )
+        self.assertEqual(
+            day.opening_periods(),
+            [(
+                datetime.datetime(2018, 1, 1, 9, 0),
+                datetime.datetime(2018, 1, 1, 19, 0)
+            )]
+        )
+        self.assertEqual(
+            day.render_periods(join=False),
+            ["9:00 AM – 7:00 PM"]
+        )
+        self.assertEqual(
+            day.render_periods(join=True),
+            "9:00 AM – 7:00 PM"
         )
         # Opening periods
         self.assertEqual(
@@ -137,23 +146,31 @@ class TestGlobal(unittest.TestCase):
             "50 minutes"
         )
         # Day periods.
+        day = oh.get_day(datetime.date(2018, 1, 1))
         self.assertEqual(
-            oh.get_day_periods(datetime.date(2018, 1, 1)),
-            DayPeriods(
-                "Monday", datetime.date(2018, 1, 1),
-                [
-                    (
-                        datetime.datetime(2018, 1, 1, 9, 0),
-                        datetime.datetime(2018, 1, 1, 12, 0)
-                    ),
-                    (
-                        datetime.datetime(2018, 1, 1, 13, 0),
-                        datetime.datetime(2018, 1, 1, 19, 0)
-                    )
-                ],
-                ["9:00 AM – 12:00 PM", "1:00 PM – 7:00 PM"],
-                "9:00 AM – 12:00 PM and 1:00 PM – 7:00 PM"
-            )
+            day.weekday_name,
+            "Monday"
+        )
+        self.assertEqual(
+            day.opening_periods(),
+            [
+                (
+                    datetime.datetime(2018, 1, 1, 9, 0),
+                    datetime.datetime(2018, 1, 1, 12, 0)
+                ),
+                (
+                    datetime.datetime(2018, 1, 1, 13, 0),
+                    datetime.datetime(2018, 1, 1, 19, 0)
+                )
+            ]
+        )
+        self.assertEqual(
+            day.render_periods(join=False),
+            ["9:00 AM – 12:00 PM", "1:00 PM – 7:00 PM"]
+        )
+        self.assertEqual(
+            day.render_periods(join=True),
+            "9:00 AM – 12:00 PM and 1:00 PM – 7:00 PM"
         )
         # Opening periods
         self.assertEqual(
@@ -317,19 +334,27 @@ class TestGlobal(unittest.TestCase):
         dt = datetime.datetime(2018, 1, 6, 3, 0)
         self.assertFalse(oh.is_open(dt))
         # Day periods.
+        day = oh.get_day(datetime.date(2018, 1, 1))
         self.assertEqual(
-            oh.get_day_periods(datetime.date(2018, 1, 1)),
-            DayPeriods(
-                "Monday", datetime.date(2018, 1, 1),
-                [
-                    (
-                        datetime.datetime(2018, 1, 1, 19, 0),
-                        datetime.datetime(2018, 1, 2, 2, 0)
-                    )
-                ],
-                ["7:00 PM – 2:00 AM"],
-                "7:00 PM – 2:00 AM"
-            )
+            day.weekday_name,
+            "Monday"
+        )
+        self.assertEqual(
+            day.opening_periods(),
+            [
+                (
+                    datetime.datetime(2018, 1, 1, 19, 0),
+                    datetime.datetime(2018, 1, 2, 2, 0)
+                )
+            ]
+        )
+        self.assertEqual(
+            day.render_periods(join=False),
+            ["7:00 PM – 2:00 AM"]
+        )
+        self.assertEqual(
+            day.render_periods(join=True),
+            "7:00 PM – 2:00 AM"
         )
         # Opening periods
         self.assertEqual(
@@ -391,19 +416,27 @@ class TestGlobal(unittest.TestCase):
         dt = datetime.datetime(2018, 1, 8, 9, 0)
         self.assertTrue(oh.is_open(dt))
         # Day periods.
+        day = oh.get_day(datetime.date(2018, 1, 1))
         self.assertEqual(
-            oh.get_day_periods(datetime.date(2018, 1, 1)),
-            DayPeriods(
-                "Monday", datetime.date(2018, 1, 1),
-                [
-                    (
-                        datetime.datetime(2018, 1, 1, 10, 0),
-                        datetime.datetime(2018, 1, 1, 20, 0)
-                    )
-                ],
-                ["10:00 AM – 8:00 PM"],
-                "10:00 AM – 8:00 PM"
-            )
+            day.weekday_name,
+            "Monday"
+        )
+        self.assertEqual(
+            day.opening_periods(),
+            [
+                (
+                    datetime.datetime(2018, 1, 1, 10, 0),
+                    datetime.datetime(2018, 1, 1, 20, 0)
+                )
+            ]
+        )
+        self.assertEqual(
+            day.render_periods(join=False),
+            ["10:00 AM – 8:00 PM"]
+        )
+        self.assertEqual(
+            day.render_periods(join=True),
+            "10:00 AM – 8:00 PM"
         )
         # Opening periods
         self.assertEqual(
@@ -491,19 +524,27 @@ class TestGlobal(unittest.TestCase):
         dt = datetime.datetime(2018, 7, 7, 10, 0)
         self.assertTrue(oh.is_open(dt))
         # Day periods.
+        day = oh.get_day(datetime.date(2018, 1, 1))
         self.assertEqual(
-            oh.get_day_periods(datetime.date(2018, 1, 1)),
-            DayPeriods(
-                "Monday", datetime.date(2018, 1, 1),
-                [
-                    (
-                        datetime.datetime(2018, 1, 1, 10, 0),
-                        datetime.datetime(2018, 1, 1, 20, 0)
-                    )
-                ],
-                ["10:00 AM – 8:00 PM"],
-                "10:00 AM – 8:00 PM"
-            )
+            day.weekday_name,
+            "Monday"
+        )
+        self.assertEqual(
+            day.opening_periods(),
+            [
+                (
+                    datetime.datetime(2018, 1, 1, 10, 0),
+                    datetime.datetime(2018, 1, 1, 20, 0)
+                )
+            ]
+        )
+        self.assertEqual(
+            day.render_periods(join=False),
+            ["10:00 AM – 8:00 PM"]
+        )
+        self.assertEqual(
+            day.render_periods(join=True),
+            "10:00 AM – 8:00 PM"
         )
         # Opening periods
         self.assertEqual(
@@ -589,26 +630,45 @@ class TestGlobal(unittest.TestCase):
         dt = datetime.datetime(2018, 1, 8, 10, 0)
         self.assertTrue(oh.is_open(dt))
         # Day periods.
+        day = oh.get_day(datetime.date(2018, 1, 1))
         self.assertEqual(
-            oh.get_day_periods(datetime.date(2018, 1, 1)),
-            DayPeriods(
-                "Monday", datetime.date(2018, 1, 1),
-                [], ["closed"], "closed"
-            )
+            day.weekday_name,
+            "Monday"
         )
         self.assertEqual(
-            oh.get_day_periods(datetime.date(2018, 1, 2)),
-            DayPeriods(
-                "Tuesday", datetime.date(2018, 1, 2),
-                [
-                    (
-                        datetime.datetime(2018, 1, 2, 8, 0),
-                        datetime.datetime(2018, 1, 2, 20, 0)
-                    )
-                ],
-                ["8:00 AM – 8:00 PM"],
-                "8:00 AM – 8:00 PM"
-            )
+            day.opening_periods(),
+            []
+        )
+        self.assertEqual(
+            day.render_periods(join=False),
+            ["closed"]
+        )
+        self.assertEqual(
+            day.render_periods(join=True),
+            "closed"
+        )
+        
+        day = oh.get_day(datetime.date(2018, 1, 2))
+        self.assertEqual(
+            day.weekday_name,
+            "Tuesday"
+        )
+        self.assertEqual(
+            day.opening_periods(),
+            [
+                (
+                    datetime.datetime(2018, 1, 2, 8, 0),
+                    datetime.datetime(2018, 1, 2, 20, 0)
+                )
+            ]
+        )
+        self.assertEqual(
+            day.render_periods(join=False),
+            ["8:00 AM – 8:00 PM"]
+        )
+        self.assertEqual(
+            day.render_periods(join=True),
+            "8:00 AM – 8:00 PM"
         )
         # Opening periods
         self.assertEqual(
@@ -660,23 +720,44 @@ class TestGlobal(unittest.TestCase):
         dt = datetime.datetime(2018, 12, 25, 10, 0)
         self.assertFalse(oh.is_open(dt))
         # Day periods.
+        day = oh.get_day(datetime.date(2018, 1, 1))
         self.assertEqual(
-            oh.get_day_periods(datetime.date(2018, 1, 1)),
-            DayPeriods(
-                "Monday", datetime.date(2018, 1, 1),
-                [
-                    (datetime.datetime(2018, 1, 1, 8, 0), datetime.datetime(2018, 1, 1, 19, 0))
-                ],
-                ["8:00 AM – 7:00 PM"],
-                "8:00 AM – 7:00 PM"
-            )
+            day.weekday_name,
+            "Monday"
         )
         self.assertEqual(
-            oh.get_day_periods(datetime.date(2018, 5, 1)),
-            DayPeriods(
-                "Tuesday", datetime.date(2018, 5, 1),
-                [], ["closed"], "closed"
-            )
+            day.opening_periods(),
+            [
+                (datetime.datetime(2018, 1, 1, 8, 0), datetime.datetime(2018, 1, 1, 19, 0))
+            ]
+        )
+        self.assertEqual(
+            day.render_periods(join=False),
+            ["8:00 AM – 7:00 PM"]
+        )
+        self.assertEqual(
+            day.render_periods(join=True),
+            "8:00 AM – 7:00 PM"
+        )
+        
+        day = oh.get_day(datetime.date(2018, 1, 2))
+        self.assertEqual(
+            day.weekday_name,
+            "Tuesday"
+        )
+        self.assertEqual(
+            day.opening_periods(),
+            [
+                (datetime.datetime(2018, 1, 2, 8, 0), datetime.datetime(2018, 1, 2, 19, 0))
+            ]
+        )
+        self.assertEqual(
+            day.render_periods(join=False),
+            ["8:00 AM – 7:00 PM"]
+        )
+        self.assertEqual(
+            day.render_periods(join=True),
+            "8:00 AM – 7:00 PM"
         )
         # Opening periods
         self.assertEqual(

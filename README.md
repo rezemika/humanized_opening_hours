@@ -294,18 +294,18 @@ It is accessible directly through the HOH namespace, and takes the same paramete
 
 -----
 
-`get_day_periods()` returns a `DayPeriods` object, which is in fact a `collections.namedtuple`, which contains opening periods for a day.
+`get_day()` returns a `Day` object, which contains opening periods and useful methods for a day.
 It can take a `datetime.date` argument to get the day you want.
 
-The returned namedtuple contains the following attributes.
+The returned object contains the following attributes.
 
-- `weekday_name` (str) : the name of the day (ex: "Monday");
+- `ohparser` (OHParser) : the OHParser instance where the object come from;
 - `date` (datetime.date) : the date of the day;
-- `periods` : (list[tuple(datetime.datetime, datetime.datetime)]) : the opening periods of the day, of the shape (beginning, end);
-- `rendered_periods` (list[str]) : a list of strings describing the opening periods of the day;
-- `joined_rendered_periods` (str) : the same list, but joined to string by comas and a terminal word (ex: "09:00 - 12:00 and 13:00 - 19:00").
+- `weekday_name` (str) : the name of the day (ex: "Monday");
+- `timespans` : (list[ComputedTimeSpan]) : the computed timespans of the day (containing `datetime.datetime` objects);
+- `locale` (babel.Locale) : the locale given to OHParser.
 
-Attention, the `datetime.datetime` objects in `periods` may be in another day, if it contains a period which spans over midnight (like `Mo-Fr 20:00-02:00`).
+Attention, the `datetime.datetime` objects in the computed timespans may be in another day, if it contains a period which spans over midnight (like `Mo-Fr 20:00-02:00`).
 
 # Supported field formats
 

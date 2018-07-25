@@ -10,11 +10,11 @@ import babel.dates
 import astral
 
 from humanized_opening_hours.temporal_objects import (
-    WEEKDAYS, MONTHS, render_timespan
+    WEEKDAYS, MONTHS, Day
 )
 from humanized_opening_hours.field_parser import get_tree_and_rules
 from humanized_opening_hours.rendering import (
-    AVAILABLE_LOCALES, join_list, translate_open_closed, translate_colon
+    AVAILABLE_LOCALES, translate_colon
 )
 from humanized_opening_hours.exceptions import (
     ParseError, CommentOnlyField, AlwaysClosed, NextChangeRecursionError
@@ -224,7 +224,14 @@ class SolarHours(dict):
 
 
 class OHParser:
-    def __init__(self, field, locale="en", location=None, optimize=True, skip_sanitizing=False):
+    def __init__(
+        self,
+        field,
+        locale="en",
+        location=None,
+        optimize=True,
+        skip_sanitizing=False
+    ):
         """A parser for the OSM opening_hours fields.
         
         >>> oh = hoh.OHParser("Mo-Fr 10:00-19:00")
@@ -639,7 +646,7 @@ class OHParser:
         """
         Returns a list of ComputedTimeSpan objects from the given date.
         """
-        # '_check_yesterday=True' allows to get ComputedTimeSpan 
+        # '_check_yesterday=True' allows to get ComputedTimeSpan
         # from yesterday which span over midnight.
         if not dt:
             dt = datetime.date.today()
@@ -702,17 +709,17 @@ class OHParser:
         week = days_of_week(year, weeknumber, first_weekday)
         output = []
         for day in week:  # TODO: Check yesterday for first day?
-            day_periods = self.get_day_periods(dt=day, _check_yesterday=False)
+            day = self.get_day(dt=day, _check_yesterday=False)
             output.append(
-                (day_periods.weekday_name, day_periods.joined_rendered_periods)
+                (day.weekday_name, day.render_periods(join=True))
             )
         colon_str = translate_colon(self.locale)
         return '\n'.join(
             [colon_str.format(day[0], day[1]) for day in output]
         )
     
-    def get_day_periods(self, dt=None, _check_yesterday=True):
-        """Returns the opening periods of the given day.
+    def get_day(self, dt=None, _check_yesterday=True):
+        """Returns the representation of a day.
         
         Parameters
         ----------
@@ -722,42 +729,17 @@ class OHParser:
         
         Returns
         -------
-        DayPeriods (collections.namedtuple)
-            A namedtuple representing the requested day.
-            
-            Attributes :
-            - weekday_name : str
-                The named of the day (ex: "Monday").
-            - date : datetime.date
-                The date of the day.
-            - periods : list[tuple(datetime.datetime, datetime.datetime)]
-                The opening periods of the day, of the shape (beginning, end).
-            - rendered_periods : list[str]
-                A list of strings describing the opening periods of the day.
-            - joined_rendered_periods : str
-                The same list, but joined to string by comas
-                and a terminal word. Ex: "09:00 - 12:00 and 13:00 - 19:00".
+        Day
+            An object representing the requested day, containing useful
+            attributes and methods for rendering. See docstring of
+            'humanized_opening_hours.temporal_objects.Day'.
         """
         if not dt:
             dt = datetime.date.today()
         computed_timespans = self._get_day_timespans(
             dt, _check_yesterday=_check_yesterday
         )
-        weekday_name = self.get_localized_names()["days"][dt.weekday()]
-        if computed_timespans:
-            rendered_periods = [
-                render_timespan(ts.timespan, self.locale)
-                for ts in computed_timespans
-            ]
-            joined_rendered_periods = join_list(rendered_periods, self.locale)
-        else:
-            closed_word = translate_open_closed(self.locale)[1]
-            rendered_periods = [closed_word]
-            joined_rendered_periods = closed_word
-        return DayPeriods(
-            weekday_name, dt, [ts.to_tuple() for ts in computed_timespans],
-            rendered_periods, joined_rendered_periods
-        )
+        return Day(self, dt, computed_timespans)
     
     def opening_periods_between(self, dt1, dt2, merge=False):
         """Returns a list of tuples representing opening periods.
@@ -803,8 +785,8 @@ class OHParser:
         for date in (
             dt1_date + datetime.timedelta(n) for n in range(delta.days+1)
         ):
-            day_periods = self.get_day_periods(date)
-            periods.extend(day_periods.periods)
+            day_periods = self.get_day(date).opening_periods()
+            periods.extend(day_periods)
         # Uses a set to removes doubles periods (cause we also get those which
         # span over midnight.
         periods = sorted(set(periods))
