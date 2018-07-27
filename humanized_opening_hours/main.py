@@ -54,7 +54,7 @@ def set_dt(dt):
 
 RE_NUMERICAL_TIME_HH_H_MM = re.compile(r"([0-2][0-9])h([0-5][0-9])")
 RE_NUMERICAL_TIME_HH_H = re.compile(r"([0-2][0-9])h")
-RE_NUMERICAL_TIME_H_H = re.compile(r"(?:[^0-9]|^)([0-9])h")
+RE_NUMERICAL_TIME_H_H = re.compile(r"([^0-9]|^)([0-9])h")
 TIME_REGEX = (
     r"[0-2][0-9]:[0-5][0-9]|"
     r"\((?:sunrise|sunset|dawn|dusk)(?:\+|-)[0-2][0-9]:[0-5][0-9]\)|"
@@ -102,9 +102,9 @@ def sanitize(field):
             parts.append(part)
             continue
         # Replaces 'h' by ':' in times.
-        part = RE_NUMERICAL_TIME_HH_H_MM.sub("\\1:\\2", part)
-        part = RE_NUMERICAL_TIME_HH_H.sub("\\1:00", part)
-        part = RE_NUMERICAL_TIME_H_H.sub("0\\1:00", part)
+        part = RE_NUMERICAL_TIME_HH_H_MM.sub(r"\g<1>:\g<2>", part)
+        part = RE_NUMERICAL_TIME_HH_H.sub(r"\g<1>:00", part)
+        part = RE_NUMERICAL_TIME_H_H.sub(r"\g<1>0\g<2>:00", part)
         # Removes spaces between times.
         # "10:00 - 20:00" -> "10:00-20:00"
         part = RE_TIMESPAN.sub("\\1-\\2", part)
