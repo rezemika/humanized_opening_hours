@@ -11,6 +11,7 @@ from humanized_opening_hours.temporal_objects import (
     YearSelector, MonthDayRange, MonthDayDate,
     TimeSpan, Time, TIMESPAN_ALL_THE_DAY
 )
+from humanized_opening_hours.exceptions import ParseError
 from humanized_opening_hours.frequent_fields import (
     FREQUENT_FIELDS, parse_simple_field
 )
@@ -237,6 +238,12 @@ class MainTransformer(lark.Transformer):
     
     def hour_minutes(self, args):
         h, m = int(args[0].value), int(args[1].value)
+        if m >= 60:
+            raise ParseError(
+                "Minutes must be in 0..59 (got {!r}).".format(
+                    args[0].value + ':' + args[1].value
+                )
+            )
         if (h, m) == (24, 0):
             dt = datetime.time.max
         else:
