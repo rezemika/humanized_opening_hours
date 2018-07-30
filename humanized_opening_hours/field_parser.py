@@ -105,7 +105,9 @@ class MainTransformer(lark.Transformer):
         )
     
     def monthday_date_month(self, args):
-        year = args[0] if len(args) == 3 else None
+        year = args[0] if len(args) == 2 else None
+        if year:
+            args.pop(0)
         month = MONTHS.index(args[0]) + 1
         return MonthDayDate("month", year=year, month=month)
     
