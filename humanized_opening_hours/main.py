@@ -68,7 +68,7 @@ RE_MULTIPLE_TIMESPANS = re.compile(
         time_regex=TIME_REGEX
     )
 )
-RE_TIME_H_MM = re.compile(r"([^0-9]|^)([0-9]):([0-2][0-9])")
+RE_TIME_H_MM = re.compile(r"([^0-9]|^)([0-9]):([0-5][0-9])")
 SPECIAL_WORDS = WEEKDAYS + MONTHS + (
     "sunrise", "sunset", "dawn", "dusk", "PH", "SH",
     "open", "off", "closed", "easter", "week"
