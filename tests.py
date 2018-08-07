@@ -1,5 +1,6 @@
 import unittest
 import datetime
+import copy
 
 from lark import Tree
 from lark.lexer import Token
@@ -827,7 +828,8 @@ class TestGlobal(unittest.TestCase):
         )
     
     def test_closed(self):
-        oh = OHParser("24/7; Su 10:00-13:00 off")
+        oh = OHParser("24/7; Su off")
+        # Was "24/7; Su 10:00-13:00 off".
         dt = datetime.datetime(2018, 1, 6, 10, 0)
         self.assertTrue(oh.is_open(dt))
         # TODO: This doesn't work because there can only be one rule per day.
@@ -1028,6 +1030,30 @@ class TestSolarHours(unittest.TestCase):
                 (datetime.datetime(2018, 1, 5, 8, 5, 21), datetime.datetime(2018, 1, 5, 16, 5, 54))
             ]
         )
+    
+    def test_this_location(self):
+        oh = OHParser(
+            "Mo-Fr sunrise-sunset",
+            location="London"
+        )
+        
+        current_location = vars(oh.solar_hours.location)
+        del current_location["astral"]
+        expected_location = vars(astral.Astral()["London"])
+        del expected_location["astral"]
+        self.assertEqual(current_location, expected_location)
+        
+        with oh.this_location(astral.Astral()["Paris"]):
+            current_location = vars(oh.solar_hours.location)
+            del current_location["astral"]
+            expected_location = vars(astral.Astral()["Paris"])
+            del expected_location["astral"]
+            self.assertEqual(current_location, expected_location)
+        
+        current_location = vars(oh.solar_hours.location)
+        expected_location = vars(astral.Astral()["London"])
+        del expected_location["astral"]
+        self.assertEqual(current_location, expected_location)
 
 
 class TestPatterns(unittest.TestCase):

@@ -4,6 +4,7 @@ import datetime
 import warnings
 from collections import namedtuple
 import statistics
+import contextlib
 
 import lark
 import babel.dates
@@ -421,6 +422,28 @@ class OHParser:
                 ).format(locale),
                 UserWarning
             )
+    
+    @contextlib.contextmanager
+    def this_location(self, location):
+        """A context manager to temporarily use a given location.
+        
+        Parameters
+        ----------
+        location : astral.Location
+            The location to use.
+        
+        Example
+        -------
+        This method is intended to be used with 'with', as a context manager.
+        It is useful only if the field contains solar hours.
+        
+        >>> with oh.this_location(astral["London"]):
+        >>>     print(oh.is_open())
+        """
+        old_location = self.solar_hours.location
+        self.solar_hours = SolarHours(location=location)
+        yield
+        self.solar_hours = SolarHours(location=old_location)
     
     def is_open(self, dt=None):
         """Is it open?

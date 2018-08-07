@@ -210,6 +210,26 @@ In some very rare cases, it might be impossible to get solar hours.
 For example, in Antactica, the sun may never reach the dawn / dusk location in the sky, so the `astral` module can't return the down time.
 So, if you try to get, for example, the next change with a field containing solar hours and located in such location, a `humanized_opening_hours.exceptions.SolarHoursError` exception will also be raised.
 
+-----
+
+Sometimes, especially if you work with numerous fields, you may want to apply the same methods to the same field but for different locations.
+To do so, you can use a dedicated method called `this_location()`, which is intended to be used as a context manager.
+It allows you to temporarily set a specific location to the OHParser instance.
+
+```python
+oh = hoh.OHParser(
+    "Mo-Fr sunrise-sunset",
+    location=(51.168, 0.0, "Europe/London", 24)
+)
+
+str(oh.solar_hours.location) == 'Location/Region, tz=Europe/London, lat=51.17, lon=0.00'
+
+with oh.this_location("Paris"):
+    str(oh.solar_hours.location) == 'Paris/France, tz=Europe/Paris, lat=48.83, lon=2.33'
+
+str(oh.solar_hours.location) == 'Location/Region, tz=Europe/London, lat=51.17, lon=0.00'
+```
+
 ## Have nice schedules
 
 You can pass any valid locale name to `OHParser`, it will work for the majority of methods, cause they only need Babel's translations.
