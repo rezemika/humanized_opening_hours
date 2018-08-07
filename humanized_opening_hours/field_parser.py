@@ -55,7 +55,13 @@ class MainTransformer(lark.Transformer):
         if len(args) == 2:  # "range_selectors time_selector"
             return Rule(args[0], args[1])
         else:  # "range_selectors time_selector rule_modifier"
-            return Rule(args[0], args[1], status=args[2])
+            time_selector = args[1]
+            status = args[2]
+            if status == "closed" and time_selector:
+                raise ParseError(
+                    "Handling of '<time_selector> closed' is not available yet."
+                )
+            return Rule(args[0], time_selector, status=status)
     
     def always_open_rule(self, args):  # "ALWAYS_OPEN"
         return Rule(AlwaysOpenSelector(), [TIMESPAN_ALL_THE_DAY])
