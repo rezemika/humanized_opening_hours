@@ -1031,7 +1031,7 @@ class TestSolarHours(unittest.TestCase):
             ]
         )
     
-    def test_this_location(self):
+    def test_temporary_location(self):
         oh = OHParser(
             "Mo-Fr sunrise-sunset",
             location="London"
@@ -1043,7 +1043,7 @@ class TestSolarHours(unittest.TestCase):
         del expected_location["astral"]
         self.assertEqual(current_location, expected_location)
         
-        with oh.this_location(astral.Astral()["Paris"]):
+        with oh.temporary_location(astral.Astral()["Paris"]):
             current_location = vars(oh.solar_hours.location)
             del current_location["astral"]
             expected_location = vars(astral.Astral()["Paris"])

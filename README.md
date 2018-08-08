@@ -224,7 +224,7 @@ oh = hoh.OHParser(
 
 str(oh.solar_hours.location) == 'Location/Region, tz=Europe/London, lat=51.17, lon=0.00'
 
-with oh.this_location("Paris"):
+with oh.temporary_location("Paris"):
     str(oh.solar_hours.location) == 'Paris/France, tz=Europe/Paris, lat=48.83, lon=2.33'
 
 str(oh.solar_hours.location) == 'Location/Region, tz=Europe/London, lat=51.17, lon=0.00'

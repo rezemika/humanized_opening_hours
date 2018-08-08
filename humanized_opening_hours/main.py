@@ -424,7 +424,7 @@ class OHParser:
             )
     
     @contextlib.contextmanager
-    def this_location(self, location):
+    def temporary_location(self, location):
         """A context manager to temporarily use a given location.
         
         Parameters
@@ -437,7 +437,7 @@ class OHParser:
         This method is intended to be used with 'with', as a context manager.
         It is useful only if the field contains solar hours.
         
-        >>> with oh.this_location(astral["London"]):
+        >>> with oh.temporary_location(astral["London"]):
         >>>     print(oh.is_open())
         """
         old_location = self.solar_hours.location
