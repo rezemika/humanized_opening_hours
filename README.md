@@ -20,7 +20,7 @@ From Saturday to Sunday: 8:00 AM – 12:00 PM.
 """
 ```
 
-**This module is still in development and bugs may occur. If you discover one, please create an issue.**
+**This module is in beta. It should be production ready, but some bugs or minor modifications are still possible. Don't hesitate to create an issue!**
 
 # Table of contents
 
