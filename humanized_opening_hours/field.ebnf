@@ -16,7 +16,11 @@ PLUS_OR_MINUS : "+" | "-"
 
 //
 
-time_domain : rule_sequence ("; " rule_sequence)*
+// The support of the comma as rule separator is not supported yet
+// in the parsing code (comma and semicolons are treated as equals),
+// but the current implementation of rules is not perfect and doesn't
+// perfectly fits the specifications, so it makes no difference yet.
+time_domain : rule_sequence (("; "|", ") rule_sequence)*
 
 rule_sequence : ALWAYS_OPEN -> always_open_rule
               | range_selectors " " time_selector
