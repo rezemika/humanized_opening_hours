@@ -1,0 +1,169 @@
+# Russian translation for HOH.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-10-06 14:06+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: temporal_objects.py:210
+msgid "Open 24 hours a day and 7 days a week."
+msgstr "Открыто 24 часа в сутки и 7 дней в неделю."
+
+#: temporal_objects.py:219
+msgid "every days"
+msgstr "каждый день"
+
+#: temporal_objects.py:221 rendering.py:34
+msgid "closed"
+msgstr "закрыто"
+
+#: temporal_objects.py:230 rendering.py:39
+msgid "{}: {}"
+msgstr "{}: {}"
+
+#: temporal_objects.py:339 temporal_objects.py:410
+#, python-brace-format
+msgid "on {weekday}"
+msgstr "в {weekday}"
+
+#: temporal_objects.py:343 temporal_objects.py:414
+#, python-brace-format
+msgid "from {weekday1} to {weekday2}"
+msgstr "с {weekday1} по {weekday2}"
+
+#: temporal_objects.py:348 temporal_objects.py:426
+msgid "on public and school holidays"
+msgstr "на общественные и школьные каникулы"
+
+#: temporal_objects.py:349 temporal_objects.py:427
+msgid "on public holidays"
+msgstr "на общественные каникулы"
+
+#: temporal_objects.py:350 temporal_objects.py:428
+msgid "on school holidays"
+msgstr "на школьные каникулы"
+
+#: temporal_objects.py:453
+#, python-brace-format
+msgid "in week {week}"
+msgstr "в неделю {n}"
+
+#: temporal_objects.py:455
+#, python-brace-format
+msgid "from week {week1} to week {week2}"
+msgstr "от недели {week1} до недели {week2}"
+
+#: temporal_objects.py:462
+#, python-brace-format
+msgid "from week {week1} to week {week2}, every {n} weeks"
+msgstr "от недели {week1} до недели {week2}, каждые {n} недель"
+
+#: temporal_objects.py:486
+#, python-brace-format
+msgid "in {year}"
+msgstr "в год {year}"
+
+#: temporal_objects.py:488
+#, python-brace-format
+msgid "from {year1} to {year2}"
+msgstr "от года {year1} до года {year2}"
+
+#: temporal_objects.py:495
+#, python-brace-format
+msgid "from {year1} to {year2}, every {n} years"
+msgstr "от года {year1} до года {year2}, каждые {n} года"
+
+#: temporal_objects.py:528
+#, python-brace-format
+msgid "from {monthday1} to {monthday2}"
+msgstr "от {monthday1} до {monthday2}"
+
+#: temporal_objects.py:607
+msgid "on easter"
+msgstr "на Пасху"
+
+#: temporal_objects.py:612
+#, python-brace-format
+msgid "{month} {day1} to {day2}, {year}"
+msgstr "от {month} {day1} до {day2}, {year}"
+
+#: temporal_objects.py:619
+#, python-brace-format
+msgid "from {month} {day1} to {day2}"
+msgstr "от {month} {day1} до {day2}"
+
+#: temporal_objects.py:630
+msgid "%B %-d"
+msgstr "%B %-d"
+
+#: rendering.py:34
+msgid "open"
+msgstr "открыто"
+
+#: rendering.py:53
+msgid "sunrise"
+msgstr "восход"
+
+#: rendering.py:54
+msgid "sunset"
+msgstr "закат"
+
+#: rendering.py:55
+msgid "dawn"
+msgstr "рассвет"
+
+#: rendering.py:56
+msgid "dusk"
+msgstr "сумерки"
+
+#: rendering.py:63
+#, python-brace-format
+msgid "{time} after sunrise"
+msgstr "{time} после восхода солнца"
+
+#: rendering.py:64
+#, python-brace-format
+msgid "{time} after sunset"
+msgstr "{time} после заката солнца"
+
+#: rendering.py:65
+#, python-brace-format
+msgid "{time} after dawn"
+msgstr "{time} после рассвета"
+
+#: rendering.py:66
+#, python-brace-format
+msgid "{time} after dusk"
+msgstr "{time} после сумерек"
+
+#: rendering.py:73
+#, python-brace-format
+msgid "{time} before sunrise"
+msgstr "{time} до восхода солнца"
+
+#: rendering.py:74
+#, python-brace-format
+msgid "{time} before sunset"
+msgstr "{time} до восхода заката солнца"
+
+#: rendering.py:75
+#, python-brace-format
+msgid "{time} before dawn"
+msgstr "{time} до рассвета"
+
+#: rendering.py:76
+#, python-brace-format
+msgid "{time} before dusk"
+msgstr "{time} до сумерек"

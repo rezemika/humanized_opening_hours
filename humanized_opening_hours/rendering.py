@@ -4,7 +4,7 @@ import os
 import babel.lists
 
 
-AVAILABLE_LOCALES = ["en", "fr"]
+AVAILABLE_LOCALES = ["en", "fr", "ru"]
 
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
