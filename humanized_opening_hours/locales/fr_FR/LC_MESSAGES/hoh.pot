@@ -56,7 +56,7 @@ msgstr "pendant les vacances scolaires"
 #: temporal_objects.py:453
 #, python-brace-format
 msgid "in week {week}"
-msgstr "semaine {n}"
+msgstr "semaine {week}"
 
 #: temporal_objects.py:455
 #, python-brace-format
