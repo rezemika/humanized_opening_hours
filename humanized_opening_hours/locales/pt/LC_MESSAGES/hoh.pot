@@ -18,7 +18,7 @@ msgstr ""
 
 #: temporal_objects.py:210
 msgid "Open 24 hours a day and 7 days a week."
-msgstr "Aberto 24 horas por dia e 7 dias por semana"
+msgstr "Aberto 24 horas por dia e 7 dias por semana."
 
 #: temporal_objects.py:219
 msgid "every days"
