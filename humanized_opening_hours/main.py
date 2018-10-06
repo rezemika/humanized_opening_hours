@@ -738,7 +738,7 @@ class OHParser:
             )
         colon_str = translate_colon(self.locale)
         return '\n'.join(
-            [colon_str.format(day[0], day[1]) for day in output]
+            [colon_str.format(day[0].capitalize(), day[1]) for day in output]
         )
     
     def get_day(self, dt=None, _check_yesterday=True):
