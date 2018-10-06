@@ -1,0 +1,167 @@
+# German translation of HOH.
+# Copyright (C) 2018
+# FELIX KLEMENT mail@felix-klement.de, 2018.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-10-06 15:30+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FELIX KLEMENT mail@felix-klement.de\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: de_DE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: temporal_objects.py:210
+msgid "Open 24 hours a day and 7 days a week."
+msgstr "24 Stunden am Tag und 7 Tage die Woche geöffnet."
+
+#: temporal_objects.py:219
+msgid "every days"
+msgstr "jeden Tag"
+
+#: temporal_objects.py:221 rendering.py:34
+msgid "closed"
+msgstr "geschlossen"
+
+#: temporal_objects.py:230 rendering.py:39
+msgid "{}: {}"
+msgstr "{}: {}"
+
+#: temporal_objects.py:339 temporal_objects.py:410
+#, python-brace-format
+msgid "on {weekday}"
+msgstr "an {weekday}"
+
+#: temporal_objects.py:343 temporal_objects.py:414
+#, python-brace-format
+msgid "from {weekday1} to {weekday2}"
+msgstr "von {weekday1} bis {weekday2}"
+
+#: temporal_objects.py:348 temporal_objects.py:426
+msgid "on public and school holidays"
+msgstr "an Feiertagen und Schulferien"
+
+#: temporal_objects.py:349 temporal_objects.py:427
+msgid "on public holidays"
+msgstr "an Feiertagen"
+
+#: temporal_objects.py:350 temporal_objects.py:428
+msgid "on school holidays"
+msgstr "in den Schulferien"
+
+#: temporal_objects.py:453
+#, python-brace-format
+msgid "in week {week}"
+msgstr "in Woche {week}"
+
+#: temporal_objects.py:455
+#, python-brace-format
+msgid "from week {week1} to week {week2}"
+msgstr "von Woche {week1} bis Woche {week2}"
+
+#: temporal_objects.py:462
+#, python-brace-format
+msgid "from week {week1} to week {week2}, every {n} weeks"
+msgstr "von Woche {week1} bis Woche {week2}, alle {n} Wochen"
+
+#: temporal_objects.py:486
+#, python-brace-format
+msgid "in {year}"
+msgstr "in {year}"
+
+#: temporal_objects.py:488
+#, python-brace-format
+msgid "from {year1} to {year2}"
+msgstr "von {year1} bis {year2}"
+
+#: temporal_objects.py:495
+#, python-brace-format
+msgid "from {year1} to {year2}, every {n} years"
+msgstr "von {year1} bis {year2}, alle {n} Jahre"
+
+#: temporal_objects.py:528
+#, python-brace-format
+msgid "from {monthday1} to {monthday2}"
+msgstr "von {monthday1} bis {monthday2}"
+
+#: temporal_objects.py:607
+msgid "on easter"
+msgstr "an Ostern"
+
+#: temporal_objects.py:612
+#, python-brace-format
+msgid "{month} {day1} to {day2}, {year}"
+msgstr "{month} {day1} bis {day2}, {year}"
+
+#: temporal_objects.py:619
+#, python-brace-format
+msgid "from {month} {day1} to {day2}"
+msgstr "von {month} {day1} bis {day2}"
+
+#: temporal_objects.py:630
+msgid "%B %-d"
+msgstr "%B %-d"
+
+#: rendering.py:34
+msgid "open"
+msgstr "offen"
+
+#: rendering.py:53
+msgid "sunrise"
+msgstr "Sonnenaufgang"
+
+#: rendering.py:54
+msgid "sunset"
+msgstr "Sonnenuntergang"
+
+#: rendering.py:55
+msgid "dawn"
+msgstr "Morgendämmerung"
+
+#: rendering.py:56
+msgid "dusk"
+msgstr "Abenddämmerung"
+
+#: rendering.py:63
+#, python-brace-format
+msgid "{time} after sunrise"
+msgstr "{time} nach Sonnenaufgang"
+
+#: rendering.py:64
+#, python-brace-format
+msgid "{time} after sunset"
+msgstr "{time} nach Sonnenuntergang"
+
+#: rendering.py:65
+#, python-brace-format
+msgid "{time} after dawn"
+msgstr "{time} nach der Morgendämmerung"
+
+#: rendering.py:66
+#, python-brace-format
+msgid "{time} after dusk"
+msgstr "{time} nach Einbruch der Dunkelheit"
+
+#: rendering.py:73
+#, python-brace-format
+msgid "{time} before sunrise"
+msgstr "{time} vor Sonnenaufgang"
+
+#: rendering.py:74
+#, python-brace-format
+msgid "{time} before sunset"
+msgstr "{time} vor Sonnenuntergang"
+
+#: rendering.py:75
+#, python-brace-format
+msgid "{time} before dawn"
+msgstr "{time} vor der Morgendämmerung"
+
+#: rendering.py:76
+#, python-brace-format
+msgid "{time} before dusk"
+msgstr "{time} vor Einbruch der Dunkelheit"
