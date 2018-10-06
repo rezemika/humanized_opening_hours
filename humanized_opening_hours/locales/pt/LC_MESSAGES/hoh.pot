@@ -1,6 +1,6 @@
 # Brazilian portuguese translation for HOH.
 # Copyright (C) 2018
-# GABRIEL LUIZ FREITAS ALMEIDA gabrielf.almeida90@gmail.com, 2018.
+# GABRIEL LUIZ FREITAS ALMEIDA <gabrielf.almeida90@gmail.com>, 2018.
 #
 #
 msgid ""
@@ -9,7 +9,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-10-06 10:59-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: GABRIEL LUIZ FREITAS ALMEIDA gabrielf.almeida90@gmail.com\n"
+"Last-Translator: GABRIEL LUIZ FREITAS ALMEIDA <gabrielf.almeida90@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: pt-br\n"
 "MIME-Version: 1.0\n"
