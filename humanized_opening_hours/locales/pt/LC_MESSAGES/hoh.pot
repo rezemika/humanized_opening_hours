@@ -2,7 +2,7 @@
 # Copyright (C) 2018
 # GABRIEL LUIZ FREITAS ALMEIDA gabrielf.almeida90@gmail.com, 2018.
 #
-#, fuzzy
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
