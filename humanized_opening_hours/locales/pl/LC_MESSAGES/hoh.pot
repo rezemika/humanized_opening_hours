@@ -17,7 +17,7 @@ msgstr ""
 
 #: temporal_objects.py:210
 msgid "Open 24 hours a day and 7 days a week."
-msgstr "Otwarte 24 godziny na dobę 7 dni w tygodniu"
+msgstr "Otwarte 24 godziny na dobę 7 dni w tygodniu."
 
 #: temporal_objects.py:219
 msgid "every days"
@@ -67,7 +67,7 @@ msgstr "od {week1} do {week2} tygodnia"
 #, python-brace-format
 msgid "from week {week1} to week {week2}, every {n} weeks"
 msgstr "od {week1} do {week2} tygodnia, co {n} tygodni"
-#deklinacja
+#Rules of polish grammar might cause the translation to be imperfect in some cases
 
 #: temporal_objects.py:486
 #, python-brace-format
@@ -78,13 +78,13 @@ msgstr "w {year} roku"
 #, python-brace-format
 msgid "from {year1} to {year2}"
 msgstr "od {year1} do {year2} roku"
-#deklinacja
+#Rules of polish grammar might cause the translation to be imperfect in some cases
 
 #: temporal_objects.py:495
 #, python-brace-format
 msgid "from {year1} to {year2}, every {n} years"
 msgstr "od {year1} do {year2} roku, co {n} lat"
-#deklinacja
+#Rules of polish grammar might cause the translation to be imperfect in some cases
 
 #: temporal_objects.py:528
 #, python-brace-format
