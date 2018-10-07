@@ -573,7 +573,7 @@ class MonthDayDate:
             last_monthday = datetime.date(
                 self.year or dt.year,
                 self.month,
-                self.safe_monthrange(self.year or dt.year, dt.month)[1]
+                self.safe_monthrange(self.year or dt.year, self.month)[1]
             )
             dates = []
             for i in range((last_monthday - first_monthday).days + 1):

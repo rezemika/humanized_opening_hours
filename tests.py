@@ -826,6 +826,42 @@ class TestGlobal(unittest.TestCase):
             oh.next_change(dt),
             datetime.datetime(2018, 1, 8, 0, 0)
         )
+
+    def test_11(self):
+        field = "Jan-Feb 10:00-20:00"
+        oh = OHParser(field)
+
+        dt = datetime.datetime(2018, 1, 1, 12, 0)
+        self.assertTrue(oh.is_open(dt))
+        dt = datetime.datetime(2018, 1, 1, 22, 0)
+        self.assertFalse(oh.is_open(dt))
+        dt = datetime.datetime(2018, 3, 1, 12, 0)
+        self.assertFalse(oh.is_open(dt))
+        # Next change
+        dt = datetime.datetime(2018, 1, 1, 12, 0)
+        self.assertEqual(
+            oh.next_change(dt),
+            datetime.datetime.combine(
+                datetime.date(2018, 1, 1),
+                datetime.time(20, 0)
+            )
+        )
+        dt = datetime.datetime(2018, 1, 1, 22, 0)
+        self.assertEqual(
+            oh.next_change(dt),
+            datetime.datetime.combine(
+                datetime.date(2018, 1, 2),
+                datetime.time(10, 0)
+            )
+        )
+        dt = datetime.datetime(2018, 6, 1, 12, 0)
+        self.assertEqual(
+            oh.next_change(dt),
+            datetime.datetime.combine(
+                datetime.date(2019, 1, 1),
+                datetime.time(10, 0)
+            )
+        )
     
     def test_closed(self):
         oh = OHParser("24/7; Su off")
