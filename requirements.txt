@@ -1,4 +1,4 @@
 astral==1.6.1
 Babel==2.5.3
-lark-parser==0.5.3
+lark-parser==0.6.4
 pytz==2017.3
