@@ -819,7 +819,10 @@ class TestGlobal(unittest.TestCase):
         dt = datetime.datetime(2018, 1, 5, 10, 0)
         self.assertEqual(
             oh.next_change(dt),
-            datetime.datetime(2018, 1, 6, 8, 0)
+            datetime.datetime.combine(
+                datetime.date(2018, 1, 5),
+                datetime.time.max
+            )
         )
         dt = datetime.datetime(2018, 1, 7, 10, 0)
         self.assertEqual(

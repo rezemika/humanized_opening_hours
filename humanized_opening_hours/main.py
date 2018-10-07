@@ -544,7 +544,7 @@ class OHParser:
                     end_time
                 )
         elif (
-            _recursion_level > 1 and
+            _recursion_level > 0 and
             beginning_time.time() != datetime.time.min
         ):
             return None
