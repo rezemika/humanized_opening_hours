@@ -632,9 +632,9 @@ class OHParser:
         month_names_items = babel.dates.get_month_names(locale=self.locale).items()
         return {
             # names sorted by day index (from 0:Monday to 6:Sunday)
-            "days": list(day_name for _, day_name in sorted(day_names_items)),
+            "days": [day_name for _, day_name in sorted(day_names_items)],
             # names sorted by month index (from 1:January to 12:December)
-            "months": list(month_name for _, month_name in sorted(month_names_items)),
+            "months": [month_name for _, month_name in sorted(month_names_items)],
         }
     
     def get_current_rule(self, dt=None):
