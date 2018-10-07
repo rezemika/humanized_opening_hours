@@ -628,13 +628,13 @@ class OHParser:
             A dict with the keys "days" and "months" containing lists
             of respectively 7 and 12 strings.
         """
+        day_names_items = babel.dates.get_day_names(locale=self.locale).items()
+        month_names_items = babel.dates.get_month_names(locale=self.locale).items()
         return {
-            "days": list(
-                babel.dates.get_day_names(locale=self.locale).values()
-            ),
-            "months": list(
-                babel.dates.get_month_names(locale=self.locale).values()
-            )
+            # names sorted by day index (from 0:Monday to 6:Sunday)
+            "days": list(day_name for _, day_name in sorted(day_names_items)),
+            # names sorted by month index (from 1:January to 12:December)
+            "months": list(month_name for _, month_name in sorted(month_names_items)),
         }
     
     def get_current_rule(self, dt=None):
