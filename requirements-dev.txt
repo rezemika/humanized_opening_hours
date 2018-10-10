@@ -4,7 +4,7 @@ certifi==2018.1.18
 chardet==3.0.4
 flake8==3.5.0
 idna==2.6
-lark-parser==0.5.3
+lark-parser==0.6.4
 mccabe==0.6.1
 pkginfo==1.4.2
 pycodestyle==2.3.1
