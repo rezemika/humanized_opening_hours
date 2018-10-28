@@ -236,6 +236,16 @@ You can pass any valid locale name to `OHParser`, it will work for the majority 
 However, the `description()` and `plaintext_week_description()` methods need more translations, so it works only with a few locales, whose list is available with `hoh.AVAILABLE_LOCALES`.
 Use another one will make methods return inconsistent sentences.
 
+Currently, the following locales are supported:
+
+- `en`: english (default);
+- `fr_FR`: french;
+- `de`: deutsch;
+- `nl`: dutch;
+- `pl`: polish;
+- `pt`: portuguese;
+- `ru_RU`: russian.
+
 -----
 
 The `get_localized_names()` method returns a dict of lists with the names of months and weekdays in the current locale.
@@ -392,14 +402,14 @@ HOH uses the module [Lark](https://github.com/erezsh/lark) (with the Earley pars
 It is very optimized (about 20 times faster) for the simplest fields (like `Mo-Fr 10:00-20:00`), so their parsing will be very fast:
 
 - 0.0002 seconds for a single field;
-- 0.024 seconds for a hundred;
-- 0.24 seconds for a thousand.
+- 0.023 seconds for a hundred;
+- 0.23 seconds for a thousand.
 
 For more complex fields (like `Jan-Feb Mo-Fr 08:00-19:00`), the parsing is slower:
 
 - 0.006 seconds for a single field;
-- 0.62 seconds for a hundred;
-- 6 seconds for a thousand.
+- 0.57 seconds for a hundred;
+- 5.7 seconds for a thousand.
 
 # Licence
 
