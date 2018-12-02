@@ -953,6 +953,11 @@ class TestGlobal(unittest.TestCase):
         field = "Mo-Fr 10:00-20:00"
         with self.assertWarns(Warning):
             oh = OHParser(field, locale="ja")
+    
+    def test_monthday_year_spanning(self):
+        oh = OHParser("Oct-Mar 07:30-19:30; Apr-Sep 07:00-21:00")
+        self.assertTrue(oh.is_open(datetime.datetime(2018, 12, 1, 12, 30)))
+        self.assertFalse(oh.is_open(datetime.datetime(2018, 12, 1, 23, 59)))
 
 
 class TestSolarHours(unittest.TestCase):
