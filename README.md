@@ -244,6 +244,7 @@ Currently, the following locales are supported:
 - `nl`: dutch;
 - `pl`: polish;
 - `pt`: portuguese;
+- `it`: italian;
 - `ru_RU`: russian.
 
 -----
