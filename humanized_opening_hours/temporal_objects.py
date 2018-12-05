@@ -518,11 +518,13 @@ class MonthDayRange:
         else:
             dt_from = sorted(self.date_from.get_dates(dt))[0]
             dt_to = sorted(self.date_to.get_dates(dt))[-1]
-            if dt_to < dt_from:  # TODO: Fix this in parsing.
+            if dt_to < dt_from <= dt:  # TODO: Fix this in parsing.
                 # When 'dt_to' is "before" 'dt_from'
                 # (ex: 'Oct-Mar 07:30-19:30; Apr-Sep 07:00-21:00'),
                 # it returns False. It shoud fix this bug.
                 dt_to += datetime.timedelta(weeks=52)
+            if dt <= dt_to < dt_from:
+                dt_from -= datetime.timedelta(weeks=52)
             return dt_from <= dt <= dt_to
     
     def description(self, localized_names, babel_locale):
