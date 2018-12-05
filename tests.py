@@ -957,6 +957,7 @@ class TestGlobal(unittest.TestCase):
     def test_monthday_year_spanning(self):
         oh = OHParser("Oct-Mar 07:30-19:30; Apr-Sep 07:00-21:00")
         self.assertTrue(oh.is_open(datetime.datetime(2018, 12, 1, 12, 30)))
+        self.assertTrue(oh.is_open(datetime.datetime(2019, 1, 1, 12, 30)))
         self.assertFalse(oh.is_open(datetime.datetime(2018, 12, 1, 23, 59)))
         self.assertTrue(oh.is_open(datetime.datetime(2018, 9, 1, 20, 59)))
 
