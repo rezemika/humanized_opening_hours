@@ -825,6 +825,11 @@ class OHParser:
                 period[0] < dt2 < period[1]
             ):
                 output_periods.append((period[0], dt2))
+            elif (
+                isinstance(dt1, datetime.datetime) and period[1] <= dt1 or
+                isinstance(dt2, datetime.datetime) and dt2 <= period[0]
+            ):
+                continue
             else:
                 output_periods.append(period)
         if merge:

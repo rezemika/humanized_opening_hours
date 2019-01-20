@@ -1689,6 +1689,117 @@ class TestFunctions(unittest.TestCase):
         )
 
 
+class TestOpeningPeriodsBetween(unittest.TestCase):
+    def test_simple(self):
+        oh = OHParser("09:00-19:00")
+        # completely before
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.datetime(2019, 1, 20, 23),
+                datetime.datetime(2019, 1, 21, 1),
+            ),
+            [],
+        )
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.datetime(2019, 1, 21, 5),
+                datetime.datetime(2019, 1, 21, 7),
+            ),
+            [],
+        )
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.datetime(2019, 1, 21, 7),
+                datetime.datetime(2019, 1, 21, 9),
+            ),
+            [],
+        )
+        # partly before
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.datetime(2019, 1, 21, 8),
+                datetime.datetime(2019, 1, 21, 10),
+            ),
+            [
+                (datetime.datetime(2019, 1, 21, 9), datetime.datetime(2019, 1, 21, 10)),
+            ],
+        )
+        # between
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.datetime(2019, 1, 21, 9),
+                datetime.datetime(2019, 1, 21, 11),
+            ),
+            [
+                (datetime.datetime(2019, 1, 21, 9), datetime.datetime(2019, 1, 21, 11)),
+            ],
+        )
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.datetime(2019, 1, 21, 17),
+                datetime.datetime(2019, 1, 21, 19),
+            ),
+            [
+                (datetime.datetime(2019, 1, 21, 17), datetime.datetime(2019, 1, 21, 19)),
+            ],
+        )
+        # partly after
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.datetime(2019, 1, 21, 18),
+                datetime.datetime(2019, 1, 21, 20),
+            ),
+            [
+                (datetime.datetime(2019, 1, 21, 18), datetime.datetime(2019, 1, 21, 19)),
+            ],
+        )
+        # completely after
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.datetime(2019, 1, 21, 19),
+                datetime.datetime(2019, 1, 21, 21),
+            ),
+            [],
+        )
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.datetime(2019, 1, 21, 21),
+                datetime.datetime(2019, 1, 21, 23),
+            ),
+            [],
+        )
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.datetime(2019, 1, 21, 23),
+                datetime.datetime(2019, 1, 22, 1),
+            ),
+            [],
+        )
+
+    def test_complex(self):
+        oh = OHParser("09:00-11:00,13:00-15:00,17:00-19:00")
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.datetime(2019, 1, 21, 10),
+                datetime.datetime(2019, 1, 21, 18),
+            ),
+            [
+                (datetime.datetime(2019, 1, 21, 10), datetime.datetime(2019, 1, 21, 11)),
+                (datetime.datetime(2019, 1, 21, 13), datetime.datetime(2019, 1, 21, 15)),
+                (datetime.datetime(2019, 1, 21, 17), datetime.datetime(2019, 1, 21, 18)),
+            ],
+        )
+        self.assertEqual(
+            oh.opening_periods_between(
+                datetime.datetime(2019, 1, 21, 11),
+                datetime.datetime(2019, 1, 21, 17),
+            ),
+            [
+                (datetime.datetime(2019, 1, 21, 13), datetime.datetime(2019, 1, 21, 15)),
+            ],
+        )
+
+
 if __name__ == '__main__':
     unittest.main()
     exit(0)
