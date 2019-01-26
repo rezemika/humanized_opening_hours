@@ -1,68 +1,57 @@
-WDAY : "Mo" | "Tu" | "We" | "Th" | "Fr" | "Sa" | "Su"
-MONTH : "Jan" | "Feb" | "Mar" | "Apr" | "May" | "Jun" | "Jul" | "Aug" | "Sep" | "Oct" | "Nov" | "Dec"
-PUBLIC_HOLIDAY : "PH"
-SCHOOL_HOLIDAY : "SH"
-EVENT : "dawn" | "sunrise" | "sunset" | "dusk"
-EASTER : "easter"
-OPEN : " open"
-CLOSED : " closed" | " off"
-ALWAYS_OPEN.2 : "24/7"
-WEEK.2 : "week "
-
-TWO_DIGITS.1 : /[0-9][0-9]+/
-YEAR.3 : /([12][0-9]{3})+/
-
+WDAY : "Mo"i | "Tu"i | "We"i | "Th"i | "Fr"i | "Sa"i | "Su"i
+MONTH : "Jan"i | "Feb"i | "Mar"i | "Apr"i | "May"i | "Jun"i | "Jul"i | "Aug"i | "Sep"i | "Oct"i | "Nov"i | "Dec"i
+ANY_RULE_SEPARATOR : "; " | ", " | " || "
+RULE_MODIFIER_OPEN : "open"i
+RULE_MODIFIER_CLOSED : "closed"i | "off"i
+RULE_MODIFIER_UNKNOWN : "unknown"i
+ALWAYS_OPEN : "24/7"
+HOUR : /[0-4]?[0-9]+/  // Allow "44:00" to mean "24:00" + 10 hours.
+MINUTE : /[0-5][0-9]+/
 PLUS_OR_MINUS : "+" | "-"
-
-//
-
-// The support of the comma as rule separator is not supported yet
-// in the parsing code (comma and semicolons are treated as equals),
-// but the current implementation of rules is not perfect and doesn't
-// perfectly fits the specifications, so it makes no difference yet.
-time_domain : rule_sequence (("; "|", ") rule_sequence)*
-
-rule_sequence : ALWAYS_OPEN -> always_open_rule
-              | range_selectors " " time_selector
-              | range_selectors " " time_selector rule_modifier
-              | time_selector
-              | time_selector rule_modifier -> time_modifier_rule
-              | range_selectors rule_modifier -> range_modifier_rule
-//              | rule_modifier -> modifier_only_rule  // TODO: Allow only "off".
-
-rule_modifier : OPEN -> rule_modifier_open
-              | CLOSED -> rule_modifier_closed
-
-//
+PUBLIC_HOLIDAY : "PH"i
+SCHOOL_HOLIDAY : "SH"i
+NTH : "1" | "2" | "3" | "4" | "5"
+EVENT : "dawn"i | "sunrise"i | "sunset"i | "dusk"i
+VARIABLE_DATE : "easter"i
 
 %ignore " "
-range_selectors : [year_selector] [monthday_selector] [week_selector] [":"] [weekday_selector]
-
-//
-
-weekday_selector : (weekday_sequence | holiday ("," holiday)*) -> weekday_or_holiday_sequence_selector
-                 | holiday ("," holiday)* "," weekday_sequence -> holiday_and_weekday_sequence_selector
-                 | weekday_sequence "," holiday ("," holiday)* -> holiday_and_weekday_sequence_selector  // Not valid but frequent pattern.
-                 | holiday ("," holiday)* " " weekday_sequence -> holiday_in_weekday_sequence_selector
-weekday_sequence : weekday_range ("," weekday_range)*
-weekday_range : WDAY
-              | WDAY "-" WDAY
-holiday : PUBLIC_HOLIDAY
-        | SCHOOL_HOLIDAY
-
-//
-
 %import common.INT
-//day_offset : " " PLUS_OR_MINUS INT " day" ["s"]
+%import common.ESCAPED_STRING
+
+//
+
+time_domain : rule_sequence (ANY_RULE_SEPARATOR rule_sequence)*
+
+rule_sequence : selector_sequence [rule_modifier]
+
+rule_modifier : RULE_MODIFIER_OPEN [" " ESCAPED_STRING] -> rule_modifier_open
+              | RULE_MODIFIER_CLOSED [" " ESCAPED_STRING] -> rule_modifier_closed
+              | RULE_MODIFIER_UNKNOWN [" " ESCAPED_STRING] -> rule_modifier_unknown
+              | ESCAPED_STRING -> rule_modifier_comment
+
+selector_sequence : ALWAYS_OPEN -> selector_sequence_always_open
+                  | wide_range_selectors ":" small_range_selectors -> selector_sequence_with_colon
+                  | wide_range_selectors small_range_selectors -> selector_sequence_without_colon
+                  | ESCAPED_STRING ":" time_selector -> selector_sequence_comment_time_selector
+
+wide_range_selectors : [year_selector] [monthday_selector] [week_selector]
+small_range_selectors : [weekday_selector] [time_selector]
 
 //
 
 time_selector : timespan ("," timespan)*
-timespan : time "-" time
+timespan : time -> timespan_normal
+         | time "+" -> timespan_plus
+         | time "-" time -> timespan_tt
+         | time "-" time "+" -> timespan_tt_plus
+         | time "-" time "/" MINUTE -> timespan_tt_minute
+         | time "-" time "/" hour_minutes -> timespan_tt_hm
+
 time : hour_minutes | variable_time
-hour_minutes : TWO_DIGITS ":" TWO_DIGITS
-variable_time : EVENT
-              | "(" EVENT PLUS_OR_MINUS hour_minutes ")"
+variable_time : EVENT -> variable_time_event
+              | "(" EVENT "+" hour_minutes ")" -> variable_time_event_plus_time
+              | "(" EVENT "-" hour_minutes ")" -> variable_time_event_minus_time
+hour_minutes : HOUR (":" | "h"i) MINUTE
 
 //
 
@@ -70,23 +59,40 @@ year_selector : year_range ("," year_range)*
 year_range : year
            | year "-" year
            | year "-" year "/" INT
-year : YEAR
+           | year "+" -> year_range_plus
+year : /([12][0-9]{3})+/
 
-//
-
-// TODO : Prevent case like "Jan 1-5-Feb 1-5" (monthday_date - monthday_date)
 monthday_selector : monthday_range ("," monthday_range)*
-monthday_range : monthday_date  // "Dec 25"
-               | monthday_date "-" monthday_date  // "Jan 1-Feb 1"
-monthday_date : [year " "] MONTH " " INT -> monthday_date_monthday
-              | [year " "] MONTH " " INT "-" INT -> monthday_date_day_to_day
-              | [year " "] MONTH -> monthday_date_month
-              | [year " "] EASTER -> monthday_date_easter
+monthday_range : [year] MONTH -> monthday_range_ym
+               | [year] MONTH "-" MONTH -> monthday_range_ymm
+               | date -> monthday_range_date
+               | date "+" -> monthday_range_date_plus
+               | date "-" date -> monthday_range_dd
+               | date "-" INT -> monthday_range_date_to
+date : [year] MONTH INT [date_offset]
+     | [year] VARIABLE_DATE [date_offset]
+date_offset : [PLUS_OR_MINUS WDAY] [day_offset]
+day_offset : " " PLUS_OR_MINUS INT "day" ["s"]
 
-//
+week_selector : "week"i week ("," week)*
+week : INT
+     | INT "-" INT
+     | INT "-" INT "/" INT
 
-week_selector : WEEK week ("," week)*  // TODO
-week : weeknum
-     | weeknum "-" weeknum
-     | weeknum "-" weeknum "/" INT
-weeknum : INT
+weekday_selector : weekday_sequence
+                 | holiday_sequence
+                 | holiday_sequence "," weekday_sequence -> weekday_selector_wd_and_holiday
+                 | weekday_sequence "," holiday_sequence -> weekday_selector_wd_and_holiday_wrong  // Invalid but frequent.
+                 | holiday_sequence " " weekday_sequence -> weekday_selector_wd_in_holiday
+weekday_sequence : weekday_range ("," weekday_range)*
+weekday_range : WDAY
+              | WDAY "-" WDAY
+              | WDAY nth -> weekday_range_nth
+              | WDAY nth day_offset -> weekday_range_nth
+holiday_sequence : holiday ("," holiday)*
+holiday : PUBLIC_HOLIDAY [day_offset]
+        | SCHOOL_HOLIDAY
+nth : "[" nth_entry ("," nth_entry)* "]"
+nth_entry : NTH
+          | NTH "-" NTH
+          | "-" NTH -> nth_entry_negative
