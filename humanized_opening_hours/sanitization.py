@@ -219,6 +219,11 @@ class SanitizerTransformer(lark.Transformer):
             return args[0].value.lower() + ' ' + args[1].value
         return args[0].value.lower()
     
+    def rule_modifier_unknown(self, args):
+        if len(args) == 2:
+            return "unknown " + args[1].value
+        return "unknown"
+    
     def rule_modifier_comment(self, args):
         return args[0].value
 

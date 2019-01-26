@@ -60,3 +60,7 @@ class Holiday:
             return dt in [date + self.td for date in PH]
         else:
             return dt in [date + self.td for date in SH]
+
+
+class Rule:
+    pass
