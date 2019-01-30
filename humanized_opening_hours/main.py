@@ -661,7 +661,7 @@ class OHParser:
         matching_rules = list(reversed(
             sorted(matching_rules, key=lambda r: r.priority)
         ))
-        if matching_rules:
+        if matching_rules and matching_rules[0].status != "closed":
             return matching_rules[0]
         return None
     
