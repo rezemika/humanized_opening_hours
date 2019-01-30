@@ -2,8 +2,9 @@ import datetime
 
 import lark
 
+from exceptions import UnsupportedPattern
 from temporal_ranges import (YearRange, MonthdayRange, WeekRange, WeekdayRange,
-    Holiday, Rule)
+    WeekdaySelector, Holiday, Time, Timespan, TimeSelector, AlwaysOpenRule, Rule)
 
 
 def flatten(s):
@@ -49,59 +50,87 @@ class MainTransformer(lark.Transformer):
         parts = []
         for arg in args:
             if isinstance(arg, lark.lexer.Token):
-                parts.append(
-                    {';': '; ', ',': ', ', '||': ' || '}.get(arg.value.strip())
-                )
+                if arg.value == ',':
+                    raise UnsupportedPattern("Comma rule separator is not supported yet.")
+                elif arg.value == '||':
+                    raise UnsupportedPattern("Fallback rule separator is not supported yet.")
+                continue
             else:
-                parts.append(arg.strip())
-        return ''.join(parts)
+                parts.append(arg)
+        return parts
     
-    def wide_range_selectors(self, args): ###
-        return ' '.join(args)
+    def rule_sequence(self, args):
+        if args[0] == "24/7":
+            opening_rule = True
+            if len(args) == 2:
+                opening_rule = args[1]
+            return AlwaysOpenRule(opening_rule=opening_rule)
+        
+        wide_range_selectors, small_range_selectors = args[0]
+        if len(small_range_selectors) == 3:
+            time_selector = small_range_selectors[2]
+            small_range_selectors = small_range_selectors[:2]
+        else:
+            time_selector = None
+        
+        if len(args) == 2:
+            rule_modifier = args[1]
+        else:
+            rule_modifier = True
+        
+        return Rule(
+            wide_range_selectors[1],
+            small_range_selectors[1],
+            time_selector=time_selector,
+            opening_rule=rule_modifier
+        )
     
-    def small_range_selectors(self, args): ###
-        return ' '.join(args)
-    
-    def rule_sequence(self, args): ###
-        return ' '.join(args)
-    
-    def selector_sequence_always_open(self, args): ###
+    def selector_sequence_always_open(self, args):
         return "24/7"
     
-    def selector_sequence_with_colon(self, args): ###
-        args = [a for a in args if a]
-        if len(args) == 1:
-            return args[0] + ':'
-        return args[0] + ': ' + ' '.join(args[1:])
-    
-    def selector_sequence_without_colon(self, args): ###
-        return ' '.join([a for a in args if a])
-    
-    def selector_sequence_comment_time_selector(self, args): ###
-        return args[0].value + ': ' + args[1]
-    
-    # weekday_selector
-    def weekday_selector(self, args): ###
-        return args[0]
-    
-    def weekday_selector_wd_and_holiday(self, args): ###
-        return ','.join(args)
-    
-    def weekday_selector_wd_and_holiday_wrong(self, args): ###
-        return ','.join(args[::-1])
-    
-    def weekday_selector_wd_in_holiday(self, args): ###
-        return ' '.join(args)
-    
-    def weekday_sequence(self, args): ###
-        return flatten(args)
-    
-    def holiday_sequence(self, args): ###
+    def selector_sequence_with_colon(self, args):
         return args
     
+    def selector_sequence_without_colon(self, args):
+        return args
+    
+    def selector_sequence_comment_time_selector(self, args):
+        raise UnsupportedPattern("<comment: time_selector> pattern is not supported.")
+    
+    def wide_range_selectors(self, args):
+        return ("wide", args)
+    
+    def small_range_selectors(self, args):
+        if len(args) == 1 and isinstance(args[0], TimeSelector):
+            return ("small", [], args[0])
+        if isinstance(args[-1], TimeSelector):
+            return ("small", args[:-1], args[-1])
+        return ("small", args)
+    
+    # weekday_selector
+    def weekday_selector(self, args):
+        return WeekdaySelector(args[0], [])
+    
+    def weekday_selector_wd_and_holiday(self, args):
+        return WeekdaySelector(args[1], args[0])
+    
+    def weekday_selector_wd_and_holiday_wrong(self, args):
+        return WeekdaySelector(args[0], args[1])
+    
+    def weekday_selector_wd_in_holiday(self, args):
+        return WeekdaySelector(args[1], args[0], wd_in_holiday=True)
+    
+    def weekday_sequence(self, args):
+        return flatten(args)
+    
+    def holiday_sequence(self, args):
+        return flatten(args)
+    
     def weekday_range(self, args):
+        if len(args) == 1:
+            return WeekdayRange([get_wday(args[0])])
         return WeekdayRange(
-            cycle_slice(range(7), get_wday(args[0]), get_wday(args[1]))
+            cycle_slice(list(range(7)), get_wday(args[0]), get_wday(args[1]))
         )
     
     def weekday_range_nth(self, args):
@@ -205,7 +234,7 @@ class MainTransformer(lark.Transformer):
     def year_range(self, args):
         if len(args) == 1:
             if '+' in args[0]:
-                return YearRange([int(args[0][:-1]]), plus=True)
+                return YearRange([int(args[0][:-1])], plus=True)
             return YearRange([int(args[0])])
         elif len(args) == 2:
             return YearRange(range(int(args[0]), int(args[1])+1))
@@ -221,17 +250,22 @@ class MainTransformer(lark.Transformer):
         return args[0]
     
     # time_selector
-    def time_selector(self, args): ###
-        return ','.join(args)
+    def time_selector(self, args):
+        return TimeSelector(args)
     
-    def timespan_normal(self, args): ###
-        return args[0]
+    def timespan_normal(self, args):
+        raise UnsupportedPattern("Points in time are not supported yet.")
     
     def timespan_plus(self, args):
         raise UnsupportedPattern("The <timespan +> pattern is not supported.")
     
-    def timespan_tt(self, args): ###
-        return args[0] + '-' + args[1]
+    def timespan_tt(self, args):
+        if args[0].type == args[1].type == "normal":
+            if args[1].delta < args[0].delta:
+                t2 = args[1]
+                t2.delta += datetime.timedelta(days=1)
+                return Timespan(args[0], t2)
+        return Timespan(args[0], args[1])
     
     def timespan_tt_plus(self, args):
         raise UnsupportedPattern("The <timespan +> pattern is not supported.")
@@ -242,38 +276,37 @@ class MainTransformer(lark.Transformer):
     def timespan_tt_hm(self, args):
         raise UnsupportedPattern("Points in time are not supported yet.")
     
-    def time(self, args): ###
-        return args[0]
+    def time(self, args):
+        return Time(args[0][0], args[0][1])
     
-    def hour_minutes(self, args): ###
-        return args[0].value.zfill(2) + ':' + args[1].value.zfill(2)
+    def hour_minutes(self, args):
+        return (
+            "normal",
+            datetime.timedelta(hours=int(args[0]), minutes=int(args[1]))
+        )
     
-    def variable_time_event(self, args): ###
-        return args[0].value.lower()
+    def variable_time_event(self, args):
+        return (args[0].value, datetime.timedelta())
     
-    def variable_time_event_plus_time(self, args): ###
-        event = args[0].value.lower()
-        time = args[1]
-        return "({}+{})".format(event, time)
+    def variable_time_event_plus_time(self, args):
+        return (args[0].value, args[1][1])
     
-    def variable_time_event_minus_time(self, args): ###
-        event = args[0].value.lower()
-        time = args[1]
-        return "({}-{})".format(event, time)
+    def variable_time_event_minus_time(self, args):
+        return (args[0].value, args[1][1] * -1)
     
     # rule_modifier
-    def rule_modifier_open(self, args): ###
+    def rule_modifier_open(self, args):
         if len(args) == 2:
-            return "open " + args[1].value
-        return "open"
+            raise UnsupportedPattern("Comments are not supported.")
+        return True
     
-    def rule_modifier_closed(self, args): ###
+    def rule_modifier_closed(self, args):
         if len(args) == 2:
-            return args[0].value.lower() + ' ' + args[1].value
-        return args[0].value.lower()
+            raise UnsupportedPattern("Comments are not supported.")
+        return False
     
     def rule_modifier_unknown(self, args):
         raise UnsupportedPattern("Unknown schedules are not supported.")
     
-    def rule_modifier_comment(self, args): ###
-        return args[0].value
+    def rule_modifier_comment(self, args):
+        raise UnsupportedPattern("Comment only rules are not supported.")

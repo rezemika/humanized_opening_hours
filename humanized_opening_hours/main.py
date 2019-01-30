@@ -1,9 +1,11 @@
 import lark
 
 import unittest
+import datetime
 
 import sanitization
 from sanitization import sanitize_field
+from rules_parsing import MainTransformer
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -27,6 +29,58 @@ class OHParser:
         sanitization.pre_check_field(field)
         tree = PARSER.parse(field)
         self.sanitized_field = sanitization.sanitize_tree(tree)
+        self.rules = MainTransformer().transform(tree)
+        self.PH = []
+        self.SH = []
+    
+    def is_open(self, dt=None):
+        if not dt:
+            dt = datetime.datetime.now()
+        for rule in self.rules[::-1]:
+            match = rule.match_dt(dt, self.PH, self.SH)
+            if match:
+                return rule.is_open(dt, self.PH, self.SH)
+        return False
+    
+    def period(self, dt=None):
+        if not dt:
+            dt = datetime.datetime.now()
+        periods = []
+        for rule in self.rules[::-1]:
+            period = rule.period(dt, self.PH, self.SH)
+            if period != (None, None):
+                periods.append(period)
+        if not periods:
+            return None
+        
+        print(periods, self.is_open(dt))
+        if self.is_open(dt):
+            beginning = min(
+                [p[1] for p in periods if p[1] != None and p[1] <= dt],
+                key=lambda d: d - dt
+            )
+        else:
+            beginning = min(
+                [p[0] for p in periods if p[0] != None and p[0] <= dt],
+                key=lambda d: d - dt
+            )
+        
+        #closest_last_ending = min(
+        #    [p[1] for p in periods if p[1] != None and p[1] <= dt],
+        #    key=lambda d: d - dt
+        #)
+        if self.is_open(dt):
+            ending = min(
+                [p[1] for p in periods if p[1] != None and p[1] >= dt],
+                key=lambda d: dt - d
+            )
+        else:
+            ending = min(
+                [p[0] for p in periods if p[0] != None and p[0] >= dt],
+                key=lambda d: dt - d
+            )
+        
+        return (beginning, ending)
 
 
 class TestPatterns(unittest.TestCase):

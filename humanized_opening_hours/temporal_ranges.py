@@ -48,6 +48,12 @@ class WeekdayRange:
         if not self.nth:
             return dt.weekday() in self.weekdays
         # TODO
+    
+    def __repr__(self):
+        return str(self)
+    
+    def __str__(self):
+        return "<WeekdayRange {}[{}]>".format(self.weekdays, self.nth)
 
 
 class Holiday:
@@ -62,5 +68,141 @@ class Holiday:
             return dt in [date + self.td for date in SH]
 
 
+class Time:
+    def __init__(self, type, delta):
+        self.type = type
+        self.delta = delta
+    
+    def get_datetime(self, dt, location=None):  # TODO: Location.
+        if self.type != "normal":
+            raise NotImplementedError()
+        base_dt = dt.date()
+        return datetime.datetime.combine(base_dt, datetime.time()) + self.delta
+    
+    def __repr__(self):
+        return str(self)
+    
+    def __str__(self):
+        return "<{} {!r}>".format(self.type, self.delta)
+
+
+class Timespan:
+    def __init__(self, time1, time2):
+        self.time1 = time1
+        self.time2 = time2
+    
+    def check(self, dt):
+        return self.time1.get_datetime(dt) <= dt < self.time2.get_datetime(dt)
+    
+    def period(self, dt):
+        return (self.time1.get_datetime(dt), self.time2.get_datetime(dt))
+    
+    def __contains__(self, dt):
+        return self.check(dt)
+    
+    def __repr__(self):
+        return str(self)
+    
+    def __str__(self):
+        return "<{} - {}>".format(self.time1, self.time2)
+
+
+class TimeSelector:
+    def __init__(self, timespans):
+        self.timespans = timespans
+    
+    def check(self, dt):
+        for timespan in self.timespans:
+            if timespan.check(dt) is True:
+                return True
+        return False
+    
+    def __repr__(self):
+        return str(self)
+    
+    def __str__(self):
+        return "<TimeSelector {!r}>".format(self.timespans)
+
+
+#####
+
+
+class WeekdaySelector:
+    def __init__(self, weekday_sequence, holiday_sequence, wd_in_holiday=False):
+        # weekday_sequence and holiday_sequence undiscerned for 'weekday_selector'.
+        self.weekday_sequence = weekday_sequence
+        self.holiday_sequence = holiday_sequence
+        self.wd_in_holiday = wd_in_holiday
+    
+    def check(self, dt, PH, SH):
+        if not self.wd_in_holiday:
+            return (
+                any((wd_range.check(dt, PH, SH) for wd_range in self.weekday_sequence))
+                or
+                any((holiday.check(dt, PH, SH) for holiday in self.holiday_sequence))
+            )
+        return (
+            any((holiday.check(dt, PH, SH) for holiday in self.holiday_sequence))
+            and
+            any((wd_range.check(dt, PH, SH) for wd_range in self.weekday_sequence))
+        )
+    
+    def __repr__(self):
+        return str(self)
+    
+    def __str__(self):
+        return "<WeekdaySelector {} {} {}>".format(
+            self.weekday_sequence,
+            'in' if self.wd_in_holiday else 'and',
+            self.holiday_sequence
+        )
+
+
+class AlwaysOpenRule:
+    def __init__(self, opening_rule=True):
+        self.opening_rule = opening_rule
+
+
 class Rule:
-    pass
+    def __init__(self, wide_range_selectors, small_range_selectors, time_selector=None, opening_rule=True):
+        self.wide_range_selectors = wide_range_selectors
+        self.small_range_selectors = small_range_selectors
+        self.time_selector = time_selector
+        self.opening_rule = opening_rule
+    
+    def match_dt(self, dt, PH, SH):
+        for selector in self.wide_range_selectors:
+            if selector.check(dt, PH, SH) is False:
+                return False
+        for selector in self.small_range_selectors:
+            if selector.check(dt, PH, SH) is False:
+                return False
+        return self.time_selector.check(dt)
+    
+    def is_open(self, dt, PH, SH):
+        match = self.match_dt(dt, PH, SH)
+        return match and self.opening_rule
+    
+    def period(self, dt, PH, SH):
+        for selector in self.wide_range_selectors:
+            if selector.check(dt, PH, SH) is False:
+                return (None, None)
+        for selector in self.small_range_selectors:
+            if selector.check(dt, PH, SH) is False:
+                return (None, None)
+        
+        '''
+        last = None
+        for timespan in self.time_selector.timespans:
+            beginning, end = timespan.period(dt)
+            if dt < beginning:
+                return (None, beginning)
+            if dt > end:
+                last = end
+            if dt in timespan:
+                return (beginning, end)
+        return (None, last)
+        '''
+        
+        if self.is_open(dt, PH, SH):
+            
