@@ -1,10 +1,13 @@
 import lark
 
-from exceptions import InconsistentField
+import os
+
+from humanized_opening_hours.exceptions import InconsistentField
 
 
 def get_parser():
-    with open("field.ebnf", 'r') as f:
+    base_dir = os.path.dirname(os.path.realpath(__file__))
+    with open(os.path.join(base_dir, "field.ebnf"), 'r') as f:
         grammar = f.read()
     return lark.Lark(grammar, start="time_domain", parser="earley", debug=True)
 
@@ -83,13 +86,13 @@ class SanitizerTransformer(lark.Transformer):
             return args[0].value.upper()
         return args[0].value.upper() + args[1]
     
-    def wday_nth_sequence(self, args):
+    def nth(self, args):
         return '[' + ','.join(args) + ']'
     
     def nth_entry(self, args):
         return '-'.join(args)
     
-    def negative_nth_entry(self, args):
+    def nth_entry_negative(self, args):
         return '-' + args[0]
     
     # week_selector

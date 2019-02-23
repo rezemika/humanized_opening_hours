@@ -2,10 +2,11 @@ import lark
 
 import unittest
 import datetime
+import os
 
-import sanitization
-from sanitization import sanitize_field
-from rules_parsing import MainTransformer
+from humanized_opening_hours import sanitization
+from humanized_opening_hours.sanitization import sanitize_field
+from humanized_opening_hours.rules_parsing import MainTransformer
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -14,7 +15,8 @@ logging.basicConfig(level=logging.DEBUG)
 # THIS(?=(?:(?:[^"]*+"){2})*+[^"]*+\z)
 
 def get_parser():
-    with open("field.ebnf", 'r') as f:
+    base_dir = os.path.dirname(os.path.realpath(__file__))
+    with open(os.path.join(base_dir, "field.ebnf"), 'r') as f:
         grammar = f.read()
     return lark.Lark(grammar, start="time_domain", parser="earley")
 
@@ -42,6 +44,15 @@ class OHParser:
                 return rule.is_open(dt, self.PH, self.SH)
         return False
     
+    def open_today(self, dt=None):
+        if not dt:
+            dt = datetime.date.today()
+        for rule in self.rules[::-1]:
+            match = rule.match_date(dt, self.PH, self.SH)
+            if match:
+                return True
+        return False
+    
     def period(self, dt=None):
         if not dt:
             dt = datetime.datetime.now()
@@ -53,34 +64,44 @@ class OHParser:
         if not periods:
             return None
         
-        print(periods, self.is_open(dt))
         if self.is_open(dt):
-            beginning = min(
-                [p[1] for p in periods if p[1] != None and p[1] <= dt],
-                key=lambda d: d - dt
-            )
-        else:
             beginning = min(
                 [p[0] for p in periods if p[0] != None and p[0] <= dt],
                 key=lambda d: d - dt
             )
-        
-        #closest_last_ending = min(
-        #    [p[1] for p in periods if p[1] != None and p[1] <= dt],
-        #    key=lambda d: d - dt
-        #)
-        if self.is_open(dt):
             ending = min(
                 [p[1] for p in periods if p[1] != None and p[1] >= dt],
                 key=lambda d: dt - d
             )
-        else:
-            ending = min(
-                [p[0] for p in periods if p[0] != None and p[0] >= dt],
-                key=lambda d: dt - d
+            return (beginning, ending)
+        else:  # Now, it can only be closed.
+            beginning = min(
+                [p[1] for p in periods if p[1] != None and p[1] <= dt],
+                key=lambda d: d - dt
             )
         
-        return (beginning, ending)
+        if len(periods) == 1:
+            temp_dt = beginning.date() + datetime.timedelta(1)
+            while True:
+                day_periods = []
+                for rule in self.rules[::-1]:
+                    period = rule.period(datetime.datetime.combine(temp_dt, datetime.time()), self.PH, self.SH)
+                    if period != (None, None):
+                        day_periods.append(period)
+                
+                if not day_periods:
+                    temp_dt += datetime.timedelta(1)
+                    continue
+                else:
+                    break
+            ending = min(
+                [p[1] for p in day_periods if p[1] != None],
+                key=lambda d: dt - d
+            )
+            return (beginning, ending)
+    
+    def next_change(self, dt=None):  # For retro-compatibility.
+        return self.period(dt=dt)[1]
 
 
 class TestPatterns(unittest.TestCase):
@@ -167,9 +188,6 @@ class TestPatterns(unittest.TestCase):
         oh = OHParser(field)
         
         field = "2010-2020/2 Mo-Fr 09:00-12:00"
-        oh = OHParser(field)
-        
-        field = "easter +2 days 09:00-19:00"
         oh = OHParser(field)
 
 

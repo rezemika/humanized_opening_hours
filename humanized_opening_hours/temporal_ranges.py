@@ -170,6 +170,15 @@ class Rule:
         self.time_selector = time_selector
         self.opening_rule = opening_rule
     
+    def match_date(self, dt, PH, SH):
+        for selector in self.wide_range_selectors:
+            if selector.check(dt, PH, SH) is False:
+                return False
+        for selector in self.small_range_selectors:
+            if selector.check(dt, PH, SH) is False:
+                return False
+        return True
+    
     def match_dt(self, dt, PH, SH):
         for selector in self.wide_range_selectors:
             if selector.check(dt, PH, SH) is False:
@@ -191,18 +200,15 @@ class Rule:
             if selector.check(dt, PH, SH) is False:
                 return (None, None)
         
-        '''
-        last = None
+        if self.is_open(dt, PH, SH):
+            for timespan in self.time_selector.timespans:
+                if dt in timespan:
+                    return timespan.period(dt)
         for timespan in self.time_selector.timespans:
             beginning, end = timespan.period(dt)
+            last = end
             if dt < beginning:
                 return (None, beginning)
             if dt > end:
                 last = end
-            if dt in timespan:
-                return (beginning, end)
         return (None, last)
-        '''
-        
-        if self.is_open(dt, PH, SH):
-            

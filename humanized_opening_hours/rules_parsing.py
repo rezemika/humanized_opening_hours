@@ -2,8 +2,8 @@ import datetime
 
 import lark
 
-from exceptions import UnsupportedPattern
-from temporal_ranges import (YearRange, MonthdayRange, WeekRange, WeekdayRange,
+from humanized_opening_hours.exceptions import UnsupportedPattern
+from humanized_opening_hours.temporal_ranges import (YearRange, MonthdayRange, WeekRange, WeekdayRange,
     WeekdaySelector, Holiday, Time, Timespan, TimeSelector, AlwaysOpenRule, Rule)
 
 
@@ -46,11 +46,11 @@ def cycle_slice(l, start_index, end_index):
 
 class MainTransformer(lark.Transformer):
     # time_domain
-    def time_domain(self, args): ###
+    def time_domain(self, args):
         parts = []
         for arg in args:
             if isinstance(arg, lark.lexer.Token):
-                if arg.value == ',':
+                if arg.value == ',':  # TODO
                     raise UnsupportedPattern("Comma rule separator is not supported yet.")
                 elif arg.value == '||':
                     raise UnsupportedPattern("Fallback rule separator is not supported yet.")
@@ -154,49 +154,36 @@ class MainTransformer(lark.Transformer):
         return -int(args[0])
     
     # week_selector
-    def week_selector(self, args): ###
-        return "week " + ','.join(args)
+    def week_selector(self, args):
+        raise NotImplementedError()
     
-    def week(self, args): ###
-        if len(args) == 1:
-            return args[0].zfill(2)
-        elif len(args) == 2:
-            return args[0].zfill(2) + '-' + args[1].zfill(2)
-        else:
-            return "{}-{}/{}".format(args[0].zfill(2), args[1].zfill(2), args[2])
+    def week(self, args):
+        raise NotImplementedError()
     
     # monthday_selector
-    def monthday_selector(self, args): ###
-        return ','.join(args)
+    def monthday_selector(self, args):
+        raise NotImplementedError()
     
-    def monthday_range_ym(self, args): ###
-        if len(args) == 2:
-            return args[0] + ' ' + args[1].value.capitalize()
-        return args[0].value.capitalize()
+    def monthday_range_ym(self, args):
+        raise NotImplementedError()
     
-    def monthday_range_ymm(self, args): ###
-        if len(args) == 2:
-            return '-'.join([a.value.capitalize() for a in args])
-        return args[0] + ' ' + args[1].value.capitalize() + '-' + args[2].value.capitalize()
+    def monthday_range_ymm(self, args):
+        raise NotImplementedError()
     
-    def monthday_range_date(self, args): ###
-        return args[0]
+    def monthday_range_date(self, args):
+        raise NotImplementedError()
     
-    def monthday_range_date_plus(self, args): ###
-        return args[0] + '+'
+    def monthday_range_date_plus(self, args):
+        raise NotImplementedError()
     
-    def monthday_range_dd(self, args): ###
-        return args[0] + '-' + args[1]
+    def monthday_range_dd(self, args):
+        raise NotImplementedError()
     
-    def monthday_range_date_to(self, args): ###
-        return args[0] + '-' + args[1]
+    def monthday_range_date_to(self, args):
+        raise NotImplementedError()
     
-    def date(self, args): ###
-        if args[0].type == "VARIABLE_DATE":
-            return ''.join(args)
-        if isinstance(args[0], str):
-            return args[0] + ' ' + args[1].value.capitalize() + ' '.join(args[2:])
-        return args[0].value + ' '.join(args[1:])
+    def date(self, args):
+        raise NotImplementedError()
     
     def date_offset(self, args):
         raise UnsupportedPattern("Date offsets are not supported yet.")
@@ -207,29 +194,8 @@ class MainTransformer(lark.Transformer):
         return datetime.timedelta(days=offset_sign * days)
     
     # year_selector
-    '''
     def year_selector(self, args):
-        return lambda dt: any(arg(dt) for arg in args)
-    
-    def year_range(self, args):
-        if len(args) == 1:
-            if '+' in args[0]
-                return lambda dt: int(args[0][:-1]) <= dt.year
-            return lambda dt: int(args[0]) == dt.year
-        elif len(args) == 2:
-            return lambda dt: int(args[0]) <= dt.year <= int(args[1])
-        else:
-            years = set(range(int(args[0]), int(args[1]+1), int(args[2].value)))
-            return lambda dt: dt.year in years
-    
-    def year_range_plus(self, args):
-        return args[0] + '+'
-    
-    def year(self, args):
-        return args[0]
-    '''
-    def year_selector(self, args): ###
-        return args
+        raise NotImplementedError()
     
     def year_range(self, args):
         if len(args) == 1:
@@ -240,7 +206,7 @@ class MainTransformer(lark.Transformer):
             return YearRange(range(int(args[0]), int(args[1])+1))
         else:
             return YearRange(
-                range(int(args[0]), int(args[1]+1), int(args[2].value))
+                range(int(args[0]), int(args[1])+1, int(args[2].value))
             )
     
     def year_range_plus(self, args):
