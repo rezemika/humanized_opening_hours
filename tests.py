@@ -965,6 +965,9 @@ class TestGlobal(unittest.TestCase):
         oh = OHParser("2019 Oct- 2020 Feb 07:30-19:30")
         self.assertFalse(oh.is_open(datetime.datetime(2019, 1, 1, 12, 30)))
 
+        with self.assertRaises(NextChangeRecursionError):
+            oh.next_change(datetime.datetime(2020,6,1))
+
 class TestSolarHours(unittest.TestCase):
     maxDiff = None
     

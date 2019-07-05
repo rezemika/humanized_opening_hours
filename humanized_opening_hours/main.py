@@ -504,6 +504,12 @@ class OHParser:
                     break
                 elif _recursion_level > 0:
                     return (None, None)
+                elif i == max(max_recursion, 1000):
+                    # Allow at least 1000 iterations, and avoid date overflow
+                    raise NextChangeRecursionError(
+                        "No matching rule found after {} iterations".format(i),
+                        dt
+                    )
                 i += 1
             new_dt = datetime.datetime.combine(
                 dt.date() + datetime.timedelta(i),
