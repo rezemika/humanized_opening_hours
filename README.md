@@ -3,7 +3,7 @@ Humanized Opening Hours - A parser for the opening_hours fields from OSM
 
 **Humanized Opening Hours** is a Python 3 module allowing a simple usage of the opening_hours fields used in OpenStreetMap.
 
-Any pull request (following PEP-8) is more than welcome!
+**Due to a lack of free time, the developpement of this module is paused. You can of course use it, but its features won't evolve before a (long) moment. If you want to become maintainer, don't hesitate to create an issue!**
 
 ```python
 >>> import humanized_opening_hours as hoh
