@@ -6,11 +6,11 @@ EVENT : "dawn" | "sunrise" | "sunset" | "dusk"
 EASTER : "easter"
 OPEN : " open"
 CLOSED : " closed" | " off"
-ALWAYS_OPEN.2 : "24/7"
-WEEK.2 : "week "
+ALWAYS_OPEN : "24/7"
+WEEK : "week "
 
 TWO_DIGITS.1 : /[0-9][0-9]+/
-YEAR.3 : /([12][0-9]{3})+/
+YEAR : /([12][0-9]{3})+/
 
 PLUS_OR_MINUS : "+" | "-"
 
