@@ -1,8 +1,8 @@
 astral==1.7.1
-Babel==2.6.0
+Babel==2.9.0
+pytz==2020.5
+lark-parser==0.11.1
 flake8==3.6.0
-lark-parser==0.6.5
 pyflakes==2.0.0
-pytz==2018.7
 twine==1.12.1
 requests==2.20.1

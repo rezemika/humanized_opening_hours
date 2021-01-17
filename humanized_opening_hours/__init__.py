@@ -13,11 +13,6 @@ To get started, simply do:
 """
 # flake8: noqa
 
-__version__ = "1.0.0b3"
-__appname__ = "osm_humanized_opening_hours"
-__author__ = "rezemika <reze.mika@gmail.com>"
-__licence__ = "AGPLv3"
-
 import os as _os
 import gettext as _gettext
 _gettext.install("HOH",
@@ -26,6 +21,7 @@ _gettext.install("HOH",
     )
 )
 
+from humanized_opening_hours.version import __version__, __appname__, __author__, __licence__
 from humanized_opening_hours.main import OHParser, sanitize, days_of_week
 from humanized_opening_hours.temporal_objects import easter_date
 from humanized_opening_hours.rendering import AVAILABLE_LOCALES

@@ -1,13 +1,13 @@
 from setuptools import setup, find_packages
 import os
 
-import humanized_opening_hours
-
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+exec(open(os.path.join(
+    BASE_DIR, 'humanized_opening_hours', 'version.py')).read())
 
 setup(
     name="osm_humanized_opening_hours",
-    version=humanized_opening_hours.__version__,
+    version=__version__,  # noqa
     packages=find_packages(exclude=["doc", "tests"]),
     author="rezemika",
     author_email="reze.mika@gmail.com",
